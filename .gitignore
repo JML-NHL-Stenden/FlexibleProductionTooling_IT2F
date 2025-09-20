@@ -1,0 +1,77 @@
+# --------------------------------------
+# Docker & Compose
+# --------------------------------------
+.env
+*.pid
+*.seed
+*.bak
+*.swp
+*.swo
+*.tmp
+*.log
+
+# Docker volumes (persistent container data)
+odoo-db-data/
+pgadmin-data/
+
+# Ignore docker-compose override files
+docker-compose.override.yml
+
+# Ignore any local container build cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# --------------------------------------
+# Odoo
+# --------------------------------------
+odoo/odoo.conf
+odoo/addons/*/__pycache__/
+odoo/addons/*/*.pyc
+odoo/addons/*/*.log
+odoo/addons/*/static/*/cache/
+
+# --------------------------------------
+# PostgreSQL
+# --------------------------------------
+db-data/
+*.sql
+*.dump
+
+# --------------------------------------
+# pgAdmin
+# --------------------------------------
+pgadmin-data/
+pgadmin_sessions/
+pgadmin4.log
+
+# --------------------------------------
+# Mosquitto (MQTT)
+# --------------------------------------
+uns/data/
+uns/log/
+uns/mosquitto.passwd
+
+# --------------------------------------
+# MQTT Bridge / Publisher
+# --------------------------------------
+mqtt_bridge/__pycache__/
+mqtt_bridge/*.pyc
+mqtt_bridge/*.log
+mqtt_publish/__pycache__/
+mqtt_publish/*.pyc
+mqtt_publish/*.log
+
+# --------------------------------------
+# IDEs & Editors
+# --------------------------------------
+.vscode/
+.idea/
+*.iml
+
+# --------------------------------------
+# OS files
+# --------------------------------------
+.DS_Store
+Thumbs.db

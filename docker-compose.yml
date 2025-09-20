@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: flexible-production-tooling-db-1
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    networks:
+      - odoo-net
+
+  odoo:
+    image: odoo:${ODOO_VERSION}
+    container_name: flexible-production-tooling-odoo-1
+    depends_on:
+      - db
+    ports:
+      - "${ODOO_HTTP_PORT}:8069"
+    volumes:
+      - ./odoo/odoo.conf:/etc/odoo/odoo.conf
+      - ./odoo/addons/product_module:/mnt/extra-addons/product_module
+    environment:
+      HOST: ${DB_HOST}
+      USER: ${DB_USER}
+      PASSWORD: ${DB_PASS}
+    networks:
+      - odoo-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: flexible-production-tooling-pgadmin-1
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - odoo-net
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: flexible-production-tooling-mqtt-1
+    ports:
+      - "${MOSQUITTO_PORT}:1883"
+    volumes:
+      - ./uns/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - odoo-net
+
+  mqtt-bridge:
+    build: ./mqtt_bridge
+    container_name: flexible-production-tooling-mqtt-bridge
+    depends_on:
+      - db
+      - mqtt
+    environment:
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+    networks:
+      - odoo-net
+
+  mqtt-publish:
+    build: ./mqtt_publish
+    container_name: flexible-production-tooling-mqtt-publish
+    depends_on:
+      - mqtt
+    environment:
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_PORT: ${MQTT_PORT}
+    networks:
+      - odoo-net
+
+volumes:
+  odoo-db-data:
+  pgadmin-data:
+
+networks:
+  odoo-net:
