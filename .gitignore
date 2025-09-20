@@ -26,7 +26,6 @@ docker-compose.override.yml
 # --------------------------------------
 # Odoo
 # --------------------------------------
-odoo/odoo.conf
 odoo/addons/*/__pycache__/
 odoo/addons/*/*.pyc
 odoo/addons/*/*.log
