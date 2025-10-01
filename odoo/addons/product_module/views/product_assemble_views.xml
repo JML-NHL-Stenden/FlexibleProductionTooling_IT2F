@@ -1,0 +1,102 @@
+<!-- product_module/views/product_assemble_views.xml -->
+<odoo>
+    <!-- Form view -->
+    <record id="view_product_assemble_form" model="ir.ui.view">
+        <field name="name">product.assemble.form</field>
+        <field name="model">product_module.page</field>
+        <field name="arch" type="xml">
+            <form string="Product Assemble">
+                <header>
+                    <button name="action_create_qr_code"
+                            string="Create QR Code"
+                            type="object"
+                            class="btn-primary"/>
+                </header>
+                <sheet>
+                    <notebook>
+                        <page string="Product Details">
+                            <group>
+                                <group>
+                                    <field name="product_name"/>
+                                    <field name="product_code"/>
+                                </group>
+                                <group>
+                                    <field name="product_description"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Name Enterer">
+                            <group>
+                                <group>
+                                    <field name="first_name_input" placeholder="First name"/>
+                                    <field name="last_name_input" placeholder="Last name"/>
+                                </group>
+                                <group>
+                                    
+                                </group>
+                            </group>
+                        </page>
+                        <page string="QR Code">
+                            <group>
+                                <group>
+                                    <field name="name" readonly="1"/>
+                                    <field name="qr_text" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="qr_image" widget="image" filename="qr_image_name"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Create Product Instructions">
+                            <group>
+                                <field name="instruction_text" placeholder="Write product instructions here..."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions (two separate actions so two sibling menus can point to them) -->
+    <record id="action_product_assemble_page" model="ir.actions.act_window">
+        <field name="name">Product Assemble</field>
+        <field name="res_model">product_module.page</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_product_assemble_form"/>
+        <field name="res_id" ref="product_module.product_assemble_page_record"/>
+        <field name="target">current</field>
+        <field name="context">{'create': False, 'edit': True}</field>
+    </record>
+
+    <record id="action_product_details_page" model="ir.actions.act_window">
+        <field name="name">Product Details</field>
+        <field name="res_model">product_module.page</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_product_assemble_form"/>
+        <field name="res_id" ref="product_module.product_assemble_page_record"/>
+        <field name="target">current</field>
+        <field name="context">{'create': False, 'edit': True}</field>
+    </record>
+
+    <!-- TOP-LEVEL APP MENU (ensure no action on root; clears any previous action) -->
+    <record id="menu_product_module_root" model="ir.ui.menu">
+        <field name="name">Product Module</field>
+        <field name="sequence">20</field>
+        <field name="action" eval="False"/>
+        <field name="parent_id" eval="False"/>
+    </record>
+
+    <!-- Sibling menus under Product Module -->
+    <menuitem id="menu_product_assemble"
+              name="Product Assemble"
+              parent="menu_product_module_root"
+              action="action_product_assemble_page"
+              sequence="1"/>
+
+    <menuitem id="menu_product_details"
+              name="Product Details"
+              parent="menu_product_module_root"
+              action="action_product_details_page"
+              sequence="2"/>
+</odoo>
