@@ -31,3 +31,8 @@ AFTER INSERT ON assembly_instructions
 FOR EACH ROW
 EXECUTE FUNCTION notify_new_instruction();
 ```
+
+Now, when you run the following command in terminal, it will be constantly displaying mqtt-bridge logs and when you add item assembly_instructions it announces it there.
+``` 
+docker-compose logs -f mqtt-bridge
+```
