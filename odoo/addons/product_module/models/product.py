@@ -11,7 +11,7 @@ class ProductModuleProduct(models.Model):
     
     sequence = fields.Integer(string='Sequence', default=10)
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
-    product_type_id = fields.Many2one('product_module.type', string='Product Type', ondelete='set null')
+    product_type_ids = fields.Many2many('product_module.type', string='Product Categories', help='Select multiple categories for this product')
 
     # Product Information
     name = fields.Char(string='Product Name', required=True)
@@ -25,6 +25,8 @@ class ProductModuleProduct(models.Model):
     qr_image = fields.Binary(string='QR Code', compute='_compute_qr', attachment=True, store=False)
     qr_image_name = fields.Char(string='QR Filename', compute='_compute_qr_filename', store=False)
 
+    # Note: Variant sequence is now handled through the product_type_ids relationship
+    
     # Instructions
     instruction_ids = fields.One2many('product_module.instruction', 'product_id', string='Assembly Instructions')
     instruction_count = fields.Integer(string='Instruction Count', compute='_compute_instruction_count')
@@ -77,6 +79,8 @@ class ProductModuleProduct(models.Model):
         """Count number of instructions for this product"""
         for record in self:
             record.instruction_count = len(record.instruction_ids)
+
+    # Note: Sequence assignment is now handled in the product_type model
 
     def action_select_product(self):
         """Select this product for the Product Details tab"""

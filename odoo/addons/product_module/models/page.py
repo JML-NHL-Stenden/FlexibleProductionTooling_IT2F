@@ -23,13 +23,24 @@ class ProductAssemblePage(models.Model):
         string='Products'
     )
 
+    # Computed counts for display
+    category_count = fields.Integer(string='Category Count', compute='_compute_counts')
+    product_count = fields.Integer(string='Product Count', compute='_compute_counts')
+
     # Selected product for Product Details tab
     selected_product_id = fields.Many2one('product_module.product', string='Selected Product')
     selected_product_name = fields.Char(related='selected_product_id.name', string='Product Name')
     selected_product_code = fields.Char(related='selected_product_id.product_code', string='Product Code')
     selected_product_description = fields.Text(related='selected_product_id.description', string='Product Description')
     selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
-    selected_product_type_id = fields.Many2one(related='selected_product_id.product_type_id', string='Product Type')
+    selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Categories')
+
+    @api.depends('product_type_ids', 'product_ids')
+    def _compute_counts(self):
+        """Compute category and product counts for display"""
+        for record in self:
+            record.category_count = len(record.product_type_ids)
+            record.product_count = len(record.product_ids)
 
     def action_edit_product(self):
         """Open the selected product for editing"""
