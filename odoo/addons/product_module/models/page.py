@@ -1,0 +1,79 @@
+# product_module/models/page.py
+from odoo import models, fields, api
+
+
+class ProductAssemblePage(models.Model):
+    _name = 'product_module.page'
+    _description = 'Static backend page for Product Assemble'
+
+    # Header/label
+    name = fields.Char(default="Products", readonly=True)
+
+    # Product types on this page
+    product_type_ids = fields.One2many(
+        comodel_name='product_module.type',
+        inverse_name='page_id',
+        string='Product Types'
+    )
+
+    # Registered products on this page
+    product_ids = fields.One2many(
+        comodel_name='product_module.product',
+        inverse_name='page_id',
+        string='Products'
+    )
+
+    # Selected product for Product Details tab
+    selected_product_id = fields.Many2one('product_module.product', string='Selected Product')
+    selected_product_name = fields.Char(related='selected_product_id.name', string='Product Name')
+    selected_product_code = fields.Char(related='selected_product_id.product_code', string='Product Code')
+    selected_product_description = fields.Text(related='selected_product_id.description', string='Product Description')
+    selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
+    selected_product_type_id = fields.Many2one(related='selected_product_id.product_type_id', string='Product Type')
+
+    def action_edit_product(self):
+        """Open the selected product for editing"""
+        if self.selected_product_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': 'Edit Product',
+                'res_model': 'product_module.product',
+                'res_id': self.selected_product_id.id,
+                'view_mode': 'form',
+                'target': 'new',
+            }
+        return False
+
+    def action_select_product(self, product_id):
+        """Select a product for the Product Details tab"""
+        self.selected_product_id = product_id
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
+
+    def action_create_product_type(self):
+        """Open form to create a new product type/category"""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Product Category',
+            'res_model': 'product_module.type',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_page_id': self.id,
+            }
+        }
+
+    def action_create_product(self):
+        """Open form to create a new product"""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Product',
+            'res_model': 'product_module.product',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_page_id': self.id,
+            }
+        }
