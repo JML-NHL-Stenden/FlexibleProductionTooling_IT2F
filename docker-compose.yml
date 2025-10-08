@@ -78,6 +78,7 @@ services:
     environment:
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
+      MQTT_TOPIC: factory/products/all_product_codes
     networks:
       - odoo-net
 
