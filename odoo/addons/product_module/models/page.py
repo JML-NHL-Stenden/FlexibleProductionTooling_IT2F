@@ -88,3 +88,4 @@ class ProductAssemblePage(models.Model):
                 'default_page_id': self.id,
             }
         }
+
