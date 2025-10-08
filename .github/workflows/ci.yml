@@ -10,57 +10,30 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mqtt:
-        image: eclipse-mosquitto:2
-        ports:
-          - 1883:1883
-        options: >-
-          --health-cmd "mosquitto -c /mosquitto/config/mosquitto.conf -v"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - name: Check out code
+      # 1. Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      # 2. Set up Docker Buildx (optional but recommended)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # ----- Test mqtt-bridge -----
-      - name: Install mqtt-bridge dependencies
-        working-directory: mqtt-bridge
+      # 3. Build and start all services
+      - name: Build and start Docker Compose services
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          docker-compose up -d --build
+          # Wait a few seconds for MQTT to be ready
+          sleep 10
 
+      # 4. Run tests inside mqtt-bridge
       - name: Run mqtt-bridge tests
-        working-directory: mqtt-bridge
-        run: |
-          pytest || echo "No tests found for mqtt-bridge"
+        run: docker-compose run --rm mqtt-bridge pytest
 
-      # ----- Test mqtt-publish -----
-      - name: Install mqtt-publish dependencies
-        working-directory: mqtt-publish
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+      # 5. Run tests inside mqtt-publish
       - name: Run mqtt-publish tests
-        working-directory: mqtt-publish
-        run: |
-          pytest || echo "No tests found for mqtt-publish"
+        run: docker-compose run --rm mqtt-publish pytest
 
-      - name: Build and test mqtt-bridge container
-        run: |
-          docker build -t mqtt-bridge-test ./mqtt-bridge
-          docker run --rm mqtt-bridge-test pytest
-
-      - name: Build and test mqtt-publish container
-        run: |
-          docker build -t mqtt-publish-test ./mqtt-publish
-          docker run --rm mqtt-publish-test pytest
-
+      # 6. Tear down
+      - name: Stop Docker Compose services
+        run: docker-compose down
