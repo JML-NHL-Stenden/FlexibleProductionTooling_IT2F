@@ -22,7 +22,7 @@ jobs:
       # 3. Build and start all services
       - name: Build and start Docker Compose services
         run: |
-          docker compose up -d --build
+          docker compose --env-file .env.ci up -d --build
           # Wait a few seconds for MQTT to be ready
           sleep 10
 
