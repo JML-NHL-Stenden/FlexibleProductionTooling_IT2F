@@ -22,18 +22,18 @@ jobs:
       # 3. Build and start all services
       - name: Build and start Docker Compose services
         run: |
-          docker-compose up -d --build
+          docker compose up -d --build
           # Wait a few seconds for MQTT to be ready
           sleep 10
 
       # 4. Run tests inside mqtt-bridge
       - name: Run mqtt-bridge tests
-        run: docker-compose run --rm mqtt-bridge pytest
+        run: docker compose run --rm mqtt-bridge pytest
 
       # 5. Run tests inside mqtt-publish
       - name: Run mqtt-publish tests
-        run: docker-compose run --rm mqtt-publish pytest
+        run: docker compose run --rm mqtt-publish pytest
 
       # 6. Tear down
       - name: Stop Docker Compose services
-        run: docker-compose down
+        run: docker compose down
