@@ -19,21 +19,31 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 3. Build and start all services
+      # 3. Verify .env.ci file exists
+      - name: Verify .env.ci file
+        run: |
+          echo "Listing repository root:"
+          ls -la
+          echo "--- .env.ci content ---"
+          cat .env.ci
+
+      # 4. Build and start all services
       - name: Build and start Docker Compose services
+        working-directory: ${{ github.workspace }}
         run: |
           docker compose --env-file .env.ci up -d --build
-          # Wait a few seconds for MQTT to be ready
+          # Wait a few seconds for services (like MQTT) to be ready
           sleep 10
 
-      # 4. Run tests inside mqtt-bridge
+      # 5. Run tests inside mqtt-bridge
       - name: Run mqtt-bridge tests
         run: docker compose run --rm mqtt-bridge pytest
 
-      # 5. Run tests inside mqtt-publish
+      # 6. Run tests inside mqtt-publish
       - name: Run mqtt-publish tests
         run: docker compose run --rm mqtt-publish pytest
 
-      # 6. Tear down
+      # 7. Tear down
       - name: Stop Docker Compose services
+        if: always()
         run: docker compose down
