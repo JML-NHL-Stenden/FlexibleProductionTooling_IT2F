@@ -37,6 +37,11 @@ def setup_mqtt():
 
 def main():
     setup_mqtt()
+
+    if os.getenv("CI") == "true":
+        log.info("CI mode: skipping idle loop")
+        return
+
     # Idle loop; keeps container alive without doing anything.
     while True:
         # Optional no-op publish to confirm container is healthy (only if MQTT is up)

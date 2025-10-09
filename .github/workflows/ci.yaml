@@ -1,4 +1,4 @@
-name: Python + Docker CI
+name: Python + Docker CI tests
 
 on:
   push:
@@ -46,11 +46,11 @@ jobs:
           echo "Waiting for services to start..."
           sleep 10
 
-      - name: Run mqtt-bridge tests
-        run: docker compose run --rm mqtt-bridge pytest
+      - name: Test mqtt-bridge
+        run: docker compose run --rm -e CI=true mqtt-bridge python bridge.py
 
-      - name: Run mqtt-publish tests
-        run: docker compose run --rm mqtt-publish pytest
+      - name: Test mqtt-publish
+        run: docker compose run --rm -e CI=true mqtt-publish python publish.py
 
       - name: Stop Docker Compose services
         if: always()
