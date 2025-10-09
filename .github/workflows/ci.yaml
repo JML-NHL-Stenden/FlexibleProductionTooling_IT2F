@@ -10,25 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      POSTGRES_VERSION: ${{ secrets.POSTGRES_VERSION }}
-      ODOO_VERSION: ${{ secrets.ODOO_VERSION }}
-      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASS: ${{ secrets.DB_PASS }}
-      ODOO_HTTP_PORT: ${{ secrets.ODOO_HTTP_PORT }}
-      PGADMIN_DEFAULT_EMAIL: ${{ secrets.PGADMIN_DEFAULT_EMAIL }}
-      PGADMIN_DEFAULT_PASSWORD: ${{ secrets.PGADMIN_DEFAULT_PASSWORD }}
-      PGADMIN_PORT: ${{ secrets.PGADMIN_PORT }}
-      MOSQUITTO_PORT: ${{ secrets.MOSQUITTO_PORT }}
-      MQTT_HOST: ${{ secrets.MQTT_HOST }}
-      MQTT_PORT: ${{ secrets.MQTT_PORT }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,11 +20,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # #
-      # - name: Create .env file from secret
-      #   run: |
-      #     mkdir -p .  # optional, ensure folder exists
-      #     echo "${{ secrets.ENV_FILE_CONTENTS }}" > .env
+      - name: Create .env file from secret
+        run: |
+          mkdir -p .  # optional, ensure folder exists
+          echo "${{ secrets.ENV_FILE_CONTENTS }}" > .env
 
 
       - name: Build and start Docker Compose services
