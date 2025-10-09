@@ -39,6 +39,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # #
+      # - name: Create .env file from secret
+      #   run: |
+      #     mkdir -p .  # optional, ensure folder exists
+      #     echo "${{ secrets.ENV_FILE_CONTENTS }}" > .env
+
+
       - name: Build and start Docker Compose services
         working-directory: ${{ github.workspace }}
         run: |
