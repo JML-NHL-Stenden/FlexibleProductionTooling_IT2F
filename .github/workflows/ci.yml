@@ -30,15 +30,15 @@ jobs:
       MQTT_PORT: ${{ secrets.MQTT_PORT }}
 
     steps:
-      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Docker Buildx
+      - name: Debug env
+        run: printenv | sort
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 3. Build and start Docker Compose services
       - name: Build and start Docker Compose services
         working-directory: ${{ github.workspace }}
         run: |
@@ -46,16 +46,12 @@ jobs:
           echo "Waiting for services to start..."
           sleep 10
 
-      # 4. Run mqtt-bridge tests
       - name: Run mqtt-bridge tests
         run: docker compose run --rm mqtt-bridge pytest
 
-      # 5. Run mqtt-publish tests
-        # You can change this if the tests live elsewhere
       - name: Run mqtt-publish tests
         run: docker compose run --rm mqtt-publish pytest
 
-      # 6. Tear down
       - name: Stop Docker Compose services
         if: always()
         run: docker compose down
