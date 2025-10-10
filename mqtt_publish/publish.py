@@ -73,6 +73,7 @@ def hash_codes(codes):
 
 def publish_all_product_codes():
     last_hash = None
+    ci_mode = os.getenv("CI") == "true" or "--dry-run" in os.sys.argv
     while True:
         try:
             codes = fetch_product_codes()
@@ -90,6 +91,10 @@ def publish_all_product_codes():
 
         except Exception as e:
             log.error("Error while publishing product codes: %s", e, exc_info=True)
+
+        if ci_mode:
+            log.info("CI/dry-run mode: exiting after one iteration")
+            break
 
         time.sleep(CHECK_INTERVAL)
 
