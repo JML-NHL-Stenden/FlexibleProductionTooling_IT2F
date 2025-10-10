@@ -178,6 +178,9 @@
                                         <field name="qr_text" readonly="1" style="background: transparent; border: none; text-align: center; font-weight: 600;"/>
                                     </div>
                                 </div>
+                                <button name="action_download_qr" type="object" class="btn btn-primary btn-sm" style="margin-bottom: 8px;" invisible="not id or not product_code">
+                                    <i class="fa fa-download"/> Download QR Code
+                                </button>
                                 <div style="font-size: 12px; color: #6c757d; text-align: center;">
                                     QR code automatically generated from Product Code
                                 </div>

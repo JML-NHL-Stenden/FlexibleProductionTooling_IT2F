@@ -121,6 +121,82 @@ class ProductModuleProduct(models.Model):
             'context': {'default_product_id': self.id}
         }
 
+    def action_download_qr(self):
+        """Download QR code as PNG image with product name"""
+        self.ensure_one()
+        
+        if not self.product_code:
+            raise UserError(_('Please set a product code first to generate QR code.'))
+        
+        try:
+            import qrcode
+            from PIL import Image, ImageDraw, ImageFont
+        except ImportError:
+            raise UserError(_('QR code generation library not available.'))
+        
+        # Generate QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(self.product_code)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Create new image with space for text below QR code
+        qr_width, qr_height = qr_img.size
+        text_height = 80
+        total_height = qr_height + text_height
+        
+        # Create white background image
+        final_img = Image.new('RGB', (qr_width, total_height), 'white')
+        final_img.paste(qr_img, (0, 0))
+        
+        # Add product name text below QR code
+        draw = ImageDraw.Draw(final_img)
+        text = self.name or 'Product'
+        
+        # Try to use a font, fallback to default if not available
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+        except:
+            font = ImageFont.load_default()
+        
+        # Calculate text position (centered)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_x = (qr_width - text_width) // 2
+        text_y = qr_height + 20
+        
+        # Draw text
+        draw.text((text_x, text_y), text, fill='black', font=font)
+        
+        # Convert to bytes
+        img_buffer = BytesIO()
+        final_img.save(img_buffer, format='PNG')
+        img_bytes = img_buffer.getvalue()
+        img_base64 = base64.b64encode(img_bytes)
+        
+        # Create attachment
+        filename = f"{self.product_code}_qr_code.png"
+        attachment = self.env['ir.attachment'].create({
+            'name': filename,
+            'type': 'binary',
+            'datas': img_base64,
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': 'image/png'
+        })
+        
+        # Return download action
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/{attachment.id}?download=true',
+            'target': 'self',
+        }
+
     def action_export_instructions(self):
         """Export product info and instructions to CSV file"""
         # Create CSV in memory
