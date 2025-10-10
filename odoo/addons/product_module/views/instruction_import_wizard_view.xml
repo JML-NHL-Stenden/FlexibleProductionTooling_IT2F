@@ -1,0 +1,50 @@
+<!-- product_module/views/instruction_import_wizard_view.xml -->
+<odoo>
+    <record id="view_instruction_import_wizard_form" model="ir.ui.view">
+        <field name="name">instruction.import.wizard.form</field>
+        <field name="model">product_module.instruction.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Instructions">
+                <sheet>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: white;">
+                        <h3 style="color: white; margin: 0 0 8px 0; font-weight: 600;">
+                            <i class="fa fa-upload" style="margin-right: 8px;"/> Import Assembly Instructions
+                        </h3>
+                        <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">
+                            Upload a CSV file with your assembly instructions
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="product_id" invisible="1"/>
+                        <field name="csv_file" filename="csv_filename" widget="binary" options="{'accepted_file_extensions': '.csv'}"/>
+                        <field name="csv_filename" invisible="1"/>
+                    </group>
+                    
+                    <group col="2">
+                        <field name="replace_existing"/>
+                        <field name="update_product_info"/>
+                    </group>
+
+                    <div class="alert alert-info" role="alert">
+                        <strong><i class="fa fa-info-circle"/> CSV Format:</strong>
+                        <p style="margin: 8px 0 0 0;">
+                            Your CSV file should have these columns:<br/>
+                            <code>Product Name, Product Code, Step #, Title, Description</code>
+                        </p>
+                        <p style="margin: 8px 0 0 0; font-size: 12px;">
+                            <strong>Example:</strong><br/>
+                            <code>Widget A, WA-001, 10, Unbox, Remove all items from the packaging</code><br/>
+                            <code>Widget A, WA-001, 20, Attach Base, Screw the base with 4 screws</code>
+                        </p>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_import" string="Import" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
+

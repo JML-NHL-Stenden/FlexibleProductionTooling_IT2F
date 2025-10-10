@@ -21,8 +21,14 @@
     'data': [
         'security/ir.model.access.csv',
         'data/page_data.xml',
+        'views/instruction_import_wizard_view.xml',
         'views/product_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'product_module/static/src/css/product_module.css',
+        ],
+    },
     'images': ['static/description/icon.png'],
     'installable': True,
     'application': True,

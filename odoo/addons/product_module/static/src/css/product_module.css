@@ -1,0 +1,10 @@
+/* Rename Discard button to Cancel */
+.o_form_view button.o_form_button_cancel {
+    font-size: 0 !important;
+}
+
+.o_form_view button.o_form_button_cancel::after {
+    content: "Cancel";
+    font-size: 14px;
+}
+

@@ -1,7 +1,10 @@
 # product_module/models/product.py
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 import base64
 import io
+import csv
+from io import StringIO, BytesIO
 
 
 class ProductModuleProduct(models.Model):
@@ -101,6 +104,66 @@ class ProductModuleProduct(models.Model):
             'res_id': self.id,
             'view_mode': 'form',
             'target': 'new',
+        }
+
+    def action_import_instructions(self):
+        """Open wizard to import instructions from CSV"""
+        self.ensure_one()
+        if not self.id:
+            raise UserError(_('Please save the product first before importing instructions.'))
+        
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Import Instructions',
+            'res_model': 'product_module.instruction.import.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'default_product_id': self.id}
+        }
+
+    def action_export_instructions(self):
+        """Export product info and instructions to CSV file"""
+        # Create CSV in memory
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Write header with product info
+        writer.writerow(['Product Name', 'Product Code', 'Step #', 'Title', 'Description'])
+        
+        # Write instruction data with product info in each row
+        for instruction in self.instruction_ids.sorted(key=lambda r: r.sequence):
+            writer.writerow([
+                self.name or '',
+                self.product_code or '',
+                instruction.sequence,
+                instruction.title or '',
+                instruction.description or ''
+            ])
+        
+        # Get CSV content
+        csv_data = output.getvalue()
+        output.close()
+        
+        # Encode to base64
+        csv_bytes = csv_data.encode('utf-8')
+        csv_base64 = base64.b64encode(csv_bytes)
+        
+        # Create attachment
+        filename = f"{self.name or 'product'}_instructions.csv"
+        attachment = self.env['ir.attachment'].create({
+            'name': filename,
+            'type': 'binary',
+            'datas': csv_base64,
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': 'text/csv'
+        })
+        
+        # Return download action
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/{attachment.id}?download=true',
+            'target': 'self',
         }
 
 
