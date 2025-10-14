@@ -75,10 +75,20 @@ services:
     container_name: flexible-production-tooling-mqtt-publish
     depends_on:
       - mqtt
+      - db
     environment:
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
-      MQTT_TOPIC: factory/products/all_product_codes
+      MQTT_TOPIC_CODES: ${MQTT_TOPIC_CODES}
+      MQTT_TOPIC_DETAILS: ${MQTT_TOPIC_DETAILS}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      ODOO_BASE_URL: ${ODOO_BASE_URL}
+      CHECK_INTERVAL: ${CHECK_INTERVAL}
+      LOG_LEVEL: ${LOG_LEVEL}
     networks:
       - odoo-net
 
