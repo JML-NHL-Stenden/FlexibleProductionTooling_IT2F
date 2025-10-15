@@ -17,10 +17,10 @@ class ProductModuleProduct(models.Model):
     product_type_ids = fields.Many2many('product_module.type', string='Product Categories', help='Select multiple categories for this product')
 
     # Product Information
-    name = fields.Char(string='Product Name', required=True)
-    product_code = fields.Char(string='Product Code', required=True)
-    variant = fields.Char(string='Variant')
-    description = fields.Text(string='Product Description')
+    name = fields.Char(string='Product Name', required=True, size=24)
+    product_code = fields.Char(string='Product Code', required=True, size=16)
+    variant = fields.Char(string='Variant', size=3)
+    description = fields.Text(string='Product Description', size=250)
     image = fields.Binary(string='Image', attachment=True)
 
     # QR Code fields
@@ -34,6 +34,26 @@ class ProductModuleProduct(models.Model):
     instruction_ids = fields.One2many('product_module.instruction', 'product_id', string='Assembly Instructions')
     instruction_count = fields.Integer(string='Instruction Count', compute='_compute_instruction_count')
 
+    # Input constrains
+    @api.constrains('name')
+    def _check_name_length(self):
+        for record in self:
+            if record.name and len(record.name) > 24:
+                raise UserError(_('Name cannot exceed 24 characters.'))
+            
+    @api.constrains('product_code')
+    def _check_code_length(self):
+        for record in self:
+            if record.product_code and len(record.product_code) > 16:
+                raise UserError(_('Product Code cannot exceed 16 characters.'))
+            
+    @api.constrains('description')
+    def _check_description_length(self):
+        for record in self:
+            if record.description and len(record.description) > 250:
+                raise UserError(_('Description cannot exceed 250 characters.'))
+
+    # ...
     @api.depends('product_code')
     def _compute_qr(self):
         """Generate QR code from product_code"""
