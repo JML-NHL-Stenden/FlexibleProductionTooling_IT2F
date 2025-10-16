@@ -31,7 +31,7 @@ cur.execute("LISTEN new_instruction;")
 mqtt_client = mqtt.Client()
 mqtt_client.connect(mqtt_host, mqtt_port, 60)
 
-print(f"Connected to MQTT broker at {mqtt_host}:{mqtt_port}")
+print(f"Connected to MQTT broker - {mqtt_host}:{mqtt_port}")
 
 print("Listening for Postgres notifications...")
 
@@ -42,7 +42,7 @@ while True:
     while conn.notifies:
         notify = conn.notifies.pop(0)
         payload = json.loads(notify.payload)
-        print(f"📢 New instruction from DB: {payload}")
+        print(f"New instruction INSERT into db: {payload}")
 
         topic = f"factory/instructions/{payload['product_code']}"
         mqtt_client.publish(topic, json.dumps(payload))
