@@ -25,7 +25,7 @@ cur = conn.cursor()
 
 # Ensure table exists (optional)
 cur.execute("""
-CREATE TABLE IF NOT EXISTS arkite_steps (
+CREATE TABLE IF NOT EXISTS steps (
     id SERIAL PRIMARY KEY,
     step_name TEXT,
     completed BOOLEAN
@@ -35,32 +35,56 @@ conn.commit()
 
 # Define MQTT callbacks
 def on_connect(client, userdata, flags, rc):
-    print("✅ Connected to MQTT broker with result code", rc)
+    print("Connected to MQTT broker with result code", rc)
     client.subscribe("factory/products/created_step")
 
 def on_message(client, userdata, msg):
     try:
-        payload_raw = msg.payload.decode()
-        print(f"📥 Received message on {msg.topic}: {payload_raw}")
+        payload = json.loads(msg.payload.decode())
+        print(f"📥 Raw payload: {payload}")
 
-        # Expecting something like: [{"step_name": "Step 1"},{"completed": 0}]
-        payload = json.loads(payload_raw)
+        # Handle possible nested array shapes
+        flat_payload = {}
 
-        # Extract values safely
-        step_name = payload[0].get("step_name", "Unknown Step")
-        completed = bool(payload[1].get("completed", 0))
+        if isinstance(payload, list):
+            # Case 1: [{'step_name':...}, {'completed':...}]
+            if len(payload) == 2 and all(isinstance(x, dict) for x in payload):
+                flat_payload = {
+                    "step_name": payload[0].get("step_name"),
+                    "completed": payload[1].get("completed")
+                }
+
+            # Case 2: [{'step_name':..., 'completed':...}] (one dict inside list)
+            elif len(payload) == 1 and isinstance(payload[0], dict):
+                flat_payload = payload[0]
+
+            else:
+                raise ValueError("Unexpected array structure in payload")
+
+        elif isinstance(payload, dict):
+            # Case 3: direct object
+            flat_payload = payload
+
+        else:
+            raise ValueError("Unexpected payload type")
+
+        # Normalize completed flag
+        step_name = flat_payload.get("step_name", "Unknown Step")
+        completed = bool(flat_payload.get("completed", 0))
 
         # Insert into Postgres
         cur.execute(
-            "INSERT INTO arkite_steps (step_name, completed) VALUES (%s, %s);",
+            "INSERT INTO steps (step_name, completed) VALUES (%s, %s);",
             (step_name, completed)
         )
         conn.commit()
-        print(f" Inserted step: {step_name}, completed={completed}")
+
+        print(f"✅ Inserted step: {step_name}, completed={completed}")
 
     except Exception as e:
-        print(f" Error: {e}")
+        print(f"❌ Error: {e}")
         conn.rollback()
+
 
 mqtt_client = mqtt.Client()
 mqtt_client.on_connect = on_connect
