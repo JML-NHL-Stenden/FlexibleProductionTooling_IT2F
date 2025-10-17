@@ -9,7 +9,7 @@ class ProductModuleType(models.Model):
     _order = 'name, id'
 
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
-    name = fields.Char(string='Category Name', required=True, size=24)
+    name = fields.Char(string='Category Name', required=True, size=12)
     image = fields.Binary(string='Image', attachment=True)
     description = fields.Text(string='Description', size=250)
     
@@ -29,7 +29,7 @@ class ProductModuleType(models.Model):
     @api.constrains('name')
     def _check_name_length(self):
         for record in self:
-            if record.name and len(record.name) > 24:
+            if record.name and len(record.name) > 12:
                 raise UserError(_('Category Name cannot exceed 24 characters.'))
     
     @api.constrains('description')

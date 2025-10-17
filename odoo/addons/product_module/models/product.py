@@ -17,7 +17,7 @@ class ProductModuleProduct(models.Model):
     product_type_ids = fields.Many2many('product_module.type', string='Product Categories', help='Select multiple categories for this product')
 
     # Product Information
-    name = fields.Char(string='Product Name', required=True, size=24)
+    name = fields.Char(string='Product Name', required=True, size=12)
     product_code = fields.Char(string='Product Code', required=True, size=16)
     variant = fields.Char(string='Variant', size=3)
     description = fields.Text(string='Product Description', size=250)
@@ -38,7 +38,7 @@ class ProductModuleProduct(models.Model):
     @api.constrains('name')
     def _check_name_length(self):
         for record in self:
-            if record.name and len(record.name) > 24:
+            if record.name and len(record.name) > 12:
                 raise UserError(_('Name cannot exceed 24 characters.'))
             
     @api.constrains('product_code')
