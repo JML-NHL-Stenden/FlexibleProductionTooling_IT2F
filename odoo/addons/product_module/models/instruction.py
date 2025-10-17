@@ -15,7 +15,7 @@ class ProductModuleInstruction(models.Model):
         ondelete='cascade'
     )
     sequence = fields.Integer(string='Step #', default=10, help='Order of assembly steps')
-    title = fields.Char(string='Step Title', required=True, size=48)
+    title = fields.Char(string='Step Title', required=True, size=250)
     description = fields.Text(string='Instructions', size=250)
     image = fields.Binary(string='Illustration', attachment=True)
 
@@ -23,7 +23,7 @@ class ProductModuleInstruction(models.Model):
     @api.constrains('title')
     def _check_title_length(self):
         for record in self:
-            if record.title and len(record.title) > 48:
+            if record.title and len(record.title) > 250:
                 raise UserError(_('Step Title cannot exceed 24 characters.'))
             
     @api.constrains('description')
