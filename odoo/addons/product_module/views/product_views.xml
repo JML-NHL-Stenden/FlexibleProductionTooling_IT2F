@@ -35,7 +35,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 24px;">
                         <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
                             <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Category Information
@@ -51,19 +51,19 @@
                             <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Category
                         </h3>
                         <div class="alert alert-info" role="alert" style="margin-bottom: 16px;">
-                            <i class="fa fa-lightbulb-o"/> 
+                            <i class="fa fa-lightbulb-o"/>
                             <strong>Tip:</strong> Use the field below to select products for this category. You can also assign products to categories when creating or editing them in the Product List tab.
                         </div>
-                        
+
                         <!-- Product Selection with Better UX -->
                         <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Select Products:</div>
-                        <field name="product_ids" widget="many2many_tags" 
+                        <field name="product_ids" widget="many2many_tags"
                                context="{'default_page_id': page_id}"
                                options="{'no_create': True}"/>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
                             <i class="fa fa-info-circle"/> Selected products will appear as tags above. Products can belong to multiple categories.
                         </div>
-                        
+
                         <!-- Products in Category Display -->
                         <div style="margin-top: 20px;" invisible="not product_ids">
                             <h4 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
@@ -83,7 +83,7 @@
                                                         <div style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
                                                             <field name="image" widget="image" options="{'size': [60, 60]}"/>
                                                         </div>
-                                                        
+
                                                         <!-- Product Info -->
                                                         <div style="flex: 1; min-width: 0;">
                                                             <strong style="font-size: 14px; color: #2c3e50; display: block; margin-bottom: 4px;">
@@ -115,12 +115,12 @@
         <field name="model">product_module.product</field>
         <field name="arch" type="xml">
             <list string="Products">
-                                <field name="sequence" widget="handle"/>
-                                <field name="name"/>
-                                <field name="product_code"/>
-                                <field name="product_type_ids" widget="many2many_tags"/>
-                                <field name="image" widget="image" options="{'size': [64, 64]}"/>
-                                <field name="instruction_count" string="Instructions"/>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="product_code"/>
+                <field name="product_type_ids" widget="many2many_tags"/>
+                <field name="image" widget="image" options="{'size': [64, 64]}"/>
+                <field name="instruction_count" string="Instructions"/>
             </list>
         </field>
     </record>
@@ -148,7 +148,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
                         <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                             <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
@@ -166,7 +166,7 @@
                                 <field name="description" placeholder="Enter detailed product description..." style="width: 100%; min-height: 100px;"/>
                             </div>
                         </div>
-                        
+
                         <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                             <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
                                 <i class="fa fa-qrcode" style="color: #6f42c1; margin-right: 8px;"/> QR Code
@@ -199,7 +199,7 @@
                             </div>
                         </div>
                         <div class="alert alert-info" role="alert" style="margin-bottom: 16px;">
-                            <i class="fa fa-lightbulb-o"/> 
+                            <i class="fa fa-lightbulb-o"/>
                             <strong>Tip:</strong> Add step-by-step instructions to help users assemble this product. You can include images and detailed descriptions for each step.
                         </div>
                         <field name="instruction_ids" context="{'default_product_id': id}">
@@ -269,21 +269,21 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <notebook>
                         <!-- TAB 1: Categories -->
                         <page string="Categories" name="product_categories">
                             <div class="alert alert-info" role="alert">
-                                <i class="fa fa-info-circle"/> 
+                                <i class="fa fa-info-circle"/>
                                 <strong>Categories</strong> - Create categories to organize your products. Each category can contain multiple products.
                             </div>
-                            
+
                             <div style="margin-bottom: 16px;">
                                 <button name="action_create_product_type" type="object" class="btn btn-primary" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Category
                                 </button>
                             </div>
-                            
+
                             <field name="product_type_ids" context="{'default_page_id': id}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
@@ -298,14 +298,14 @@
                                                         <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
-                                                        
+
                                                         <!-- Product Info -->
                                                         <div style="flex: 1;">
                                                             <!-- Type Name -->
                                                             <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                                 <field name="name"/>
                                                             </div>
-                                                            
+
                                                             <!-- Total Products -->
                                                             <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
                                                                 <field name="product_count"/> Total Products
@@ -319,14 +319,14 @@
                                 </kanban>
                             </field>
                         </page>
-                        
+
                         <!-- TAB 2: Product List -->
                         <page string="Product List" name="product_list">
                             <div class="alert alert-success" role="alert">
-                                <i class="fa fa-list"/> 
+                                <i class="fa fa-list"/>
                                 <strong>Product Catalog</strong> - Manage all your products. Assign them to categories to organize and group similar products together.
                             </div>
-                            
+
                             <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
                                 <button name="action_create_product" type="object" class="btn btn-success" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Product
@@ -338,7 +338,7 @@
                                     </span>
                                 </div>
                             </div>
-                            
+
                             <field name="product_ids" context="{'default_page_id': id}" widget="kanban">
                                 <kanban create="false">
                                     <field name="name"/>
@@ -355,14 +355,14 @@
                                                         <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
-                                                        
+
                                                         <!-- Product Info -->
                                                         <div style="flex: 1;">
                                                             <!-- Product Name -->
                                                             <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                                 <field name="name"/>
                                                             </div>
-                                                            
+
                                                             <!-- Product Code -->
                                                             <div style="margin-bottom: 12px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
@@ -372,7 +372,7 @@
                                                                     <field name="product_code" options="{'max_length': 16}"/>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             <!-- Product Categories -->
                                                             <div style="margin-bottom: 8px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
@@ -381,6 +381,75 @@
                                                                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                                                     <field name="product_type_ids" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="background: #f8f9fa; border: 1px solid #dee2e6; color: #495057;"/>
                                                                 </div>
+                                                            </div>
+
+                                                            <!-- Product Components -->
+                                                            <div style="margin-bottom: 16px;">
+                                                                <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Components Used</div>
+                                                                <field name="component_ids" widget="many2many_tags" style="width: 100%;"/>
+                                                                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
+                                                                    <i class="fa fa-info-circle"/> Select components used in this product
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                            </field>
+                        </page>
+
+                        <!-- TAB 3: Components -->
+                        <page string="Components" name="components">
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fa fa-puzzle-piece"/>
+                                <strong>Components</strong> - Manage product components and track which products use them.
+                            </div>
+
+                            <div style="margin-bottom: 16px;">
+                                <button name="action_create_component" type="object" class="btn btn-warning" style="background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
+                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Component
+                                </button>
+                            </div>
+
+                            <field name="component_ids" context="{'default_page_id': id}" widget="kanban">
+                                <kanban create="false" multi_edit="1">
+                                    <field name="name"/>
+                                    <field name="component_type"/>
+                                    <field name="usage_count"/>
+                                    <field name="image"/>
+                                    <templates>
+                                        <t t-name="kanban-box">
+                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #ff6b6b; width: 300px; min-height: 140px;">
+                                                <div class="oe_kanban_content" style="padding: 16px;">
+                                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                                        <!-- Component Image -->
+                                                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
+                                                            <field name="image" widget="image" options="{'size': [80, 80]}"/>
+                                                        </div>
+
+                                                        <!-- Component Info -->
+                                                        <div style="flex: 1;">
+                                                            <!-- Component Name -->
+                                                            <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                                <field name="name"/>
+                                                            </div>
+
+                                                            <!-- Component Type -->
+                                                            <div style="margin-bottom: 8px;">
+                                                                <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
+                                                                    <i class="fa fa-tag"/> Type
+                                                                </div>
+                                                                <div style="font-size: 14px; color: #495057; background: #e9ecef; padding: 6px 12px; border-radius: 8px; display: inline-block; border-left: 3px solid #007bff;">
+                                                                    <field name="component_type"/>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Usage Count -->
+                                                            <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
+                                                                <field name="usage_count"/> Products
                                                             </div>
                                                         </div>
                                                     </div>

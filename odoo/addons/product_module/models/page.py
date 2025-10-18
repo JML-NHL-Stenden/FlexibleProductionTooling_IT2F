@@ -1,4 +1,3 @@
-# product_module/models/page.py
 from odoo import models, fields, api
 
 
@@ -23,9 +22,17 @@ class ProductAssemblePage(models.Model):
         string='Products'
     )
 
+    # Components on this page
+    component_ids = fields.One2many(
+        comodel_name='product_module.component',
+        inverse_name='page_id',
+        string='Components'
+    )
+
     # Computed counts for display
     category_count = fields.Integer(string='Category Count', compute='_compute_counts')
     product_count = fields.Integer(string='Product Count', compute='_compute_counts')
+    component_count = fields.Integer(string='Component Count', compute='_compute_counts')
 
     # Selected product for Product Details tab
     selected_product_id = fields.Many2one('product_module.product', string='Selected Product')
@@ -35,12 +42,13 @@ class ProductAssemblePage(models.Model):
     selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
     selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Categories')
 
-    @api.depends('product_type_ids', 'product_ids')
+    @api.depends('product_type_ids', 'product_ids', 'component_ids')
     def _compute_counts(self):
-        """Compute category and product counts for display"""
+        """Compute category, product and component counts for display"""
         for record in self:
             record.category_count = len(record.product_type_ids)
             record.product_count = len(record.product_ids)
+            record.component_count = len(record.component_ids)
 
     def action_edit_product(self):
         """Open the selected product for editing"""
@@ -89,3 +97,15 @@ class ProductAssemblePage(models.Model):
             }
         }
 
+    def action_create_component(self):
+        """Open form to create a new component"""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Component',
+            'res_model': 'product_module.component',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_page_id': self.id,
+            }
+        }

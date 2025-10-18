@@ -23,6 +23,7 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/product_views.xml',
+        'views/component_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

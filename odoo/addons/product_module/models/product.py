@@ -28,8 +28,11 @@ class ProductModuleProduct(models.Model):
     qr_image = fields.Binary(string='QR Code', compute='_compute_qr', attachment=True, store=False)
     qr_image_name = fields.Char(string='QR Filename', compute='_compute_qr_filename', store=False)
 
+    # Components relationship
+    component_ids = fields.Many2many('product_module.component', string='Components', help='Components used in this product')
+
     # Note: Variant sequence is now handled through the product_type_ids relationship
-    
+
     # Instructions
     instruction_ids = fields.One2many('product_module.instruction', 'product_id', string='Assembly Instructions')
     instruction_count = fields.Integer(string='Instruction Count', compute='_compute_instruction_count')
@@ -40,11 +43,11 @@ class ProductModuleProduct(models.Model):
         for record in self:
             code = (record.product_code or '').strip()
             record.qr_text = code or False
-            
+
             if not code:
                 record.qr_image = False
                 continue
-            
+
             try:
                 import qrcode
             except ImportError:
@@ -111,7 +114,7 @@ class ProductModuleProduct(models.Model):
         self.ensure_one()
         if not self.id:
             raise UserError(_('Please save the product first before importing instructions.'))
-        
+
         return {
             'type': 'ir.actions.act_window',
             'name': 'Import Instructions',
@@ -124,16 +127,16 @@ class ProductModuleProduct(models.Model):
     def action_download_qr(self):
         """Download QR code as PNG image with product name"""
         self.ensure_one()
-        
+
         if not self.product_code:
             raise UserError(_('Please set a product code first to generate QR code.'))
-        
+
         try:
             import qrcode
             from PIL import Image, ImageDraw, ImageFont
         except ImportError:
             raise UserError(_('QR code generation library not available.'))
-        
+
         # Generate QR code
         qr = qrcode.QRCode(
             version=1,
@@ -144,41 +147,41 @@ class ProductModuleProduct(models.Model):
         qr.add_data(self.product_code)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white")
-        
+
         # Create new image with space for text below QR code
         qr_width, qr_height = qr_img.size
         text_height = 80
         total_height = qr_height + text_height
-        
+
         # Create white background image
         final_img = Image.new('RGB', (qr_width, total_height), 'white')
         final_img.paste(qr_img, (0, 0))
-        
+
         # Add product name text below QR code
         draw = ImageDraw.Draw(final_img)
         text = self.name or 'Product'
-        
+
         # Try to use a font, fallback to default if not available
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
         except:
             font = ImageFont.load_default()
-        
+
         # Calculate text position (centered)
         bbox = draw.textbbox((0, 0), text, font=font)
         text_width = bbox[2] - bbox[0]
         text_x = (qr_width - text_width) // 2
         text_y = qr_height + 20
-        
+
         # Draw text
         draw.text((text_x, text_y), text, fill='black', font=font)
-        
+
         # Convert to bytes
         img_buffer = BytesIO()
         final_img.save(img_buffer, format='PNG')
         img_bytes = img_buffer.getvalue()
         img_base64 = base64.b64encode(img_bytes)
-        
+
         # Create attachment
         filename = f"{self.product_code}_qr_code.png"
         attachment = self.env['ir.attachment'].create({
@@ -189,7 +192,7 @@ class ProductModuleProduct(models.Model):
             'res_id': self.id,
             'mimetype': 'image/png'
         })
-        
+
         # Return download action
         return {
             'type': 'ir.actions.act_url',
@@ -202,10 +205,10 @@ class ProductModuleProduct(models.Model):
         # Create CSV in memory
         output = StringIO()
         writer = csv.writer(output)
-        
+
         # Write header with product info
         writer.writerow(['Product Name', 'Product Code', 'Step #', 'Title', 'Description'])
-        
+
         # Write instruction data with product info in each row
         for instruction in self.instruction_ids.sorted(key=lambda r: r.sequence):
             writer.writerow([
@@ -215,15 +218,15 @@ class ProductModuleProduct(models.Model):
                 instruction.title or '',
                 instruction.description or ''
             ])
-        
+
         # Get CSV content
         csv_data = output.getvalue()
         output.close()
-        
+
         # Encode to base64
         csv_bytes = csv_data.encode('utf-8')
         csv_base64 = base64.b64encode(csv_bytes)
-        
+
         # Create attachment
         filename = f"{self.name or 'product'}_instructions.csv"
         attachment = self.env['ir.attachment'].create({
@@ -234,12 +237,11 @@ class ProductModuleProduct(models.Model):
             'res_id': self.id,
             'mimetype': 'text/csv'
         })
-        
+
         # Return download action
         return {
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
         }
-
 
