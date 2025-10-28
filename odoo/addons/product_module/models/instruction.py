@@ -24,7 +24,7 @@ class ProductModuleInstruction(models.Model):
     def _check_title_length(self):
         for record in self:
             if record.title and len(record.title) > 250:
-                raise UserError(_('Step Title cannot exceed 24 characters.'))
+                raise UserError(_('Step Title cannot exceed 250 characters.'))
             
     @api.constrains('description')
     def _check_description_length(self):

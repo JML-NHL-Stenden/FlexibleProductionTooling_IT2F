@@ -30,7 +30,7 @@ class ProductModuleType(models.Model):
     def _check_name_length(self):
         for record in self:
             if record.name and len(record.name) > 12:
-                raise UserError(_('Category Name cannot exceed 24 characters.'))
+                raise UserError(_('Category Name cannot exceed 12 characters.'))
     
     @api.constrains('description')
     def _check_description_length(self):
