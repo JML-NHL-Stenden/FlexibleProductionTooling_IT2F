@@ -16,123 +16,143 @@ This project creates a **modular and intelligent production environment** that d
 
 ---
 
-## 📂 Project Setup
+## 📂 Folder Structure
 
-### 1. Clone Repository
-```bash
-cd ~/Desktop
-mkdir flexible-production-tooling
-cd flexible-production-tooling
-git clone https://github.com/JML-NHL-Stenden/FlexibleProductionTooling_IT2F.git
-cd FlexibleProductionTooling_IT2F
-git branch
-✅ Expected: *main
+```
+flexible-production-tooling/
+├── mqtt-bridge/                  # PLC → DB bridge
+├── mqtt-publish/                 # DB → MQTT publisher
+├── odoo/                         # Odoo with custom module
+├── pgadmin/                      # DB GUI (optional)
+├── uns/                          # Mosquitto config
+├── docker-compose.yml
+└── .env
+```
 
-2. Add .env file
-Place your environment configuration in the project root.
+---
 
-⚙️ Required Tools
-Tool	Purpose
-Arkite Studio / HIM	Create and deploy operator instructions
-Eclipse Mosquitto	MQTT broker for event handling
-MQTT Explorer	Monitor MQTT messages
-QR Code Scanner	Publishes product UIDs to MQTT
-Python 3.10+	Optional DB bridge scripts
-Docker Desktop	Run broker, Odoo, PostgreSQL, services
-VS Code	Edit configs or scripts
+## ⚙️ Required Tools
 
-🚀 Step-by-Step Deployment
-▶️ Step 1: Start Docker
+- **Arkite Studio / HIM** → Create and deploy operator instructions  
+- **Eclipse Mosquitto** → MQTT broker for event handling  
+- **MQTT Explorer** → Monitor MQTT messages  
+- **QR Code Scanner** → Publishes product UIDs to MQTT  
+- **Python 3.10+** → Optional DB bridge scripts  
+- **Docker Desktop** → Run broker, Odoo, PostgreSQL, services  
+- **VS Code** → Edit configs or scripts  
+
+---
+
+## 🚀 Step-by-Step Deployment
+
+### ▶️ Step 1: Start Docker
 Open Docker Desktop.
 
-▶️ Step 2: Build and Start Containers
-powershell
-Copy code
+---
+
+### ▶️ Step 2: Build and Start Containers
+```powershell
 docker-compose down -v
 docker-compose up --build -d
-Containers started:
+```
 
-📨 flexible-production-tooling-mqtt-1
+Containers started:  
+- 📨 flexible-production-tooling-mqtt-1  
+- 📊 flexible-production-tooling-odoo-1  
+- 🗄️ flexible-production-tooling-db-1  
+- 📋 flexible-production-tooling-pgadmin-1  
+- 🔌 flexible-production-tooling-mqtt-bridge  
+- 📡 flexible-production-tooling-mqtt-publish  
 
-📊 flexible-production-tooling-odoo-1
+---
 
-🗄️ flexible-production-tooling-db-1
-
-📋 flexible-production-tooling-pgadmin-1
-
-🔌 flexible-production-tooling-mqtt-bridge
-
-📡 flexible-production-tooling-mqtt-publish
-
-▶️ Step 3: Verify Containers
-powershell
-Copy code
+### ▶️ Step 3: Verify Containers
+```powershell
 docker ps
-✅ All listed as Up.
+```
+✅ All should be listed as **Up**.  
+⚠️ If some are `Exited`, restart them in Docker Desktop.
 
-▶️ Step 4: Initialize Odoo (first setup only)
-powershell
-Copy code
+---
+
+### ▶️ Step 4: Initialize Odoo (first setup only)
+```powershell
 docker exec -it flexible-production-tooling-odoo-1 bash
 odoo -d odoo -i base --without-demo=all --stop-after-init
-▶️ Step 5: Open pgAdmin
-🌐 http://localhost:5050
-Login: admin@admin.com / admin
+```
 
-▶️ Step 6: Register Odoo DB
-General → Name: odoo
+---
 
-Connection → Host: db
+### ▶️ Step 5: Open pgAdmin
+🌐 Go to [http://localhost:5050](http://localhost:5050)  
+- Username: `admin@admin.com`  
+- Password: `admin`  
 
-Username: odoo
+---
 
-Password: odoo
+### ▶️ Step 6: Register Odoo Database in pgAdmin
+- General → Name: **odoo**  
+- Connection → Host: **db**  
+- Username: **odoo**  
+- Password: **odoo**
 
-▶️ Step 7: Access Odoo
-🌐 http://localhost:8069
-Login: admin / admin
+---
 
-Steps:
+### ▶️ Step 7: Access Odoo
+🌐 Go to [http://localhost:8069](http://localhost:8069)  
+- Email: `admin`  
+- Password: `admin`  
 
-Activate Developer Mode → Settings → Developer Tools
+Steps:  
+1. Go to **Settings → Developer Tools → Activate Developer Mode**  
+2. Go to **Apps → Search `Product Module` → Install**  
 
-Go to Apps → Search Product Module → Install
+---
 
-▶️ Step 8: Setup MQTT Explorer
-➕ Add new connection:
+### ▶️ Step 8: Setup MQTT Explorer
+1. Add new connection  
+2. Set values:  
+   - Name: `FPT Broker`  
+   - Host: `localhost`  
+   - Port: `1883`  
+   - Protocol: `mqtt://`  
+3. Click **Connect**  
 
-Name: FPT Broker
+Expected topics:  
+- `localhost/factory/products/all_product_codes`  
+- `localhost/factory/products/all_product_details`  
 
-Host: localhost
+---
 
-Port: 1883
+## ✅ Verification Checklist
 
-Protocol: mqtt://
+- [x] **Containers running** → `docker ps` shows all services  
+- [x] **MQTT Explorer** → Messages visible on product topics  
+- [x] **QR Scan** → Correct Arkite workflow triggered  
+- [x] **PostgreSQL** → Database accessible in pgAdmin  
+- [x] **Odoo** → Product visible in Product Module  
 
-✅ Connect
+---
 
-Expected topics:
+## 🛠️ Troubleshooting
 
-localhost/factory/products/all_product_codes
+- ❌ **Containers not running** → Docker stopped  
+  🔧 Start Docker Desktop  
 
-localhost/factory/products/all_product_details
+- ❌ **No MQTT messages** → Port blocked  
+  🔧 Ensure port **1883** is open  
 
-✅ Verification Checklist
-Test	Expected Result
-docker ps	All containers running
-MQTT Explorer	Messages visible on product topics
-QR Scan	Correct Arkite workflow triggered
-PostgreSQL	Database visible in pgAdmin
-Odoo	Product appears in Product Module
+- ❌ **Bridge not logging** → Service inactive  
+  🔧 Restart MQTT bridge  
 
-🛠️ Troubleshooting
-Issue	Cause	Solution
-Containers not running	Docker stopped	Start Docker Desktop
-No MQTT messages	Port blocked	Open port 1883
-Bridge not logging	Service inactive	Restart MQTT bridge
-Odoo blank page	DB not initialized	Repeat Step 4 (Odoo init)
-pgAdmin cannot connect	Wrong hostname	Use db instead of localhost
+- ❌ **Odoo blank page** → Database not initialized  
+  🔧 Repeat Step 4 (Odoo init)  
 
-👤 Author
-Daryl Genove
+- ❌ **pgAdmin cannot connect** → Wrong hostname  
+  🔧 Use `db` instead of `localhost`  
 
+---
+
+## 👤 Author
+
+**Daryl Genove**
