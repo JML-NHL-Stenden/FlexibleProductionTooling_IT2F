@@ -60,7 +60,6 @@ def setup_mqtt():
 
 def main():
     setup_mqtt()
-
     if os.getenv("CI") == "true":
         log.info("CI mode: skipping idle loop")
         return

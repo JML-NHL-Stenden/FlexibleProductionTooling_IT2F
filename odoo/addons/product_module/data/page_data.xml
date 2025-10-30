@@ -1,0 +1,6 @@
+<odoo>
+    <!-- Create the single record the action will open -->
+    <record id="product_assemble_page_record" model="product_module.page">
+        <field name="name">Products</field>
+    </record>
+</odoo>
