@@ -24,6 +24,7 @@
         'views/instruction_import_wizard_view.xml',
         'views/product_views.xml',
         'views/component_views.xml',
+        'views/progress_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

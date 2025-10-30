@@ -29,10 +29,18 @@ class ProductAssemblePage(models.Model):
         string='Components'
     )
 
+    # Progress tracking on this page
+    progress_ids = fields.One2many(
+        comodel_name='product_module.progress',
+        inverse_name='page_id',
+        string='Progress Tracking'
+    )
+
     # Computed counts for display
     category_count = fields.Integer(string='Category Count', compute='_compute_counts')
     product_count = fields.Integer(string='Product Count', compute='_compute_counts')
     component_count = fields.Integer(string='Component Count', compute='_compute_counts')
+    progress_count = fields.Integer(string='Progress Count', compute='_compute_counts')
 
     # Selected product for Product Details tab
     selected_product_id = fields.Many2one('product_module.product', string='Selected Product')
@@ -42,13 +50,14 @@ class ProductAssemblePage(models.Model):
     selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
     selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Categories')
 
-    @api.depends('product_type_ids', 'product_ids', 'component_ids')
+    @api.depends('product_type_ids', 'product_ids', 'component_ids', 'progress_ids')
     def _compute_counts(self):
-        """Compute category, product and component counts for display"""
+        """Compute category, product, component and progress counts for display"""
         for record in self:
             record.category_count = len(record.product_type_ids)
             record.product_count = len(record.product_ids)
             record.component_count = len(record.component_ids)
+            record.progress_count = len(record.progress_ids)
 
     def action_edit_product(self):
         """Open the selected product for editing"""
@@ -109,3 +118,29 @@ class ProductAssemblePage(models.Model):
                 'default_page_id': self.id,
             }
         }
+
+    def action_create_progress(self):
+        """Open form to create a new progress tracking item with better defaults"""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Workstation',
+            'res_model': 'product_module.progress',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_page_id': self.id,
+                # Set default name based on workstation count
+                'default_name': f'Workstation {self.progress_count + 1}',
+            }
+        }
+
+    def write(self, vals):
+        """Override write to update progress records when instructions change"""
+        result = super().write(vals)
+
+        if 'instruction_ids' in vals:
+            progress_model = self.env['product_module.progress']
+            for product in self:
+                progress_model.update_progress_from_instruction_change(product.id)
+
+        return result
