@@ -168,6 +168,10 @@ Expected topics:
 ---
 
 ## 🧰 Commit Hooks (Husky)
+- Run Terminal/Powershell as Administrator:
+  ```sh
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  ```
 
 - Install dependencies once after pulling:
   ```sh
@@ -207,4 +211,4 @@ Expected topics:
 
 ## 👤 Author
 
-**Daryl Genove, Jia Men Lam**
+**Daryl Genove, Jia Men Lam, Quentin Hamelet**
