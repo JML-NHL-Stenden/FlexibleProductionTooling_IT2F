@@ -211,6 +211,24 @@ Expected topics:
 
 ## Branch Conventions
 
+### Branching Naming Prefixes
+```sh
+<type>/<description>
+```
+- `main`: The main development branch (e.g., `main`, `master`, or `develope`)
+- `feature/` (or `feat/`): For new features (e.g., `feature/add-login-page`, `feat/add-login-page`)
+- `bugfix/` (or `fix/`): For bug fixes (e.g., `bugfix/fix-header-bug`, `fix/head-bug`)
+- `hotfix/`: For urgent fixes (e.g., `hotfix/security-patch`)
+- `release/`: For branches perparing a release (e.g., `release/v1.2.0`)
+- `chore/`: For non-code tasks like dependency, docs updates (e.g., `chore/update-dependencies`)
+
+### Basic Rules
+1. **Use Lowercase Alphanumerics, Hyphens, and Dots:** Always use lowercase letters(`a-z`), numbers (`0-9`), and hyphens (`-`) to separate words. Avoid special characters, underscores, or spaces. For release branches, dots (`.`) may be used in the description to represent version numbers (e.g., `release/v1.2.0`).
+2. **No Consecutive, Leading, or Trailing Hyphens or Dots:** Ensure that hyphens and dots do not appear consecutively (e.g., `feature/new--login`, `release/v1.-2.0`).
+3. **Keep it Clear and Concise:** The branch name should be descriptive yet concise, clearly indicating the purpose of the work.
+4. **Include Ticket Numbers:** If applicable, include the ticket number from your project management tool to make tracking easier. For example, for a ticket `issue-123`, the branch name coud be `feat/issue-123-new-login`.
+
+(https://conventional-branch.github.io/)
 
 ---
 
