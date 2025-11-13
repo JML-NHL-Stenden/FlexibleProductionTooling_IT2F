@@ -209,6 +209,11 @@ Expected topics:
 
 ---
 
+## Branch Conventions
+
+
+---
+
 ## 👤 Author
 
 **Daryl Genove, Jia Men Lam, Quentin Hamelet**
