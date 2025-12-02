@@ -136,6 +136,9 @@ Expected topics:
 - `localhost/factory/products/all_product_codes`
 - `localhost/factory/products/all_product_details`
 
+### ▶️ Step 8: Setup Arkite connection
+Make sure that the main body of the API calls to Arkite contain your IPv4 instead of "localhost" as in the template example in the API Tester.
+
 ---
 
 ## ✅ Verification Checklist
