@@ -1,72 +1,91 @@
-# mqtt_bridge/bridge.py
 import os
-import time
-import logging
+import json
+import psycopg2
+import paho.mqtt.client as mqtt
 
-# Try to import paho-mqtt, but don't fail the container if it's missing
-try:
-    import paho.mqtt.client as mqtt
-except Exception:
-    mqtt = None
-
-# --- Logging ---
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-log = logging.getLogger("mqtt-bridge")
-
-# --- Environment (defaults keep it generic/no-op) ---
 MQTT_HOST = os.getenv("MQTT_HOST", "mqtt")
-MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
-MQTT_TOPIC = os.getenv("MQTT_TOPIC", "")  # empty means: don't subscribe
-IDLE_INTERVAL_SEC = float(os.getenv("IDLE_INTERVAL_SEC", "5"))
+MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
+MQTT_TOPIC = "factory/all_steps"
 
-client = None
+def get_conn():
+    retries = 10
+    while retries:
+        try:
+            return psycopg2.connect(
+                host=os.getenv("DB_HOST", "db"),
+                port=int(os.getenv("DB_PORT", "5432")),
+                dbname=os.getenv("DB_NAME", "odoo"),
+                user=os.getenv("DB_USER", "odoo"),
+                password=os.getenv("DB_PASS", "odoo"),
+            )
+        except psycopg2.OperationalError as e:
+            print("Postgres not ready, retrying in 2 seconds...")
+            retries -= 1
+            time.sleep(2)
+    raise Exception("Could not connect to Postgres after multiple retries")
 
-def on_connect(cli, _ud, _flags, rc, _props=None):
-    if rc == 0:
-        log.info("Connected to MQTT at %s:%s", MQTT_HOST, MQTT_PORT)
-        if MQTT_TOPIC:
-            cli.subscribe(MQTT_TOPIC)
-            log.info("Subscribed to topic: %s", MQTT_TOPIC)
-        else:
-            log.info("No topic configured (MQTT_TOPIC empty) — running idle.")
-    else:
-        log.warning("MQTT connect returned code %s", rc)
+def ensure_table_exists():
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS arkite_steps (
+        step_id BIGINT PRIMARY KEY,
+        step_name TEXT,
+        project_id BIGINT,
+        project_name TEXT,
+        process_id BIGINT,
+        process_name TEXT,
+        detection_id BIGINT,
+        detection_name TEXT,
+        is_detected BOOLEAN,
+        text_instruction TEXT,
+        step_type TEXT,
+        material_id BIGINT,
+        step_index INT
+    );
+    """
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(create_sql)
+        conn.commit()
+        print(" Table 'arkite_steps' ensured to exist")
 
-def on_message(_cli, _ud, msg):
-    # Default bridge does nothing; just logs receipt
-    try:
-        payload = msg.payload.decode("utf-8", errors="ignore")
-    except Exception:
-        payload = "<binary>"
-    log.info("Message on %s: %s", msg.topic, payload)
+def insert_steps(steps):
+    with get_conn() as conn, conn.cursor() as cur:
+        for s in steps:
+            cur.execute("""
+                INSERT INTO arkite_steps (
+                    step_id, step_name, project_id, project_name, process_id, process_name,
+                    detection_id, detection_name, is_detected, text_instruction, step_type,
+                    material_id, step_index
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ON CONFLICT (step_id) DO UPDATE SET
+                    is_detected = EXCLUDED.is_detected,
+                    text_instruction = EXCLUDED.text_instruction
+            """, (
+                s["stepId"], s["stepName"], s["projectId"], s["projectName"],
+                s["processId"], s["processName"], s["detectionId"], s["detectionName"],
+                s["is_detected"], s["textInstruction"], s["stepType"], s["materialId"], s["index"]
+            ))
+        conn.commit()
 
-def setup_mqtt():
-    global client
-    if mqtt is None:
-        log.info("paho-mqtt not installed; running without MQTT.")
-        return
-    try:
-        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="default-bridge")
-        client.on_connect = on_connect
-        client.on_message = on_message
-        client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
-        client.loop_start()
-    except Exception as e:
-        log.warning("Could not connect to MQTT (%s). Continuing idle.", e)
-        client = None
+def on_message(client, userdata, msg):
+    steps = json.loads(msg.payload)
+    insert_steps(steps)
+    print(f"Inserted/updated {len(steps)} steps into DB")
+
+def on_connect(client, userdata, flags, reasonCode, properties):
+    if reasonCode == 0:
+        print("Connected to MQTT")
+        client.subscribe(MQTT_TOPIC)
 
 def main():
-    setup_mqtt()
-    if os.getenv("CI") == "true":
-        log.info("CI mode: skipping idle loop")
-        return
+    ensure_table_exists()
 
-    # Idle loop to keep the container healthy even with no MQTT
-    while True:
-        time.sleep(IDLE_INTERVAL_SEC)
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    print(f"Connecting to MQTT {MQTT_HOST}:{MQTT_PORT}...")
+    client.connect(MQTT_HOST, MQTT_PORT)
+    client.loop_forever()
 
 if __name__ == "__main__":
     main()
