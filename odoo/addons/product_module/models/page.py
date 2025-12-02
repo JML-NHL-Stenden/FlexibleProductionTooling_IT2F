@@ -1,4 +1,5 @@
-from odoo import models, fields, api
+# product_module/models/page.py
+from odoo import models, fields, api, _
 
 
 class ProductAssemblePage(models.Model):
@@ -48,7 +49,10 @@ class ProductAssemblePage(models.Model):
     selected_product_code = fields.Char(related='selected_product_id.product_code', string='Product Code')
     selected_product_description = fields.Text(related='selected_product_id.description', string='Product Description')
     selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
-    selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Categories')
+    selected_product_type_ids = fields.Many2many(
+        related='selected_product_id.product_type_ids',
+        string='Product Categories'
+    )
 
     @api.depends('product_type_ids', 'product_ids', 'component_ids', 'progress_ids')
     def _compute_counts(self):
@@ -131,6 +135,20 @@ class ProductAssemblePage(models.Model):
                 'default_page_id': self.id,
                 # Set default name based on workstation count
                 'default_name': f'Workstation {self.progress_count + 1}',
+            }
+        }
+
+    def action_create_arkite_project(self):
+        """Called by 'Create Arkite Project' button on the Product List tab."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Arkite Project'),
+                'message': _('Create Arkite Project clicked. Implement project creation logic here.'),
+                'type': 'info',
+                'sticky': False,
             }
         }
 

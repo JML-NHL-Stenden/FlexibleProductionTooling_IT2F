@@ -1,2 +1,4 @@
 psycopg2-binary
 paho-mqtt
+requests
+urllib3

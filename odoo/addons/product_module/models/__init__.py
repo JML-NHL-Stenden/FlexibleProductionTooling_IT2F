@@ -5,3 +5,4 @@ from . import instruction
 from . import instruction_import_wizard
 from . import component
 from . import progress_tracking
+from . import arkite_project

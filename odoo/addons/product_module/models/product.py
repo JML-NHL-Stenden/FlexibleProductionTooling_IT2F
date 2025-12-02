@@ -56,7 +56,6 @@ class ProductModuleProduct(models.Model):
             if record.description and len(record.description) > 250:
                 raise UserError(_('Description cannot exceed 250 characters.'))
 
-    # ...
     @api.depends('product_code')
     def _compute_qr(self):
         """Generate QR code from product_code"""
@@ -71,11 +70,9 @@ class ProductModuleProduct(models.Model):
             try:
                 import qrcode
             except ImportError:
-                # If qrcode lib is missing, skip the image (text still available)
                 record.qr_image = False
                 continue
 
-            # Generate QR code
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -86,7 +83,6 @@ class ProductModuleProduct(models.Model):
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
 
-            # Convert to binary
             buf = io.BytesIO()
             img.save(buf, format='PNG')
             record.qr_image = base64.b64encode(buf.getvalue())
@@ -105,8 +101,6 @@ class ProductModuleProduct(models.Model):
         """Count number of instructions for this product"""
         for record in self:
             record.instruction_count = len(record.instruction_ids)
-
-    # Note: Sequence assignment is now handled in the product_type model
 
     def action_select_product(self):
         """Select this product for the Product Details tab"""
@@ -157,7 +151,6 @@ class ProductModuleProduct(models.Model):
         except ImportError:
             raise UserError(_('QR code generation library not available.'))
 
-        # Generate QR code
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -168,41 +161,33 @@ class ProductModuleProduct(models.Model):
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white")
 
-        # Create new image with space for text below QR code
         qr_width, qr_height = qr_img.size
         text_height = 80
         total_height = qr_height + text_height
 
-        # Create white background image
         final_img = Image.new('RGB', (qr_width, total_height), 'white')
         final_img.paste(qr_img, (0, 0))
 
-        # Add product name text below QR code
         draw = ImageDraw.Draw(final_img)
         text = self.name or 'Product'
 
-        # Try to use a font, fallback to default if not available
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
-        except:
+        except Exception:
             font = ImageFont.load_default()
 
-        # Calculate text position (centered)
         bbox = draw.textbbox((0, 0), text, font=font)
         text_width = bbox[2] - bbox[0]
         text_x = (qr_width - text_width) // 2
         text_y = qr_height + 20
 
-        # Draw text
         draw.text((text_x, text_y), text, fill='black', font=font)
 
-        # Convert to bytes
         img_buffer = BytesIO()
         final_img.save(img_buffer, format='PNG')
         img_bytes = img_buffer.getvalue()
         img_base64 = base64.b64encode(img_bytes)
 
-        # Create attachment
         filename = f"{self.product_code}_qr_code.png"
         attachment = self.env['ir.attachment'].create({
             'name': filename,
@@ -213,7 +198,6 @@ class ProductModuleProduct(models.Model):
             'mimetype': 'image/png'
         })
 
-        # Return download action
         return {
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
@@ -222,14 +206,11 @@ class ProductModuleProduct(models.Model):
 
     def action_export_instructions(self):
         """Export product info and instructions to CSV file"""
-        # Create CSV in memory
         output = StringIO()
         writer = csv.writer(output)
 
-        # Write header with product info
         writer.writerow(['Product Name', 'Product Code', 'Step #', 'Title', 'Description'])
 
-        # Write instruction data with product info in each row
         for instruction in self.instruction_ids.sorted(key=lambda r: r.sequence):
             writer.writerow([
                 self.name or '',
@@ -239,15 +220,12 @@ class ProductModuleProduct(models.Model):
                 instruction.description or ''
             ])
 
-        # Get CSV content
         csv_data = output.getvalue()
         output.close()
 
-        # Encode to base64
         csv_bytes = csv_data.encode('utf-8')
         csv_base64 = base64.b64encode(csv_bytes)
 
-        # Create attachment
         filename = f"{self.name or 'product'}_instructions.csv"
         attachment = self.env['ir.attachment'].create({
             'name': filename,
@@ -258,10 +236,32 @@ class ProductModuleProduct(models.Model):
             'mimetype': 'text/csv'
         })
 
-        # Return download action
         return {
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
         }
 
+    def action_create_arkite_project(self):
+        """Create Arkite project record with snapshot of product + QR."""
+        self.ensure_one()
+
+        self.env['product_module.arkite_project'].create({
+            'product_id': self.id,
+            'product_name': self.name,
+            'product_code': self.product_code,
+            'qr_text': self.qr_text,
+            'qr_image': self.qr_image,
+            'qr_image_name': self.qr_image_name,
+        })
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Arkite Project',
+                'message': f'Arkite project created for product {self.name}.',
+                'type': 'success',
+                'sticky': False,
+            }
+        }

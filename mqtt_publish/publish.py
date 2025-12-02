@@ -21,6 +21,8 @@ MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 MQTT_TOPIC_CODES = os.getenv("MQTT_TOPIC_CODES", "factory/products/all_product_codes")
 # NOTE: This topic publishes data GROUPED BY CATEGORY
 MQTT_TOPIC_DETAILS = os.getenv("MQTT_TOPIC_DETAILS", "factory/products/all_product_details")
+# Arkite QR trigger topic
+MQTT_TOPIC_QR = os.getenv("MQTT_TOPIC_QR", "arkite/trigger/QR")
 
 # Pretty JSON output (set PRETTY_JSON=true for indented payloads)
 PRETTY_JSON = os.getenv("PRETTY_JSON", "false").lower() in ("1", "true", "yes", "y")
@@ -82,6 +84,27 @@ SELECT DISTINCT product_code
 FROM public.product_module_product
 WHERE product_code IS NOT NULL AND product_code <> ''
 ORDER BY product_code;
+"""
+
+
+# =========================
+# SQL (Arkite QR mappings)
+# =========================
+# NOTE: only latest entry (by id) will be published
+SQL_ARKITE_QR = """
+SELECT
+    ap.id,
+    ap.product_name,
+    ap.product_code,
+    ap.qr_text
+FROM public.product_module_arkite_project ap
+JOIN public.product_module_product p
+      ON p.id = ap.product_id
+WHERE ap.product_name IS NOT NULL
+  AND ap.qr_text IS NOT NULL
+  AND ap.product_code IS NOT NULL
+ORDER BY ap.id DESC
+LIMIT 1;
 """
 
 
@@ -250,6 +273,24 @@ def fetch_details_grouped_by_category():
         return categories
 
 
+def fetch_arkite_qr_rows():
+    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(SQL_ARKITE_QR)
+        return cur.fetchall()
+
+
+def delete_arkite_qr_rows(row_ids):
+    """Delete Arkite QR rows by id after publishing."""
+    if not row_ids:
+        return
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "DELETE FROM public.product_module_arkite_project WHERE id = ANY(%s)",
+            (row_ids,),
+        )
+        log.info("Deleted %d Arkite QR rows from DB", cur.rowcount)
+
+
 # =========================
 # Payload Builders
 # =========================
@@ -278,6 +319,24 @@ def payload_for_details_grouped(categories):
             ],
         },
         "odoo_base_url": ODOO_BASE_URL or None,
+    }
+
+
+def payload_for_arkite_qr(rows):
+    items = []
+    for r in rows:
+        items.append(
+            {
+                "product_name": r["product_name"],
+                "product_code": r["product_code"],
+                "qr_text": r["qr_text"],
+            }
+        )
+    return {
+        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "count": len(items),
+        "items": items,
+        "source": {"db": DB_NAME, "table": "public.product_module_arkite_project"},
     }
 
 
@@ -337,11 +396,38 @@ def publish_all_product_data():
             categories = fetch_details_grouped_by_category()
             h_details = hash_categories(categories)
             if h_details != last_hash_details:
-                mqtt_client.publish(MQTT_TOPIC_DETAILS, dumps(payload_for_details_grouped(categories)), qos=1, retain=True)
-                log.info("Published %d categories (grouped details) to '%s'", len(categories), MQTT_TOPIC_DETAILS)
+                mqtt_client.publish(
+                    MQTT_TOPIC_DETAILS,
+                    dumps(payload_for_details_grouped(categories)),
+                    qos=1,
+                    retain=True,
+                )
+                log.info(
+                    "Published %d categories (grouped details) to '%s'",
+                    len(categories),
+                    MQTT_TOPIC_DETAILS,
+                )
                 last_hash_details = h_details
             else:
                 log.debug("No change in grouped details; skipping publish.")
+
+            # 3) Arkite QR mappings topic (name + QR code) – publish latest and delete
+            arkite_rows = fetch_arkite_qr_rows()
+            if arkite_rows:
+                mqtt_client.publish(
+                    MQTT_TOPIC_QR,
+                    dumps(payload_for_arkite_qr(arkite_rows)),
+                    qos=1,
+                    retain=True,  # keep last QR on broker even after DB delete
+                )
+                log.info(
+                    "Published %d Arkite QR entries to '%s'",
+                    len(arkite_rows),
+                    MQTT_TOPIC_QR,
+                )
+                delete_arkite_qr_rows([r["id"] for r in arkite_rows])
+            else:
+                log.debug("No Arkite QR entries to publish.")
 
         except Exception as e:
             log.error("Error while publishing product data: %s", e, exc_info=True)

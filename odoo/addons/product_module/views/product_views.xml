@@ -55,7 +55,6 @@
                             <strong>Tip:</strong> Use the field below to select products for this category. You can also assign products to categories when creating or editing them in the Product List tab.
                         </div>
 
-                        <!-- Product Selection with Better UX -->
                         <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Select Products:</div>
                         <field name="product_ids" widget="many2many_tags"
                                context="{'default_page_id': page_id}"
@@ -64,7 +63,6 @@
                             <i class="fa fa-info-circle"/> Selected products will appear as tags above. Products can belong to multiple categories.
                         </div>
 
-                        <!-- Products in Category Display -->
                         <div style="margin-top: 20px;" invisible="not product_ids">
                             <h4 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
                                 <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Category
@@ -79,12 +77,9 @@
                                             <div class="oe_kanban_card" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 280px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                                        <!-- Product Image -->
                                                         <div style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
                                                             <field name="image" widget="image" options="{'size': [60, 60]}"/>
                                                         </div>
-
-                                                        <!-- Product Info -->
                                                         <div style="flex: 1; min-width: 0;">
                                                             <strong style="font-size: 14px; color: #2c3e50; display: block; margin-bottom: 4px;">
                                                                 <field name="name"/>
@@ -294,19 +289,15 @@
                                             <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #667eea; width: 300px; min-height: 120px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <!-- Product Image -->
                                                         <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <!-- Product Info -->
                                                         <div style="flex: 1;">
-                                                            <!-- Type Name -->
                                                             <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <!-- Total Products -->
                                                             <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
                                                                 <field name="product_count"/> Total Products
                                                             </div>
@@ -331,6 +322,7 @@
                                 <button name="action_create_product" type="object" class="btn btn-success" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Product
                                 </button>
+
                                 <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa fa-info-circle" style="color: #007bff;"/>
                                     <span style="font-size: 14px; color: #495057;">
@@ -346,24 +338,21 @@
                                     <field name="product_type_ids"/>
                                     <field name="image"/>
                                     <field name="instruction_count"/>
+                                    <field name="component_ids"/>
                                     <templates>
                                         <t t-name="kanban-box">
                                             <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <!-- Product Image -->
                                                         <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <!-- Product Info -->
                                                         <div style="flex: 1;">
-                                                            <!-- Product Name -->
                                                             <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <!-- Product Code -->
                                                             <div style="margin-bottom: 12px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
                                                                     <i class="fa fa-barcode" style="margin-right: 4px;"/> Product Code
@@ -373,7 +362,6 @@
                                                                 </div>
                                                             </div>
 
-                                                            <!-- Product Categories -->
                                                             <div style="margin-bottom: 8px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
                                                                     <i class="fa fa-folder" style="margin-right: 4px;"/> Categories
@@ -383,7 +371,6 @@
                                                                 </div>
                                                             </div>
 
-                                                            <!-- Product Components -->
                                                             <div style="margin-bottom: 16px;">
                                                                 <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Components Used</div>
                                                                 <field name="component_ids" widget="many2many_tags" style="width: 100%;"/>
@@ -391,6 +378,14 @@
                                                                     <i class="fa fa-info-circle"/> Select components used in this product
                                                                 </div>
                                                             </div>
+
+                                                            <!-- Arkite Project button inside each product card -->
+                                                            <button name="action_create_arkite_project"
+                                                                    type="object"
+                                                                    class="btn btn-secondary"
+                                                                    style="width: 100%; border-radius: 8px; font-weight: 600; margin-top: 4px;">
+                                                                <i class="fa fa-project-diagram" style="margin-right: 8px;"/> Create Arkite Project
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -425,19 +420,15 @@
                                             <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #ff6b6b; width: 300px; min-height: 140px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <!-- Component Image -->
                                                         <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <!-- Component Info -->
                                                         <div style="flex: 1;">
-                                                            <!-- Component Name -->
                                                             <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <!-- Component Type -->
                                                             <div style="margin-bottom: 8px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
                                                                     <i class="fa fa-tag"/> Type
@@ -447,7 +438,6 @@
                                                                 </div>
                                                             </div>
 
-                                                            <!-- Usage Count -->
                                                             <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
                                                                 <field name="usage_count"/> Products
                                                             </div>
@@ -491,6 +481,46 @@
         <field name="context">{'create': False, 'edit': True}</field>
     </record>
 
+    <!-- Arkite Project Views -->
+    <record id="view_arkite_project_list" model="ir.ui.view">
+        <field name="name">product.module.arkite.project.list</field>
+        <field name="model">product_module.arkite_project</field>
+        <field name="arch" type="xml">
+            <list string="Arkite Projects">
+                <field name="product_name"/>
+                <field name="product_code"/>
+                <field name="qr_text"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_arkite_project_form" model="ir.ui.view">
+        <field name="name">product.module.arkite.project.form</field>
+        <field name="model">product_module.arkite_project</field>
+        <field name="arch" type="xml">
+            <form string="Arkite Project">
+                <sheet>
+                    <group>
+                        <field name="product_id"/>
+                        <field name="product_name" readonly="1"/>
+                        <field name="product_code" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="qr_text" readonly="1"/>
+                        <field name="qr_image" widget="image" readonly="1" options="{'size': [200, 200]}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_arkite_project" model="ir.actions.act_window">
+        <field name="name">Arkite Projects</field>
+        <field name="res_model">product_module.arkite_project</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_arkite_project_list"/>
+    </record>
+
     <!-- TOP-LEVEL APP MENU -->
     <record id="menu_product_module_root" model="ir.ui.menu">
         <field name="name">Product Module</field>
@@ -517,4 +547,10 @@
               parent="menu_product_module_root"
               action="action_product"
               sequence="30"/>
+
+    <menuitem id="menu_arkite_projects"
+              name="Arkite Projects"
+              parent="menu_product_module_root"
+              action="action_arkite_project"
+              sequence="40"/>
 </odoo>
