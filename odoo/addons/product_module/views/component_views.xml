@@ -20,21 +20,22 @@
         <field name="model">product_module.component</field>
         <field name="arch" type="xml">
             <form string="Component Details">
-                <sheet>
-                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                        <div style="display: flex; align-items: center; gap: 20px;">
+                <sheet style="max-width: 1000px; margin: 0 auto; padding: 0;">
+                    <!-- Larger Header -->
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; color: white;">
+                        <div style="display: flex; align-items: center; gap: 24px;">
                             <div style="width: 100px; height: 100px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
                                 <field name="image" widget="image" options="{'size': [100, 100]}"/>
                             </div>
                             <div style="flex: 1;">
-                                <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                    <field name="name" placeholder="Enter Component Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px;"/>
+                                <h1 style="color: white; margin: 0 0 12px 0; font-size: 28px; font-weight: 700;">
+                                    <field name="name" readonly="1" style="color: white; background: transparent; border: none; font-size: 28px;"/>
                                 </h1>
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
-                                        <i class="fa fa-tag"/> <field name="component_type" placeholder="Component Type" required="1" style="color: white; background: transparent; border: none; width: 200px;"/>
+                                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600;">
+                                        <i class="fa fa-tag"/> <field name="component_type" readonly="1" style="color: white; background: transparent; border: none; font-size: 14px;"/>
                                     </span>
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600;">
                                         <i class="fa fa-cube"/> Used in <field name="usage_count"/> Products
                                     </span>
                                 </div>
@@ -42,71 +43,28 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                        <!-- Used in Products -->
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-cube" style="color: #28a745; margin-right: 8px;"/> Used in Products
-                            </h3>
-                            <field name="product_ids" widget="many2many_tags"
-                                   context="{'default_page_id': page_id}"
-                                   options="{'no_create': True}"/>
-                            <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
-                                <i class="fa fa-info-circle"/> Select products that use this component
-                            </div>
-                        </div>
-
-                        <!-- Used in Categories -->
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-folder" style="color: #007bff; margin-right: 8px;"/> Used in Categories
-                            </h3>
-                            <field name="product_type_ids" widget="many2many_tags"
-                                   context="{'default_page_id': page_id}"
-                                   options="{'no_create': True}"/>
-                            <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
-                                <i class="fa fa-info-circle"/> Select categories that use this component
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Products Display -->
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" invisible="not product_ids">
-                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                    <!-- Larger Products List -->
+                    <div style="background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="color: #2c3e50; margin-bottom: 24px; font-weight: 600; font-size: 20px;">
                             <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products Using This Component
                         </h3>
-                        <field name="product_ids" readonly="1">
-                            <kanban>
-                                <field name="name"/>
-                                <field name="product_code"/>
-                                <field name="image"/>
-                                <templates>
-                                    <t t-name="kanban-box">
-                                        <div class="oe_kanban_card" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 280px;">
-                                            <div class="oe_kanban_content" style="padding: 16px;">
-                                                <div style="display: flex; align-items: center; gap: 12px;">
-                                                    <!-- Product Image -->
-                                                    <div style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
-                                                        <field name="image" widget="image" options="{'size': [60, 60]}"/>
-                                                    </div>
-
-                                                    <!-- Product Info -->
-                                                    <div style="flex: 1; min-width: 0;">
-                                                        <strong style="font-size: 14px; color: #2c3e50; display: block; margin-bottom: 4px;">
-                                                            <field name="name"/>
-                                                        </strong>
-                                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                                            <span style="background: #6c757d; color: white; border-radius: 6px; padding: 2px 6px; font-size: 10px;">
-                                                                <i class="fa fa-barcode"/> <field name="product_code"/>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </t>
-                                </templates>
-                            </kanban>
+                        
+                        <!-- Empty State -->
+                        <div invisible="product_ids" style="text-align: center; padding: 40px; color: #6c757d;">
+                            <i class="fa fa-cube" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                            <h4 style="color: #6c757d; margin-bottom: 8px;">No products are using this component yet.</h4>
+                            <p style="font-size: 16px;">Products that use this component will appear here.</p>
+                        </div>
+                        
+                        <!-- Products List -->
+                        <field name="product_ids" readonly="1" nolabel="1">
+                            <list nolabel="1">
+                                <field name="image" widget="image" options="{'size': [50, 50]}" style="width: 50px;"/>
+                                <field name="name" string="Product Name" style="font-weight: 600;"/>
+                                <field name="product_code" string="Code"/>
+                                <field name="description" string="Description" style="max-width: 300px;"/>
+                                <field name="product_type_ids" string="Categories" widget="many2many_tags" readonly="1"/>
+                            </list>
                         </field>
                     </div>
                 </sheet>

@@ -220,6 +220,28 @@ class ProductModuleProduct(models.Model):
             'target': 'self',
         }
 
+    def action_start_project(self):
+        """Start Arkite project for this product via MQTT"""
+        self.ensure_one()
+        
+        if not self.name:
+            raise UserError(_('Please set a product name first.'))
+        if not self.product_code:
+            raise UserError(_('Please set a product code first.'))
+        
+        # TODO: Integrate with Arkite API
+        # For now, show a confirmation message
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Start Project'),
+                'message': _('Starting Arkite project "%s" (Code: %s)...') % (self.name, self.product_code),
+                'type': 'info',
+                'sticky': False,
+            }
+        }
+
     def action_export_instructions(self):
         """Export product info and instructions to CSV file"""
         # Create CSV in memory

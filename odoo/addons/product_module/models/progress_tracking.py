@@ -4,11 +4,11 @@ from odoo.exceptions import UserError
 
 class ProductModuleProgress(models.Model):
     _name = 'product_module.progress'
-    _description = 'Workstation Progress Tracking'
+    _description = 'Unit Progress Tracking'
     _order = 'name'
 
     # Basic fields
-    name = fields.Char(string='Workstation Name', required=True)
+    name = fields.Char(string='Unit Name', required=True)
 
     # Relationships
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
@@ -23,7 +23,13 @@ class ProductModuleProgress(models.Model):
     product_name = fields.Char(string='Product Name', related='product_id.name', store=True)
     product_code = fields.Char(string='Product Code', related='product_id.product_code', store=True)
     product_image = fields.Binary(string='Product Image', related='product_id.image')
+    product_description = fields.Text(string='Product Description', related='product_id.description')
     instruction_count = fields.Integer(string='Instruction Count', related='product_id.instruction_count')
+    
+    # Current step information
+    current_step_number = fields.Integer(string='Current Step Number', compute='_compute_current_step_info', store=False)
+    current_step_title = fields.Char(string='Current Step Title', compute='_compute_current_step_info', store=False)
+    current_step_description = fields.Text(string='Current Step Description', compute='_compute_current_step_info', store=False)
 
     @api.depends('completed_steps', 'total_steps')
     def _compute_progress_percentage(self):
@@ -45,11 +51,36 @@ class ProductModuleProgress(models.Model):
             else:
                 record.total_steps = 0
 
+    @api.depends('completed_steps', 'product_id', 'product_id.instruction_ids')
+    def _compute_current_step_info(self):
+        """Get current step information from product instructions"""
+        for record in self:
+            if not record.product_id or not record.product_id.instruction_ids:
+                record.current_step_number = 0
+                record.current_step_title = 'No instructions available'
+                record.current_step_description = 'Add assembly instructions to the product'
+                continue
+                
+            # Get sorted instructions
+            instructions = record.product_id.instruction_ids.sorted('sequence')
+            
+            if record.completed_steps >= len(instructions):
+                # All steps completed
+                record.current_step_number = len(instructions)
+                record.current_step_title = 'All steps completed'
+                record.current_step_description = 'Assembly is finished'
+            else:
+                # Get next instruction to complete (current step)
+                current_instruction = instructions[record.completed_steps]
+                record.current_step_number = record.completed_steps + 1
+                record.current_step_title = current_instruction.title or f'Step {record.completed_steps + 1}'
+                record.current_step_description = current_instruction.description or 'No description provided'
+
     @api.constrains('name')
     def _check_name(self):
         for record in self:
             if not record.name:
-                raise UserError('Workstation Name is required!')
+                raise UserError('Unit Name is required!')
 
     @api.constrains('completed_steps', 'total_steps')
     def _check_completed_steps(self):
