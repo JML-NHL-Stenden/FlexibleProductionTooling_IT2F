@@ -32,66 +32,60 @@ def fetch_steps_payload():
         r = requests.get(f"{url}?apiKey={APIKEY}", verify=False)
         return r.json()
 
-    # 1. Projects
-    projects = get(f"{BASE}/projects")
-
-    # Vars for final result
     final_steps = []
 
-    # 5. Variables (for detection state)
-    variables = get(f"{BASE}/units/171880875434312/variables")
-    variable_map = {v["Name"]: v["CurrentState"] for v in variables}
+    # 1. Fetch all projects
+    projects = get(f"{BASE}/projects")
 
     for proj in projects:
-
         projectId = proj["Id"]
         projectName = proj["Name"]
 
-        # 2. Processes
-        processes = get(f"{BASE}/projects/{projectId}/processes")
+        # 2. Fetch project-level variables
+        project_variables = get(f"{BASE}/projects/{projectId}/variables")
 
-        # 3. Detections
-        detections = get(f"{BASE}/projects/{projectId}/detections")
-        detection_map = {d["Id"]: d for d in detections}
+        # Keep ONLY Detection-created variables
+        detection_variables = {
+            v["Id"]: v
+            for v in project_variables
+            if v["CreationType"] == "Detection"
+        }
 
-        for proc in processes:
+        # 3. Fetch actual variable states from the unit
+        unit_variables = get(f"{BASE}/units/171880875434312/variables")
+        unit_state_map = {v["Id"]: v["CurrentState"] for v in unit_variables}
 
-            processId = proc["Id"]
-            processName = proc["Name"]
+        # 4. Fetch steps (NO processes)
+        steps = get(f"{BASE}/projects/{projectId}/steps")
 
-            # 4. Steps
-            steps = get(
-                f"{BASE}/projects/{projectId}/processes/{processId}/steps"
-            )
+        for step in steps:
 
-            for step in steps:
+            detection_id = step.get("DetectionId")
+            detection_name = None
+            current_state = None
+            is_detected = False
 
-                detection_id = step.get("DetectionId")
-                detection_name = None
-                current_state = None
-                is_detected = False
+            if detection_id != None and detection_id in detection_variables:
+                detection_name = detection_variables[detection_id]["Name"]
+                current_state = unit_state_map.get(detection_id)
 
-                if detection_id and detection_id in detection_map:
-                    detection_name = detection_map[detection_id]["Name"]
-                    current_state = variable_map.get(detection_name)
-                    is_detected = detect_state_to_bool(current_state)
+                # Convert ON/OFF/UNKNOWN → boolean
+                is_detected = (current_state == "ON")
 
-                if detection_id != None:
-                    final_steps.append({
-                        "stepId": step["Id"],
-                        "stepName": step["Name"],
-                        "textInstruction": step["TextInstruction"].get("en-US"),
-                        "projectId": projectId,
-                        "projectName": projectName,
-                        "processId": processId,
-                        "processName": processName,
-                        "detectionId": detection_id,
-                        "detectionName": detection_name,
-                        "is_detected": is_detected,
-                        "stepType": step["StepType"],
-                        "index": step["Index"],
-                        "materialId": step["MaterialId"]
-                    })
+            final_steps.append({
+                "stepId": step["Id"],
+                "stepName": step["Name"],
+                "textInstruction": step["TextInstruction"].get("en-US"),
+                "projectId": projectId,
+                "projectName": projectName,
+                "detectionId": detection_id,
+                "detectionName": detection_name,
+                "is_detected": is_detected,
+                "state_raw": current_state,
+                "stepType": step["StepType"],
+                "index": step["Index"],
+                "materialId": step["MaterialId"]
+            })
 
     print(">>> Steps fetched:", len(final_steps))
     return final_steps
