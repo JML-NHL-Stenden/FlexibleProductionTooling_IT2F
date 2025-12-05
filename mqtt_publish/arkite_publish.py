@@ -65,7 +65,7 @@ def fetch_steps_payload():
             current_state = None
             is_detected = False
 
-            if detection_id != None and detection_id in detection_variables:
+            if detection_id and detection_id in detection_variables:
                 detection_name = detection_variables[detection_id]["Name"]
                 current_state = unit_state_map.get(detection_id)
 
@@ -81,9 +81,7 @@ def fetch_steps_payload():
                 "detectionId": detection_id,
                 "detectionName": detection_name,
                 "is_detected": is_detected,
-                "state_raw": current_state,
                 "stepType": step["StepType"],
-                "index": step["Index"],
                 "materialId": step["MaterialId"]
             })
 

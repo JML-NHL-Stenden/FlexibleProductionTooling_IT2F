@@ -26,20 +26,17 @@ def get_conn():
 
 def ensure_table_exists():
     create_sql = """
-    CREATE TABLE IF NOT EXISTS arkite_steps (
+    CREATE TABLE IF NOT EXISTS detections_steps (
         step_id BIGINT PRIMARY KEY,
         step_name TEXT,
         project_id BIGINT,
         project_name TEXT,
-        process_id BIGINT,
-        process_name TEXT,
         detection_id BIGINT,
         detection_name TEXT,
         is_detected BOOLEAN,
         text_instruction TEXT,
         step_type TEXT,
-        material_id BIGINT,
-        step_index INT
+        material_id BIGINT
     );
     """
     with get_conn() as conn, conn.cursor() as cur:
@@ -51,18 +48,17 @@ def insert_steps(steps):
     with get_conn() as conn, conn.cursor() as cur:
         for s in steps:
             cur.execute("""
-                INSERT INTO arkite_steps (
-                    step_id, step_name, project_id, project_name, process_id, process_name,
+                INSERT INTO detections_steps (
+                    step_id, step_name, project_id, project_name, 
                     detection_id, detection_name, is_detected, text_instruction, step_type,
-                    material_id, step_index
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    material_id
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 ON CONFLICT (step_id) DO UPDATE SET
                     is_detected = EXCLUDED.is_detected,
                     text_instruction = EXCLUDED.text_instruction
             """, (
-                s["stepId"], s["stepName"], s["projectId"], s["projectName"],
-                s["processId"], s["processName"], s["detectionId"], s["detectionName"],
-                s["is_detected"], s["textInstruction"], s["stepType"], s["materialId"], s["index"]
+                s["stepId"], s["stepName"], s["projectId"], s["projectName"], s["detectionId"], s["detectionName"],
+                s["is_detected"], s["textInstruction"], s["stepType"], s["materialId"]
             ))
         conn.commit()
 
