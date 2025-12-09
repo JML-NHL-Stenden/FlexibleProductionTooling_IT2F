@@ -219,6 +219,13 @@ def on_connect(cli, _userdata, _flags, rc, _props=None):
         log.warning("MQTT connect returned code %s", rc)
 
 
+def on_disconnect(cli, _userdata, rc, _props=None):
+    if rc != 0:
+        log.warning("MQTT disconnected unexpectedly (rc=%s). Will try to reconnect...", rc)
+    else:
+        log.info("MQTT disconnected cleanly (rc=%s).", rc)
+
+
 def on_message(_cli, _userdata, msg):
     global last_payload_hash
 
@@ -273,8 +280,23 @@ def setup_mqtt():
 
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
-    client.loop_start()
+    client.on_disconnect = on_disconnect
+
+    while True:
+        try:
+            log.info("Trying to connect to MQTT at %s:%s ...", MQTT_HOST, MQTT_PORT)
+            client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
+            client.loop_start()
+            log.info("MQTT connect OK. Loop started.")
+            break
+        except Exception as e:
+            log.error(
+                "MQTT connect failed to %s:%s: %s. Retrying in 5 seconds...",
+                MQTT_HOST,
+                MQTT_PORT,
+                e,
+            )
+            time.sleep(5)
 
 
 def main():
