@@ -5,7 +5,7 @@
         <field name="name">product.module.type.list</field>
         <field name="model">product_module.type</field>
         <field name="arch" type="xml">
-            <list string="Categories">
+            <list string="Jobs">
                 <field name="name"/>
                 <field name="product_count" string="Total Products"/>
             </list>
@@ -16,12 +16,12 @@
         <field name="name">product.module.type.form</field>
         <field name="model">product_module.type</field>
         <field name="arch" type="xml">
-            <form string="Category">
+            <form string="Job">
                 <sheet>
                     <!-- Two Column Layout -->
                     <div style="display: flex; width: 100%; height: calc(100vh - 200px); gap: 24px;">
                         
-                        <!-- LEFT COLUMN - Category Information -->
+                        <!-- LEFT COLUMN - Job Information -->
                         <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
                             <!-- Top Section: Image + Name -->
                             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
@@ -31,7 +31,7 @@
                                     </div>
                                     <div style="flex: 1;">
                                         <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                            <field name="name" placeholder="Category Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
+                                            <field name="name" placeholder="Job Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
                                         </h1>
                                         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
                                             <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
@@ -45,11 +45,11 @@
                             <!-- Bottom Section: Description (fills remaining space) -->
                             <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column;">
                                 <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Category Information
+                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Job Information
                                 </h3>
                                 <div style="flex: 1; display: flex; flex-direction: column;">
                                     <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description:</div>
-                                    <field name="description" placeholder="Describe this product category..." style="width: 100%; flex: 1; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                    <field name="description" placeholder="Describe this product job..." style="width: 100%; flex: 1; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
                                 </div>
                             </div>
                         </div>
@@ -57,7 +57,7 @@
                         <!-- RIGHT COLUMN - Products List -->
                         <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
                             <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Category
+                                <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Job
                             </h3>
 
                             <!-- Products Display List (scrollable) -->
@@ -67,7 +67,7 @@
                                         <field name="name" string="Name" style="font-weight: 600; font-size: 14px;"/>
                                         <field name="description" string="Description" style="font-size: 12px; color: #6c757d; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"/>
                                         <field name="product_code" string="Code" style="font-size: 11px; background: #e9ecef; padding: 2px 6px; border-radius: 4px; color: #495057;"/>
-                                        <field name="product_type_ids" string="Categories" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="font-size: 10px;"/>
+                                        <field name="product_type_ids" string="Jobs" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="font-size: 10px;"/>
                                     </list>
                                 </field>
                             </div>
@@ -75,11 +75,11 @@
                             <!-- Empty State -->
                             <div invisible="product_ids" style="text-align: center; padding: 40px; color: #6c757d;">
                                 <i class="fa fa-cube" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
-                                <h4 style="color: #6c757d; margin-bottom: 8px;">No Products in this Category</h4>
-                                <p style="font-size: 14px; margin-bottom: 16px;">Products that belong to this category will appear here.</p>
+                                <h4 style="color: #6c757d; margin-bottom: 8px;">No Products in this Job</h4>
+                                <p style="font-size: 14px; margin-bottom: 16px;">Products that belong to this job will appear here.</p>
                                 <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; font-size: 13px; color: #495057;">
                                     <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
-                                    <strong>Note:</strong> Assign products to categories from the Product List tab
+                                    <strong>Note:</strong> Assign products to jobs from the Product List tab
                                 </div>
                             </div>
                         </div>
@@ -100,7 +100,7 @@
                 <field name="product_code"/>
                 <field name="product_type_ids" widget="many2many_tags"/>
                 <field name="image" widget="image" options="{'size': [64, 64]}"/>
-                <field name="instruction_count" string="Instructions"/>
+                <field name="instruction_count" string="Processes"/>
             </list>
         </field>
     </record>
@@ -130,26 +130,20 @@
                                 </div>
                                 
                                 <!-- Product Details integrated into Name section -->
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <div style="color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Product Code</div>
-                                        <field name="product_code" required="1" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 8px 10px; width: 100%; font-size: 13px;"/>
-                                    </div>
-                                    <div>
-                                        <div style="color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Variant Options</div>
-                                        <field name="variant" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 8px 10px; width: 100%; font-size: 13px;"/>
-                                    </div>
+                                <div>
+                                    <div style="color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Product Code</div>
+                                    <field name="product_code" required="1" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 8px 10px; width: 100%; font-size: 13px;"/>
                                 </div>
                             </div>
 
-                            <!-- 2. Product Categories -->
+                            <!-- 2. Product Jobs -->
                             <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
                                 <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
-                                    <i class="fa fa-folder" style="color: #667eea; margin-right: 8px;"/> Product Categories
+                                    <i class="fa fa-folder" style="color: #667eea; margin-right: 8px;"/> Product Jobs
                                 </h3>
                                 <field name="product_type_ids" widget="many2many_tags" style="width: 100%;"/>
                                 <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
-                                    <i class="fa fa-info-circle"/> Select categories for this product
+                                    <i class="fa fa-info-circle"/> Select jobs for this product
                                 </div>
                             </div>
 
@@ -173,14 +167,14 @@
                                     </div>
                                 </div>
 
-                                <!-- Components -->
+                                <!-- Materials -->
                                 <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
                                     <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
-                                        <i class="fa fa-puzzle-piece" style="color: #ff6b6b; margin-right: 8px;"/> Components
+                                        <i class="fa fa-puzzle-piece" style="color: #ff6b6b; margin-right: 8px;"/> Materials
                                     </h3>
-                                    <field name="component_ids" widget="many2many_tags" style="width: 100%;"/>
+                                    <field name="material_ids" widget="many2many_tags" style="width: 100%;"/>
                                     <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
-                                        <i class="fa fa-info-circle"/> Select components used in this product
+                                        <i class="fa fa-info-circle"/> Select materials used in this product
                                     </div>
                                 </div>
                             </div>
@@ -197,22 +191,22 @@
                                 <field name="description" placeholder="Enter detailed product description..." style="width: 100%; height: 200px; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
                             </div>
 
-                            <!-- 2. Assembly Instructions -->
+                            <!-- 2. Processes -->
                             <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 2;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                                     <h3 style="color: #2c3e50; margin: 0; font-weight: 600; display: flex; align-items: center;">
-                                        <i class="fa fa-list-ol" style="color: #fd7e14; margin-right: 8px;"/> Assembly Instructions
+                                        <i class="fa fa-list-ol" style="color: #fd7e14; margin-right: 8px;"/> Processes
                                     </h3>
                                 </div>
                                 <div class="alert alert-info" role="alert" style="margin-bottom: 16px; padding: 12px; font-size: 13px;">
                                     <i class="fa fa-lightbulb-o"/>
-                                    <strong>Tip:</strong> Add step-by-step assembly instructions
+                                    <strong>Tip:</strong> Add process steps for this product
                                 </div>
                                 <field name="instruction_ids" context="{'default_product_id': id}" style="flex: 1;">
                                     <list editable="bottom">
                                         <field name="sequence" widget="handle"/>
-                                        <field name="title" string="Step Title"/>
-                                        <field name="description" string="Step Description"/>
+                                        <field name="title" string="Process Title"/>
+                                        <field name="process_step" string="Process Steps"/>
                                     </list>
                                 </field>
                             </div>
@@ -230,9 +224,9 @@
                         </div>
                         <!-- Right Side Buttons -->
                         <div style="display: flex; gap: 8px;">
-                            <button string="Create Variant" class="btn btn-warning" disabled="1"/>
-                            <button name="action_import_instructions" string="Import" type="object" class="btn btn-secondary" invisible="not id"/>
-                            <button name="action_export_instructions" string="Export" type="object" class="btn btn-secondary" invisible="not id"/>
+                            <button name="action_create_variant" string="Open Instruction Form" type="object" class="btn btn-warning" invisible="not id"/>
+                            <button name="action_import_instructions" string="Import Processes" type="object" class="btn btn-secondary" invisible="not id"/>
+                            <button name="action_export_instructions" string="Export Processes" type="object" class="btn btn-secondary" invisible="not id"/>
                         </div>
                     </div>
                 </footer>
@@ -245,7 +239,7 @@
         <field name="name">product.assemble.page.form</field>
         <field name="model">product_module.page</field>
         <field name="arch" type="xml">
-            <form string="Products">
+            <form string="Dashboard">
                 <sheet style="max-width: none; width: 100%;">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -254,15 +248,15 @@
                                     <i class="fa fa-cube" style="margin-right: 12px;"/> <field name="name" readonly="1" style="color: white; background: transparent; border: none; font-size: 32px;"/>
                                 </h1>
                                 <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">
-                                    Organize your products into categories and manage your complete product catalog
+                                    Organize your products into jobs and manage your complete product catalog
                                 </p>
                             </div>
                             <div style="display: flex; gap: 12px;">
                                 <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
                                     <div style="font-size: 24px; font-weight: 700; color: white;">
-                                        <field name="category_count"/>
+                                        <field name="job_count"/>
                                     </div>
-                                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Categories</div>
+                                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Jobs</div>
                                 </div>
                                 <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
                                     <div style="font-size: 24px; font-weight: 700; color: white;">
@@ -275,16 +269,16 @@
                     </div>
 
                     <notebook>
-                        <!-- TAB 1: Categories -->
-                        <page string="Categories" name="product_categories">
+                        <!-- TAB 1: Jobs -->
+                        <page string="Jobs" name="product_categories">
                             <div class="alert alert-info" role="alert">
                                 <i class="fa fa-info-circle"/>
-                                <strong>Categories</strong> - Create categories to organize your products. Each category can contain multiple products.
+                                <strong>Jobs</strong> - Create jobs to organize your products. Each job can contain multiple products.
                             </div>
 
                             <div style="margin-bottom: 16px;">
                                 <button name="action_create_product_type" type="object" class="btn btn-primary" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
-                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Category
+                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Job
                                 </button>
                             </div>
 
@@ -334,7 +328,7 @@
                         <page string="Product List" name="product_list">
                             <div class="alert alert-success" role="alert">
                                 <i class="fa fa-list"/>
-                                <strong>Product Catalog</strong> - Manage all your products. Assign them to categories to organize and group similar products together.
+                                <strong>Product Catalog</strong> - Manage all your products. Assign them to jobs to organize and group similar products together.
                             </div>
 
                             <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
@@ -344,7 +338,7 @@
                                 <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa fa-info-circle" style="color: #007bff;"/>
                                     <span style="font-size: 14px; color: #495057;">
-                                        <strong>Tip:</strong> To assign products to categories, edit the category and select products, or edit individual products to set their category.
+                                        <strong>Tip:</strong> To assign products to jobs, edit the job and select products, or edit individual products to set their job.
                                     </span>
                                 </div>
                             </div>
@@ -383,22 +377,22 @@
                                                                 </div>
                                                             </div>
 
-                                                            <!-- Product Categories -->
+                                                            <!-- Product Jobs -->
                                                             <div style="margin-bottom: 8px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
-                                                                    <i class="fa fa-folder" style="margin-right: 4px;"/> Categories
+                                                                    <i class="fa fa-folder" style="margin-right: 4px;"/> Jobs
                                                                 </div>
                                                                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                                                     <field name="product_type_ids" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="background: #f8f9fa; border: 1px solid #dee2e6; color: #495057;"/>
                                                                 </div>
                                                             </div>
 
-                                                            <!-- Product Components -->
+                                                            <!-- Product Materials -->
                                                             <div style="margin-bottom: 16px;">
-                                                                <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Components Used</div>
-                                                                <field name="component_ids" widget="many2many_tags" style="width: 100%;"/>
+                                                                <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Materials Used</div>
+                                                                <field name="material_ids" widget="many2many_tags" style="width: 100%;"/>
                                                                 <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
-                                                                    <i class="fa fa-info-circle"/> Select components used in this product
+                                                                    <i class="fa fa-info-circle"/> Select materials used in this product
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -411,23 +405,23 @@
                             </field>
                         </page>
 
-                        <!-- TAB 3: Components -->
-                        <page string="Components" name="components">
+                        <!-- TAB 3: Materials -->
+                        <page string="Materials" name="materials">
                             <div class="alert alert-warning" role="alert">
                                 <i class="fa fa-puzzle-piece"/>
-                                <strong>Components</strong> - Manage product components and track which products use them.
+                                <strong>Materials</strong> - Manage product materials and track which products use them.
                             </div>
 
                             <div style="margin-bottom: 16px;">
-                                <button name="action_create_component" type="object" class="btn btn-warning" style="background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
-                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Component
+                                <button name="action_create_material" type="object" class="btn btn-warning" style="background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
+                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Material
                                 </button>
                             </div>
 
-                            <field name="component_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="material_ids" context="{'default_page_id': id}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
-                                    <field name="component_type"/>
+                                    <field name="material_type"/>
                                     <field name="usage_count"/>
                                     <field name="image"/>
                                     <templates>
@@ -435,25 +429,25 @@
                                             <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #ff6b6b; width: 300px; min-height: 140px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <!-- Component Image -->
+                                                        <!-- Material Image -->
                                                         <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <!-- Component Info -->
+                                                        <!-- Material Info -->
                                                         <div style="flex: 1;">
-                                                            <!-- Component Name -->
+                                                            <!-- Material Name -->
                                                             <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <!-- Component Type -->
+                                                            <!-- Material Type -->
                                                             <div style="margin-bottom: 8px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
                                                                     <i class="fa fa-tag"/> Type
                                                                 </div>
                                                                 <div style="font-size: 14px; color: #495057; background: #e9ecef; padding: 6px 12px; border-radius: 8px; display: inline-block; border-left: 3px solid #007bff;">
-                                                                    <field name="component_type"/>
+                                                                    <field name="material_type"/>
                                                                 </div>
                                                             </div>
 
@@ -478,7 +472,7 @@
 
     <!-- Actions -->
     <record id="action_product_type" model="ir.actions.act_window">
-        <field name="name">Categories</field>
+        <field name="name">Jobs</field>
         <field name="res_model">product_module.type</field>
         <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_product_type_list"/>
@@ -517,7 +511,7 @@
               sequence="10"/>
 
     <menuitem id="menu_product_types"
-              name="Categories"
+              name="Jobs"
               parent="menu_product_module_root"
               action="action_product_type"
               sequence="20"/>

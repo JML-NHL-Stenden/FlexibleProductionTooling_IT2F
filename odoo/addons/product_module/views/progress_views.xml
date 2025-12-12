@@ -95,11 +95,11 @@
                                          <td style="color: #495057; padding: 8px;"><field name="current_step_number" readonly="1"/></td>
                                      </tr>
                                      <tr style="background: #e9ecef;">
-                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Step Title</td>
+                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Process Title</td>
                                          <td style="color: #495057; padding: 8px;"><field name="current_step_title" readonly="1"/></td>
                                      </tr>
                                      <tr style="background: #e9ecef;">
-                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Step Description</td>
+                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Process Steps</td>
                                          <td style="color: #495057; padding: 8px;"><field name="current_step_description" readonly="1"/></td>
                                      </tr>
                                     <tr style="background: #e9ecef;">

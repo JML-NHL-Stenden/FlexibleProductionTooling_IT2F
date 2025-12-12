@@ -16,7 +16,7 @@ class ProductModuleProgress(models.Model):
 
     # Progress tracking
     progress_percentage = fields.Integer(string='Progress %', compute='_compute_progress_percentage', store=True)
-    total_steps = fields.Integer(string='Total Instructions', compute='_compute_total_steps', store=True)
+    total_steps = fields.Integer(string='Total Processes', compute='_compute_total_steps', store=True)
     completed_steps = fields.Integer(string='Completed Steps', default=0)
 
     # Display fields for better UX
@@ -24,7 +24,7 @@ class ProductModuleProgress(models.Model):
     product_code = fields.Char(string='Product Code', related='product_id.product_code', store=True)
     product_image = fields.Binary(string='Product Image', related='product_id.image')
     product_description = fields.Text(string='Product Description', related='product_id.description')
-    instruction_count = fields.Integer(string='Instruction Count', related='product_id.instruction_count')
+    instruction_count = fields.Integer(string='Process Count', related='product_id.instruction_count')
     
     # Current step information
     current_step_number = fields.Integer(string='Current Step Number', compute='_compute_current_step_info', store=False)
@@ -41,10 +41,10 @@ class ProductModuleProgress(models.Model):
 
     @api.depends('product_id', 'product_id.instruction_ids')
     def _compute_total_steps(self):
-        """Compute total_steps based on product instruction count - FIXED VERSION"""
+        """Compute total_steps based on product process count - FIXED VERSION"""
         for record in self:
             if record.product_id and record.product_id.instruction_ids:
-                # Always get the current instruction count from the product
+                # Always get the current process count from the product
                 record.total_steps = len(record.product_id.instruction_ids)
             elif record.product_id:
                 record.total_steps = 0
@@ -53,28 +53,30 @@ class ProductModuleProgress(models.Model):
 
     @api.depends('completed_steps', 'product_id', 'product_id.instruction_ids')
     def _compute_current_step_info(self):
-        """Get current step information from product instructions"""
+        """Get current step information from product processes"""
         for record in self:
             if not record.product_id or not record.product_id.instruction_ids:
                 record.current_step_number = 0
-                record.current_step_title = 'No instructions available'
-                record.current_step_description = 'Add assembly instructions to the product'
+                record.current_step_title = 'No processes available'
+                record.current_step_description = 'Add processes to the product'
                 continue
                 
-            # Get sorted instructions
+            # Get sorted processes
             instructions = record.product_id.instruction_ids.sorted('sequence')
             
             if record.completed_steps >= len(instructions):
                 # All steps completed
                 record.current_step_number = len(instructions)
                 record.current_step_title = 'All steps completed'
-                record.current_step_description = 'Assembly is finished'
+                record.current_step_description = 'Process is finished'
             else:
-                # Get next instruction to complete (current step)
+                # Get next process to complete (current step)
                 current_instruction = instructions[record.completed_steps]
                 record.current_step_number = record.completed_steps + 1
                 record.current_step_title = current_instruction.title or f'Step {record.completed_steps + 1}'
-                record.current_step_description = current_instruction.description or 'No description provided'
+                # Get the process step label
+                process_step_label = dict(current_instruction._fields['process_step'].selection).get(current_instruction.process_step, 'No process step selected')
+                record.current_step_description = process_step_label
 
     @api.constrains('name')
     def _check_name(self):
@@ -148,7 +150,7 @@ class ProductModuleProgress(models.Model):
 
     @api.model
     def update_progress_from_instruction_change(self, product_id):
-        """Update all progress records when product instructions change"""
+        """Update all progress records when product processes change"""
         if product_id:
             progress_records = self.search([('product_id', '=', product_id)])
             progress_records._compute_total_steps()
