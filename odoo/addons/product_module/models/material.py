@@ -1,14 +1,14 @@
-# product_module/models/component.py
+# product_module/models/material.py
 from odoo import models, fields, api
 
-class ProductModuleComponent(models.Model):
-    _name = 'product_module.component'
-    _description = 'Product Component'
+class ProductModuleMaterial(models.Model):
+    _name = 'product_module.material'
+    _description = 'Product Material'
     _order = 'name, id'
 
     # Basic fields
-    name = fields.Char(string='Component Name', required=True)
-    component_type = fields.Char(string='Component Type', required=True)
+    name = fields.Char(string='Material Name', required=True)
+    material_type = fields.Char(string='Material Type', required=True)
     image = fields.Binary(string='Image', attachment=True)
 
     # Relationships
@@ -16,23 +16,24 @@ class ProductModuleComponent(models.Model):
     product_ids = fields.Many2many(
         'product_module.product',
         string='Used in Products',
-        help='Products that use this component'
+        help='Products that use this material'
     )
     product_type_ids = fields.Many2many(
         'product_module.type',
         string='Used in Categories',
-        help='Categories that use this component'
+        help='Categories that use this material'
     )
 
     # Computed fields
     usage_count = fields.Integer(
         string='Usage Count',
         compute='_compute_usage_count',
-        help='Number of products using this component'
+        help='Number of products using this material'
     )
 
     @api.depends('product_ids')
     def _compute_usage_count(self):
-        """Compute number of products using this component"""
+        """Compute number of products using this material"""
         for record in self:
             record.usage_count = len(record.product_ids)
+

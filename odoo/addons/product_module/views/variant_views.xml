@@ -1,0 +1,150 @@
+<!-- product_module/views/variant_views.xml -->
+<odoo>
+    <!-- Variant Form View -->
+    <record id="view_variant_form" model="ir.ui.view">
+        <field name="name">product.module.variant.form</field>
+        <field name="model">product_module.variant</field>
+        <field name="arch" type="xml">
+            <form string="Product Variant">
+                <sheet>
+                    <!-- Header Info -->
+                    <div class="alert alert-info" role="alert" style="margin-bottom: 24px;">
+                        <i class="fa fa-info-circle"/>
+                        <strong>Creating Product Variant</strong> - This variant is based on: <field name="parent_product_id" readonly="1" style="display: inline; font-weight: bold;"/>
+                    </div>
+
+                    <!-- Two Column Layout: Left (4 sections) + Right (2 sections) -->
+                    <div style="display: flex; gap: 24px; width: 100%; min-height: 600px;">
+                        
+                        <!-- LEFT COLUMN - 4 Sections -->
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 24px;">
+                            
+                            <!-- 1. Name & Product Details (Merged) -->
+                            <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border-radius: 12px; padding: 18px; color: white;">
+                                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                    <div style="width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.3);">
+                                        <field name="image" widget="image" options="{'size': [64, 64]}"/>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <h2 style="color: white; margin: 0 0 12px 0; font-size: 18px; font-weight: 700;">Variant Name</h2>
+                                        <field name="name" placeholder="Enter Variant Name" required="1" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 10px 14px; width: 100%; font-size: 15px; font-weight: 600;"/>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product Code -->
+                                <div>
+                                    <div style="color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Product Code</div>
+                                    <field name="product_code" required="1" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 8px 10px; width: 100%; font-size: 13px;"/>
+                                </div>
+                            </div>
+
+                            <!-- 2. Product Jobs -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
+                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
+                                    <i class="fa fa-folder" style="color: #667eea; margin-right: 8px;"/> Product Jobs
+                                </h3>
+                                <field name="product_type_ids" widget="many2many_tags" style="width: 100%;"/>
+                                <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
+                                    <i class="fa fa-info-circle"/> Select jobs for this variant
+                                </div>
+                            </div>
+
+                            <!-- 3. QR Code and Components (Side by Side) -->
+                            <div style="display: flex; gap: 24px;">
+                                <!-- QR Code -->
+                                <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
+                                    <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
+                                        <i class="fa fa-qrcode" style="color: #6f42c1; margin-right: 8px;"/> QR Code
+                                    </h3>
+                                    <div style="text-align: center;">
+                                        <div style="background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 2px dashed #dee2e6; display: inline-block;">
+                                            <field name="qr_image" widget="image" filename="qr_image_name" options="{'size': [120, 120]}" style="max-width: 120px; max-height: 120px;"/>
+                                        </div>
+                                        <div style="margin-bottom: 12px; font-size: 12px; color: #6c757d; font-weight: 600;">
+                                            <field name="qr_text" readonly="1" style="background: transparent; border: none; text-align: center;"/>
+                                        </div>
+                                        <button name="action_download_qr" type="object" class="btn btn-primary btn-sm" invisible="not id or not product_code">
+                                            <i class="fa fa-download"/> Download
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Materials -->
+                                <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
+                                    <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
+                                        <i class="fa fa-puzzle-piece" style="color: #ff6b6b; margin-right: 8px;"/> Materials
+                                    </h3>
+                                    <field name="material_ids" widget="many2many_tags" style="width: 100%;"/>
+                                    <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
+                                        <i class="fa fa-info-circle"/> Select materials used in this variant
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN - 2 Sections -->
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 24px;">
+                            
+                            <!-- 1. Description -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
+                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
+                                    <i class="fa fa-align-left" style="color: #007bff; margin-right: 8px;"/> Description
+                                </h3>
+                                <field name="description" placeholder="Enter detailed variant description..." style="width: 100%; height: 200px; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                            </div>
+
+                            <!-- 2. Processes -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 2;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="color: #2c3e50; margin: 0; font-weight: 600; display: flex; align-items: center;">
+                                        <i class="fa fa-list-ol" style="color: #fd7e14; margin-right: 8px;"/> Processes
+                                    </h3>
+                                </div>
+                                <div class="alert alert-info" role="alert" style="margin-bottom: 16px; padding: 12px; font-size: 13px;">
+                                    <i class="fa fa-lightbulb-o"/>
+                                    <strong>Tip:</strong> Customize the processes for this variant
+                                </div>
+                                <field name="instruction_ids" context="{'default_variant_id': id}" style="flex: 1;">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="title" string="Process Title"/>
+                                        <field name="process_step" string="Process Steps"/>
+                                    </list>
+                                </field>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+                <footer>
+                    <!-- Footer Buttons -->
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <div style="display: flex; gap: 8px;">
+                            <button string="Save" special="save" class="btn btn-success"/>
+                            <button string="Cancel" special="cancel" class="btn btn-secondary"/>
+                            <button name="unlink" type="object" string="Delete" class="btn btn-danger" confirm="Are you sure you want to delete this variant?"/>
+                        </div>
+                    </div>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Variant List View -->
+    <record id="view_variant_list" model="ir.ui.view">
+        <field name="name">product.module.variant.list</field>
+        <field name="model">product_module.variant</field>
+        <field name="arch" type="xml">
+            <list string="Product Variants">
+                <field name="sequence" widget="handle"/>
+                <field name="parent_product_id"/>
+                <field name="name"/>
+                <field name="product_code"/>
+                <field name="product_type_ids" widget="many2many_tags"/>
+                <field name="image" widget="image" options="{'size': [64, 64]}"/>
+                <field name="instruction_count" string="Processes"/>
+            </list>
+        </field>
+    </record>
+</odoo>
+
+
