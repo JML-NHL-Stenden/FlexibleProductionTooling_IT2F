@@ -138,6 +138,21 @@ class ProductModuleProduct(models.Model):
             'target': 'new',
         }
 
+    def action_delete_product(self):
+        """Delete this product and close the dialog"""
+        self.ensure_one()
+        product_id = self.id
+        try:
+            self.unlink()
+        except Exception as e:
+            raise UserError(_('Cannot delete this product: %s') % str(e))
+        
+        # Return action to close the dialog and reload
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
+
     def action_import_instructions(self):
         """Open wizard to import processes from CSV"""
         self.ensure_one()

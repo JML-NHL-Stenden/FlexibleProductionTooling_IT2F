@@ -1,5 +1,6 @@
 from . import page
 from . import product_type
+from . import project
 from . import product
 from . import variant
 from . import instruction

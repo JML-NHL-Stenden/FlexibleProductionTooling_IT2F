@@ -10,7 +10,6 @@ class ProductModuleType(models.Model):
 
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
     name = fields.Char(string='Job Name', required=True, size=12)
-    image = fields.Binary(string='Image', attachment=True)
     description = fields.Text(string='Description', size=250)
     
     # Related products (Many2many relationship)

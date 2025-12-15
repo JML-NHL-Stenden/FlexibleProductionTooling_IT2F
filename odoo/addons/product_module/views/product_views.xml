@@ -23,21 +23,16 @@
                         
                         <!-- LEFT COLUMN - Job Information -->
                         <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
-                            <!-- Top Section: Image + Name -->
+                            <!-- Top Section: Name -->
                             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                                <div style="display: flex; align-items: center; gap: 20px;">
-                                    <div style="width: 80px; height: 80px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
-                                        <field name="image" widget="image" options="{'size': [80, 80]}"/>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                            <field name="name" placeholder="Job Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
-                                        </h1>
-                                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
-                                            <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
-                                                <i class="fa fa-cube"/> <field name="product_count"/> Total Products
-                                            </span>
-                                        </div>
+                                <div>
+                                    <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
+                                        <field name="name" placeholder="Job Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
+                                    </h1>
+                                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+                                        <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                            <i class="fa fa-cube"/> <field name="product_count"/> Total Products
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -60,14 +55,13 @@
                                 <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Job
                             </h3>
 
-                            <!-- Products Display List (scrollable) -->
+                            <!-- Products List (scrollable and editable) -->
                             <div style="flex: 1; overflow-y: auto; max-height: calc(100vh - 300px);">
-                                <field name="product_ids" readonly="1" nolabel="1">
-                                    <list nolabel="1">
-                                        <field name="name" string="Name" style="font-weight: 600; font-size: 14px;"/>
-                                        <field name="description" string="Description" style="font-size: 12px; color: #6c757d; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"/>
-                                        <field name="product_code" string="Code" style="font-size: 11px; background: #e9ecef; padding: 2px 6px; border-radius: 4px; color: #495057;"/>
-                                        <field name="product_type_ids" string="Jobs" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="font-size: 10px;"/>
+                                <field name="product_ids" widget="many2many" nolabel="1">
+                                    <list>
+                                        <field name="name" string="Name"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="product_code" string="Code"/>
                                     </list>
                                 </field>
                             </div>
@@ -217,10 +211,9 @@
                     <!-- Left Side Buttons -->
                     <div style="display: flex; justify-content: space-between; width: 100%;">
                         <div style="display: flex; gap: 8px;">
-                            <button string="Save" special="save" class="btn btn-success"/>
+                            <button string="Save &amp; Close" special="save" class="btn btn-success" data-hotkey="s"/>
                             <button string="Cancel" special="cancel" class="btn btn-secondary"/>
-                            <button name="unlink" type="object" string="Delete" class="btn btn-danger" confirm="Are you sure you want to delete this product?"/>
-                            <button name="action_start_project" type="object" string="Start Project" class="btn btn-info" disabled="1"/>
+                            <button name="action_delete_product" type="object" string="Delete" class="btn btn-danger" confirm="Are you sure you want to delete this product?" invisible="not id"/>
                         </div>
                         <!-- Right Side Buttons -->
                         <div style="display: flex; gap: 8px;">
@@ -254,6 +247,12 @@
                             <div style="display: flex; gap: 12px;">
                                 <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
                                     <div style="font-size: 24px; font-weight: 700; color: white;">
+                                        <field name="project_count"/>
+                                    </div>
+                                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Projects</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
+                                    <div style="font-size: 24px; font-weight: 700; color: white;">
                                         <field name="job_count"/>
                                     </div>
                                     <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Jobs</div>
@@ -269,7 +268,54 @@
                     </div>
 
                     <notebook>
-                        <!-- TAB 1: Jobs -->
+                        <!-- TAB 1: Projects -->
+                        <page string="Projects" name="projects">
+                            <div class="alert alert-success" role="alert">
+                                <i class="fa fa-folder-open"/>
+                                <strong>Projects</strong> - Create projects to organize your jobs. Each project can contain multiple jobs.
+                            </div>
+
+                            <div style="margin-bottom: 16px;">
+                                <button name="action_create_project" type="object" class="btn btn-success" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
+                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Project
+                                </button>
+                            </div>
+
+                            <field name="project_ids" context="{'default_page_id': id}" widget="kanban">
+                                <kanban create="false" multi_edit="1">
+                                    <field name="name"/>
+                                    <field name="job_count"/>
+                                    <field name="description"/>
+                                    <templates>
+                                        <t t-name="kanban-box">
+                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 120px;">
+                                                <div class="oe_kanban_content" style="padding: 16px;">
+                                                    <!-- Project Info -->
+                                                    <div style="flex: 1;">
+                                                        <!-- Project Name -->
+                                                        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                            <field name="name"/>
+                                                        </div>
+
+                                                        <!-- Description -->
+                                                        <div t-if="record.description.value" style="font-size: 13px; color: #6c757d; margin-bottom: 12px; line-height: 1.4; max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                                            <field name="description"/>
+                                                        </div>
+
+                                                        <!-- Total Jobs -->
+                                                        <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
+                                                            <field name="job_count"/> Total Jobs
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                            </field>
+                        </page>
+
+                        <!-- TAB 2: Jobs -->
                         <page string="Jobs" name="product_categories">
                             <div class="alert alert-info" role="alert">
                                 <i class="fa fa-info-circle"/>
@@ -286,34 +332,26 @@
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="product_count"/>
-                                    <field name="image"/>
                                     <field name="description"/>
                                     <templates>
                                         <t t-name="kanban-box">
                                             <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #667eea; width: 300px; min-height: 120px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
-                                                    <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <!-- Product Image -->
-                                                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
-                                                            <field name="image" widget="image" options="{'size': [80, 80]}"/>
+                                                    <!-- Job Info -->
+                                                    <div style="flex: 1;">
+                                                        <!-- Type Name -->
+                                                        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                            <field name="name"/>
                                                         </div>
 
-                                                        <!-- Product Info -->
-                                                        <div style="flex: 1;">
-                                                            <!-- Type Name -->
-                                                            <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
-                                                                <field name="name"/>
-                                                            </div>
+                                                        <!-- Description -->
+                                                        <div t-if="record.description.value" style="font-size: 13px; color: #6c757d; margin-bottom: 12px; line-height: 1.4; max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                                            <field name="description"/>
+                                                        </div>
 
-                                                            <!-- Description -->
-                                                            <div t-if="record.description.value" style="font-size: 13px; color: #6c757d; margin-bottom: 12px; line-height: 1.4; max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                                                                <field name="description"/>
-                                                            </div>
-
-                                                            <!-- Total Products -->
-                                                            <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
-                                                                <field name="product_count"/> Total Products
-                                                            </div>
+                                                        <!-- Total Products -->
+                                                        <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
+                                                            <field name="product_count"/> Total Products
                                                         </div>
                                                     </div>
                                                 </div>
@@ -324,27 +362,22 @@
                             </field>
                         </page>
 
-                        <!-- TAB 2: Product List -->
+                        <!-- TAB 3: Product List -->
                         <page string="Product List" name="product_list">
                             <div class="alert alert-success" role="alert">
                                 <i class="fa fa-list"/>
                                 <strong>Product Catalog</strong> - Manage all your products. Assign them to jobs to organize and group similar products together.
                             </div>
 
-                            <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+                            <div style="margin-bottom: 16px;">
                                 <button name="action_create_product" type="object" class="btn btn-success" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Product
                                 </button>
-                                <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa fa-info-circle" style="color: #007bff;"/>
-                                    <span style="font-size: 14px; color: #495057;">
-                                        <strong>Tip:</strong> To assign products to jobs, edit the job and select products, or edit individual products to set their job.
-                                    </span>
-                                </div>
                             </div>
 
-                            <field name="product_ids" context="{'default_page_id': id}" widget="kanban">
-                                <kanban create="false">
+                            <field name="product_ids" mode="kanban" readonly="1">
+                                <kanban create="false" edit="false" delete="false">
+                                    <field name="id"/>
                                     <field name="name"/>
                                     <field name="product_code"/>
                                     <field name="product_type_ids"/>
@@ -352,7 +385,7 @@
                                     <field name="instruction_count"/>
                                     <templates>
                                         <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
+                                            <div class="oe_kanban_card" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
                                                         <!-- Product Image -->
@@ -368,32 +401,25 @@
                                                             </div>
 
                                                             <!-- Product Code -->
-                                                            <div style="margin-bottom: 12px;">
+                                                            <div style="margin-bottom: 8px;">
                                                                 <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
                                                                     <i class="fa fa-barcode" style="margin-right: 4px;"/> Product Code
                                                                 </div>
-                                                                <div style="font-size: 14px; color: #495057; background: #e9ecef; padding: 6px 12px; border-radius: 8px; display: inline-block; border-left: 3px solid #007bff;">
-                                                                    <field name="product_code" options="{'max_length': 16}"/>
+                                                                <div style="font-size: 14px; color: #495057; background: #e9ecef; padding: 6px 12px; border-radius: 8px; display: inline-block;">
+                                                                    <field name="product_code"/>
                                                                 </div>
                                                             </div>
 
                                                             <!-- Product Jobs -->
                                                             <div style="margin-bottom: 8px;">
-                                                                <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
-                                                                    <i class="fa fa-folder" style="margin-right: 4px;"/> Jobs
-                                                                </div>
-                                                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                                                    <field name="product_type_ids" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="background: #f8f9fa; border: 1px solid #dee2e6; color: #495057;"/>
-                                                                </div>
+                                                                <field name="product_type_ids" widget="many2many_tags"/>
                                                             </div>
-
-                                                            <!-- Product Materials -->
-                                                            <div style="margin-bottom: 16px;">
-                                                                <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Materials Used</div>
-                                                                <field name="material_ids" widget="many2many_tags" style="width: 100%;"/>
-                                                                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
-                                                                    <i class="fa fa-info-circle"/> Select materials used in this product
-                                                                </div>
+                                                            
+                                                            <!-- Edit Button -->
+                                                            <div style="margin-top: 12px;">
+                                                                <button name="action_edit_product" type="object" class="btn btn-sm btn-primary">
+                                                                    <i class="fa fa-pencil"/> Edit
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -405,7 +431,7 @@
                             </field>
                         </page>
 
-                        <!-- TAB 3: Materials -->
+                        <!-- TAB 4: Materials -->
                         <page string="Materials" name="materials">
                             <div class="alert alert-warning" role="alert">
                                 <i class="fa fa-puzzle-piece"/>
@@ -509,6 +535,12 @@
               parent="menu_product_module_root"
               action="action_product_assemble_page"
               sequence="10"/>
+
+    <menuitem id="menu_projects"
+              name="Projects"
+              parent="menu_product_module_root"
+              action="action_project"
+              sequence="15"/>
 
     <menuitem id="menu_product_types"
               name="Jobs"

@@ -1,0 +1,95 @@
+<!-- product_module/views/project_views.xml -->
+<odoo>
+    <!-- Project List View -->
+    <record id="view_project_list" model="ir.ui.view">
+        <field name="name">product.module.project.list</field>
+        <field name="model">product_module.project</field>
+        <field name="arch" type="xml">
+            <list string="Projects">
+                <field name="name"/>
+                <field name="job_count" string="Total Jobs"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Project Form View -->
+    <record id="view_project_form" model="ir.ui.view">
+        <field name="name">product.module.project.form</field>
+        <field name="model">product_module.project</field>
+        <field name="arch" type="xml">
+            <form string="Project">
+                <sheet>
+                    <!-- Two Column Layout -->
+                    <div style="display: flex; width: 100%; height: calc(100vh - 200px); gap: 24px;">
+                        
+                        <!-- LEFT COLUMN - Project Information -->
+                        <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
+                            <!-- Top Section: Name -->
+                            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                                <div>
+                                    <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
+                                        <field name="name" placeholder="Project Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
+                                    </h1>
+                                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+                                        <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                            <i class="fa fa-briefcase"/> <field name="job_count"/> Total Jobs
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Section: Description (fills remaining space) -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column;">
+                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Project Information
+                                </h3>
+                                <div style="flex: 1; display: flex; flex-direction: column;">
+                                    <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description:</div>
+                                    <field name="description" placeholder="Describe this project..." style="width: 100%; flex: 1; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN - Jobs List -->
+                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
+                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Jobs in this Project
+                            </h3>
+
+                            <!-- Jobs List (scrollable and editable) -->
+                            <div style="flex: 1; overflow-y: auto; max-height: calc(100vh - 300px);">
+                                <field name="job_ids" widget="many2many" nolabel="1">
+                                    <list>
+                                        <field name="name" string="Job Name"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="product_count" string="Products"/>
+                                    </list>
+                                </field>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div invisible="job_ids" style="text-align: center; padding: 40px; color: #6c757d;">
+                                <i class="fa fa-briefcase" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                                <h4 style="color: #6c757d; margin-bottom: 8px;">No Jobs in this Project</h4>
+                                <p style="font-size: 14px; margin-bottom: 16px;">Jobs that belong to this project will appear here.</p>
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; font-size: 13px; color: #495057;">
+                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
+                                    <strong>Note:</strong> Click "Add a line" above to add jobs to this project
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_project" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">product_module.project</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_project_list"/>
+    </record>
+</odoo>
+
