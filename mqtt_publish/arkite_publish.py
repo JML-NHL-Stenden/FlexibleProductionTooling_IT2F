@@ -1,20 +1,24 @@
 import os
 import json
 import threading
-
+import re
 import time
 import requests
 import paho.mqtt.client as mqtt
+import urllib3
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 print("MQTT_HOST:", os.getenv("MQTT_HOST"), "MQTT_PORT:", os.getenv("MQTT_PORT"), flush=True)
+
+WORKSTATION_IP = "192.168.56.1"
 
 MQTT_HOST = os.getenv("MQTT_HOST")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
 
-API_CALL_URL = "https://192.168.56.1/api/v1/projects/?apiKey=jtXRqckD5"
-UNIT_FETCH_URL = "https://192.168.56.1/api/v1/units"
-LOAD_URL = "https://192.168.56.1/api/v1/units/171880875434312/projects/649473381547313964/load"
+API_CALL_URL = f"https://{WORKSTATION_IP}/api/v1/projects/?apiKey=kdfNPsDrz"
+UNIT_FETCH_URL = f"https://{WORKSTATION_IP}/api/v1/units"
+LOAD_URL = f"https://{WORKSTATION_IP}/api/v1/units/171880875434312/projects/649473381547313964/load"
 API_KEY = "kdfNPsDrz"
 
 def detect_state_to_bool(state):
@@ -22,71 +26,122 @@ def detect_state_to_bool(state):
         return True
     return False
 
+def fetch_loaded_project_id():
+    url = f"https://{WORKSTATION_IP}/api/v1/units/171880875434312/loadedProject?apiKey={API_KEY}"
+    # ↑ adjust path if your Arkite uses a different endpoint name
+
+    try:
+        r = requests.get(url, verify=False)
+        r.raise_for_status()
+        data = r.json()
+
+        if isinstance(data, dict) and data.get("Id"):
+            return str(data["Id"])  # normalize to string
+    except Exception as e:
+        print("Failed to fetch loaded project:", e)
+
+    return None
+
+def extract_step_number(comment):
+    if not comment:
+        return None
+    match = re.search(r"step\s*(\d+)", comment, re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
 def fetch_steps_payload():
-    print(">>> Fetching Arkite steps...")
+    print(">>> Fetching Arkite detection steps...")
+
+    loaded_project_id = fetch_loaded_project_id()
 
     BASE = "https://192.168.56.1/api/v1"
     APIKEY = "kdfNPsDrz"
+    UNIT_ID = "171880875434312"
 
     def get(url):
         r = requests.get(f"{url}?apiKey={APIKEY}", verify=False)
+        r.raise_for_status()
         return r.json()
 
-    final_steps = []
+    detection_steps = []
 
-    # 1. Fetch all projects
+    # 1. Fetch projects
     projects = get(f"{BASE}/projects")
 
     for proj in projects:
-        projectId = proj["Id"]
-        projectName = proj["Name"]
+        project_id = proj["Id"]
+        project_name = proj["Name"]
 
-        # 2. Fetch project-level variables
-        project_variables = get(f"{BASE}/projects/{projectId}/variables")
-
-        # Keep ONLY Detection-created variables
+        project_variables = get(f"{BASE}/projects/{project_id}/variables")
         detection_variables = {
             v["Id"]: v
             for v in project_variables
-            if v["CreationType"] == "Detection"
+            if v.get("CreationType") == "Detection"
         }
 
-        # 3. Fetch actual variable states from the unit
-        unit_variables = get(f"{BASE}/units/171880875434312/variables")
-        unit_state_map = {v["Id"]: v["CurrentState"] for v in unit_variables}
+        unit_variables = get(f"{BASE}/units/{UNIT_ID}/variables")
+        unit_state_map = {
+            v["Id"]: v.get("CurrentState")
+            for v in unit_variables
+        }
 
-        # 4. Fetch steps (NO processes)
-        steps = get(f"{BASE}/projects/{projectId}/steps")
+        steps = get(f"{BASE}/projects/{project_id}/steps")
 
+        is_project_loaded = (
+            loaded_project_id is not None
+            and str(project_id) == loaded_project_id
+        )
+
+        numbered_step_sequence = {}
+        for step in steps:
+            if step.get("Name") == "Numbered Step":
+                seq = extract_step_number(step.get("Comment"))
+                if seq is not None:
+                    numbered_step_sequence[step["Id"]] = seq
+
+        # --------------------------------------------------
+        # Pass 2: collect detection steps
+        # --------------------------------------------------
         for step in steps:
 
             detection_id = step.get("DetectionId")
+            is_material_grab = step.get("StepType") == "MATERIAL_GRAB"
+
+            # Only detection steps
+            if not detection_id and not is_material_grab:
+                continue
+
             detection_name = None
             current_state = None
-            is_detected = False
+            detection_status = False
 
             if detection_id and detection_id in detection_variables:
                 detection_name = detection_variables[detection_id]["Name"]
                 current_state = unit_state_map.get(detection_id)
+                detection_status = detect_state_to_bool(current_state)
 
-                # Convert ON/OFF/UNKNOWN → boolean
-                is_detected = (current_state == "ON")
+            # Resolve sequence from parent numbered step
+            sequence = None
+            parent_id = step.get("ParentStepId")
+            if parent_id and parent_id in numbered_step_sequence:
+                sequence = numbered_step_sequence[parent_id]
 
-            final_steps.append({
-                "stepId": step["Id"],
-                "stepName": step["Name"],
-                "textInstruction": step["TextInstruction"].get("en-US"),
-                "projectId": projectId,
-                "projectName": projectName,
+            detection_steps.append({
+                "id": step["Id"],
+                "name": step.get("Name"),
+                "projectId": project_id,
+                "projectName": project_name,
                 "detectionId": detection_id,
                 "detectionName": detection_name,
-                "is_detected": is_detected,
-                "stepType": step["StepType"],
-                "materialId": step["MaterialId"]
+                "comment": step.get("Comment"),
+                "textInstruction": step.get("TextInstruction", {}).get("en-US"),
+                "stepType": step.get("StepType"),
+                "sequence": sequence,
+                "detection_status": detection_status,
+                "isProjectLoaded": is_project_loaded
             })
 
-    print(">>> Steps fetched:", len(final_steps))
-    return final_steps
+    print(f">>> Detection steps fetched: {len(detection_steps)}")
+    return detection_steps
 
 def on_message(client, userdata, msg):
     print(">>> MQTT RAW MESSAGE:", msg.topic, msg.payload.decode(), flush=True) 
@@ -94,6 +149,10 @@ def on_message(client, userdata, msg):
     print(f"MQTT update received on {msg.topic}")
 
 def on_connect(client, userdata, flags, reasonCode, properties):
+    global connected
+    if reasonCode == 0:
+        connected = True
+        print(">>> MQTT connected")
     if reasonCode == 0:
         print(">>> MQTT connected successfully!", flush=True)
         print(">>> Listening for product updates…", flush=True)

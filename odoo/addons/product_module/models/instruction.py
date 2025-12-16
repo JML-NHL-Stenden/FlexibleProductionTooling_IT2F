@@ -8,6 +8,11 @@ class ProductModuleInstruction(models.Model):
     _description = 'Assembly Instruction for Product'
     _order = 'sequence, id'
 
+    arkite_step_id = fields.BigInteger(
+        string="Arkite Step ID",
+        index=True,
+        required=True
+    )
     product_id = fields.Many2one(
         'product_module.product', 
         string='Product', 

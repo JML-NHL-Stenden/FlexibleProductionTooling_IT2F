@@ -12,6 +12,12 @@ class ProductModuleProduct(models.Model):
     _description = 'Registered Product for Assembly'
     _order = 'sequence, id'
     
+
+    arkite_project_id = fields.BigInteger(
+        string="Arkite Step ID",
+        index=True,
+        required=True
+    )
     sequence = fields.Integer(string='Sequence', default=10)
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
     product_type_ids = fields.Many2many('product_module.type', string='Product Categories', help='Select multiple categories for this product')

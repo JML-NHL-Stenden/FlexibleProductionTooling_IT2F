@@ -19,6 +19,16 @@ class ProductModuleProgress(models.Model):
     total_steps = fields.Integer(string='Total Instructions', compute='_compute_total_steps', store=True)
     completed_steps = fields.Integer(string='Completed Steps', default=0)
 
+    status = fields.Selection(
+        [('not_started', 'Not Started'),
+         ('in_progress', 'In Progress'),
+         ('done', 'Done')],
+        string='Status',
+        compute='_compute_status',
+        store=True,
+        default='not_started'
+    )
+
     # Display fields for better UX
     product_name = fields.Char(string='Product Name', related='product_id.name', store=True)
     product_code = fields.Char(string='Product Code', related='product_id.product_code', store=True)
@@ -32,6 +42,17 @@ class ProductModuleProgress(models.Model):
                 record.progress_percentage = min(100, int((record.completed_steps / record.total_steps) * 100))
             else:
                 record.progress_percentage = 0
+
+    @api.depends('completed_steps', 'total_steps')
+    def _compute_status(self):
+        """Compute status based on completed_steps and total_steps"""
+        for record in self:
+            if record.total_steps == 0 or record.completed_steps == 0:
+                record.status = 'not_started'
+            elif record.completed_steps >= record.total_steps:
+                record.status = 'done'
+            else:
+                record.status = 'in_progress'
 
     @api.depends('product_id', 'product_id.instruction_ids')
     def _compute_total_steps(self):
