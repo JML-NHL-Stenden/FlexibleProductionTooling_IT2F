@@ -1,15 +1,15 @@
 # product_module/models/product_type.py
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
 
 class ProductModuleType(models.Model):
     _name = 'product_module.type'
-    _description = 'Product Category'
+    _description = 'Product Job'
     _order = 'name, id'
 
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
-    name = fields.Char(string='Category Name', required=True, size=12)
+    name = fields.Char(string='Job Name', required=True, size=12)
     image = fields.Binary(string='Image', attachment=True)
     description = fields.Text(string='Description', size=250)
     
@@ -23,14 +23,14 @@ class ProductModuleType(models.Model):
         for record in self:
             record.product_count = len(record.product_ids)
 
-    # Note: Variant sequencing is now simplified - products in categories are just counted
+    # Note: Variant sequencing is now simplified - products in jobs are just counted
 
     # Input constrains
     @api.constrains('name')
     def _check_name_length(self):
         for record in self:
             if record.name and len(record.name) > 12:
-                raise UserError(_('Category Name cannot exceed 12 characters.'))
+                raise UserError(_('Job Name cannot exceed 12 characters.'))
     
     @api.constrains('description')
     def _check_description_length(self):

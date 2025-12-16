@@ -1,9 +1,13 @@
 # product_module/models/product.py
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+
 import base64
 import io
 import csv
+import os
+import json
+from datetime import datetime, timezone
 from io import StringIO, BytesIO
 
 
@@ -11,15 +15,18 @@ class ProductModuleProduct(models.Model):
     _name = 'product_module.product'
     _description = 'Registered Product for Assembly'
     _order = 'sequence, id'
-    
+
     sequence = fields.Integer(string='Sequence', default=10)
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
-    product_type_ids = fields.Many2many('product_module.type', string='Product Categories', help='Select multiple categories for this product')
+    product_type_ids = fields.Many2many(
+        'product_module.type',
+        string='Product Jobs',
+        help='Select multiple jobs for this product'
+    )
 
     # Product Information
     name = fields.Char(string='Product Name', required=True, size=12)
     product_code = fields.Char(string='Product Code', required=True, size=16)
-    variant = fields.Char(string='Variant', size=3)
     description = fields.Text(string='Product Description', size=250)
     image = fields.Binary(string='Image', attachment=True)
 
@@ -28,34 +35,41 @@ class ProductModuleProduct(models.Model):
     qr_image = fields.Binary(string='QR Code', compute='_compute_qr', attachment=True, store=False)
     qr_image_name = fields.Char(string='QR Filename', compute='_compute_qr_filename', store=False)
 
-    # Components relationship
-    component_ids = fields.Many2many('product_module.component', string='Components', help='Components used in this product')
+    # Materials relationship
+    material_ids = fields.Many2many(
+        'product_module.material',
+        string='Materials',
+        help='Materials used in this product'
+    )
 
-    # Note: Variant sequence is now handled through the product_type_ids relationship
+    # Processes
+    instruction_ids = fields.One2many('product_module.instruction', 'product_id', string='Processes')
+    instruction_count = fields.Integer(string='Process Count', compute='_compute_instruction_count')
 
-    # Instructions
-    instruction_ids = fields.One2many('product_module.instruction', 'product_id', string='Assembly Instructions')
-    instruction_count = fields.Integer(string='Instruction Count', compute='_compute_instruction_count')
-
-    # Input constrains
+    # -------------------------
+    # Input constraints
+    # -------------------------
     @api.constrains('name')
     def _check_name_length(self):
         for record in self:
             if record.name and len(record.name) > 12:
                 raise UserError(_('Name cannot exceed 12 characters.'))
-            
+
     @api.constrains('product_code')
     def _check_code_length(self):
         for record in self:
             if record.product_code and len(record.product_code) > 16:
                 raise UserError(_('Product Code cannot exceed 16 characters.'))
-            
+
     @api.constrains('description')
     def _check_description_length(self):
         for record in self:
             if record.description and len(record.description) > 250:
                 raise UserError(_('Description cannot exceed 250 characters.'))
 
+    # -------------------------
+    # QR generation
+    # -------------------------
     @api.depends('product_code')
     def _compute_qr(self):
         """Generate QR code from product_code"""
@@ -98,9 +112,104 @@ class ProductModuleProduct(models.Model):
 
     @api.depends('instruction_ids')
     def _compute_instruction_count(self):
-        """Count number of instructions for this product"""
+        """Count number of processes for this product"""
         for record in self:
             record.instruction_count = len(record.instruction_ids)
+
+    # -------------------------
+    # Helpers: MQTT publishing
+    # -------------------------
+    def _get_mqtt_config(self):
+        """
+        Pull config from environment first (works great in Docker),
+        fallback to Odoo system params if you want to configure via UI later.
+        """
+        ICP = self.env['ir.config_parameter'].sudo()
+
+        host = os.getenv("MQTT_HOST") or ICP.get_param("product_module.mqtt_host") or "mqtt"
+        port = os.getenv("MQTT_PORT") or ICP.get_param("product_module.mqtt_port") or "1883"
+        topic = os.getenv("MQTT_TOPIC_QR") or ICP.get_param("product_module.mqtt_topic_qr") or "arkite/trigger/QR"
+
+        try:
+            port = int(port)
+        except Exception:
+            port = 1883
+
+        return host, port, topic
+
+    def _publish_qr_trigger_to_mqtt(self):
+        """
+        Publish the same payload shape your existing Windows Arkite Agent expects:
+        {
+          "timestamp": "...",
+          "count": 1,
+          "items": [{"product_name": "...", "product_code": "...", "qr_text": "..."}],
+          "source": {...}
+        }
+        """
+        self.ensure_one()
+
+        try:
+            import paho.mqtt.client as mqtt
+        except Exception as e:
+            raise UserError(_(
+                "Missing Python dependency for MQTT in Odoo (paho-mqtt).\n"
+                "Install it in your Odoo container, e.g.:\n"
+                "  pip3 install paho-mqtt\n\n"
+                "Original error: %s"
+            ) % (str(e),))
+
+        mqtt_host, mqtt_port, mqtt_topic = self._get_mqtt_config()
+
+        payload = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "count": 1,
+            "items": [
+                {
+                    "product_name": self.name,
+                    "product_code": self.product_code,
+                    # IMPORTANT: your agent only needs qr_text to exist to trigger
+                    # (and your trigger script uses the scanned code as qr_text)
+                    "qr_text": (self.product_code or "").strip(),
+                }
+            ],
+            "source": {
+                "origin": "odoo-product-module",
+                "action": "action_start_project",
+                "model": self._name,
+                "res_id": self.id,
+            },
+        }
+
+        client = mqtt.Client(client_id=f"odoo-start-project-{self.id}", protocol=mqtt.MQTTv5)
+        try:
+            client.connect(mqtt_host, mqtt_port, keepalive=30)
+            client.publish(mqtt_topic, json.dumps(payload), qos=0, retain=False)
+            client.disconnect()
+        except Exception as e:
+            raise UserError(_(
+                "MQTT publish failed.\n"
+                "Host: %s\nPort: %s\nTopic: %s\n\nError: %s"
+            ) % (mqtt_host, mqtt_port, mqtt_topic, str(e)))
+
+        return payload, mqtt_host, mqtt_port, mqtt_topic
+
+    # -------------------------
+    # Existing actions
+    # -------------------------
+    def action_create_variant(self):
+        """Open instruction form with two windows side by side"""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Instruction Form',
+            'res_model': 'product_module.instruction.form.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_product_id': self.id,
+            }
+        }
 
     def action_select_product(self):
         """Select this product for the Product Details tab"""
@@ -124,14 +233,14 @@ class ProductModuleProduct(models.Model):
         }
 
     def action_import_instructions(self):
-        """Open wizard to import instructions from CSV"""
+        """Open wizard to import processes from CSV"""
         self.ensure_one()
         if not self.id:
-            raise UserError(_('Please save the product first before importing instructions.'))
+            raise UserError(_('Please save the product first before importing processes.'))
 
         return {
             'type': 'ir.actions.act_window',
-            'name': 'Import Instructions',
+            'name': 'Import Processes',
             'res_model': 'product_module.instruction.import.wizard',
             'view_mode': 'form',
             'target': 'new',
@@ -204,12 +313,42 @@ class ProductModuleProduct(models.Model):
             'target': 'self',
         }
 
+    def action_start_project(self):
+        """
+        Start Arkite project for this product by publishing a QR-trigger payload to MQTT.
+
+        This is the “same trigger” your Windows scripts already use:
+        - arkite_agent.py opens/logs into Arkite when it receives a message
+        - bridge.py can also act on it (duplicate/load template)
+        """
+        self.ensure_one()
+
+        if not self.name:
+            raise UserError(_('Please set a product name first.'))
+        if not self.product_code:
+            raise UserError(_('Please set a product code first.'))
+
+        payload, host, port, topic = self._publish_qr_trigger_to_mqtt()
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Run in Arkite'),
+                'message': _(
+                    'Published QR trigger to MQTT.\nHost=%s Port=%s Topic=%s\n\nProduct: %s (%s)'
+                ) % (host, port, topic, self.name, self.product_code),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
     def action_export_instructions(self):
-        """Export product info and instructions to CSV file"""
+        """Export product info and processes to CSV file"""
         output = StringIO()
         writer = csv.writer(output)
 
-        writer.writerow(['Product Name', 'Product Code', 'Step #', 'Title', 'Description'])
+        writer.writerow(['Product Name', 'Product Code', 'Step #', 'Process Title', 'Process Steps'])
 
         for instruction in self.instruction_ids.sorted(key=lambda r: r.sequence):
             writer.writerow([
@@ -217,7 +356,7 @@ class ProductModuleProduct(models.Model):
                 self.product_code or '',
                 instruction.sequence,
                 instruction.title or '',
-                instruction.description or ''
+                dict(instruction._fields['process_step'].selection).get(instruction.process_step, '') or ''
             ])
 
         csv_data = output.getvalue()
@@ -226,7 +365,7 @@ class ProductModuleProduct(models.Model):
         csv_bytes = csv_data.encode('utf-8')
         csv_base64 = base64.b64encode(csv_bytes)
 
-        filename = f"{self.name or 'product'}_instructions.csv"
+        filename = f"{self.name or 'product'}_processes.csv"
         attachment = self.env['ir.attachment'].create({
             'name': filename,
             'type': 'binary',
@@ -240,28 +379,4 @@ class ProductModuleProduct(models.Model):
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
-        }
-
-    def action_create_arkite_project(self):
-        """Create Arkite project record with snapshot of product + QR."""
-        self.ensure_one()
-
-        self.env['product_module.arkite_project'].create({
-            'product_id': self.id,
-            'product_name': self.name,
-            'product_code': self.product_code,
-            'qr_text': self.qr_text,
-            'qr_image': self.qr_image,
-            'qr_image_name': self.qr_image_name,
-        })
-
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'Arkite Project',
-                'message': f'Arkite project created for product {self.name}.',
-                'type': 'success',
-                'sticky': False,
-            }
         }
