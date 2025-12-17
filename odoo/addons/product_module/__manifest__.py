@@ -25,6 +25,10 @@
         'views/product_views.xml',
         'views/component_views.xml',
         'views/progress_views.xml',
+        'views/arkite_project_wizard_view.xml',
+        'views/arkite_job_step_wizard_view.xml',
+        'data/arkite_security_data.xml',
+        'views/test_menu_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

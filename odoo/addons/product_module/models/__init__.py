@@ -6,3 +6,6 @@ from . import instruction_import_wizard
 from . import component
 from . import progress_tracking
 from . import arkite_project
+from . import arkite_template
+from . import arkite_project_wizard
+from . import arkite_job_step_wizard

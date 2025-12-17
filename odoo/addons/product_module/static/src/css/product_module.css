@@ -1,3 +1,7 @@
+/* ============================================
+   Product Module - Main Stylesheet
+   ============================================ */
+
 /* Rename Discard button to Cancel */
 .o_form_view button.o_form_button_cancel {
     font-size: 0 !important;
@@ -8,3 +12,764 @@
     font-size: 14px;
 }
 
+/* ============================================
+   Header Styles - Gradient Backgrounds
+   ============================================ */
+
+/* Purple gradient header (Categories, Main Page) */
+.pm-header-purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+/* Green gradient header (Products) */
+.pm-header-green {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+/* Orange gradient header (Instructions) */
+.pm-header-orange {
+    background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: white;
+}
+
+/* ============================================
+   Header Content Layout
+   ============================================ */
+
+.pm-header-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.pm-header-content-spaced {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pm-header-title {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.pm-header-title-large {
+    color: white;
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.pm-header-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 8px 0 0 0;
+    font-size: 16px;
+}
+
+.pm-header-field {
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+}
+
+.pm-header-field-large {
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 32px;
+}
+
+/* ============================================
+   Image Containers
+   ============================================ */
+
+.pm-image-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.pm-image-container-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.pm-image-container-small {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e9ecef;
+    flex-shrink: 0;
+}
+
+.pm-image-container-kanban {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e9ecef;
+}
+
+/* ============================================
+   Badge/Tag Styles
+   ============================================ */
+
+.pm-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pm-badge-dark {
+    background: #6c757d;
+    color: white;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+.pm-badge-light {
+    background: #f8f9fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* ============================================
+   Card/Container Styles
+   ============================================ */
+
+.pm-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+}
+
+.pm-card-no-margin {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Section Headers
+   ============================================ */
+
+.pm-section-title {
+    color: #2c3e50;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.pm-section-title-with-icon {
+    color: #2c3e50;
+    margin: 0 0 16px 0;
+    font-weight: 600;
+}
+
+.pm-section-title-white {
+    color: white;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* ============================================
+   Form Labels
+   ============================================ */
+
+.pm-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.pm-label-inline {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* ============================================
+   Form Fields
+   ============================================ */
+
+.pm-field-full {
+    width: 100%;
+    min-height: 100px;
+}
+
+.pm-field-description {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.pm-field-code {
+    color: white;
+    background: transparent;
+    border: none;
+    width: 120px;
+}
+
+/* ============================================
+   Info Text
+   ============================================ */
+
+.pm-info-text {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+.pm-info-text-small {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+/* ============================================
+   Kanban Card Styles
+   ============================================ */
+
+.pm-kanban-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 8px;
+    width: 300px;
+    min-height: 120px;
+}
+
+.pm-kanban-card-purple {
+    border-left: 4px solid #667eea;
+}
+
+.pm-kanban-card-green {
+    border-left: 4px solid #28a745;
+    min-height: 140px;
+}
+
+.pm-kanban-card-red {
+    border-left: 4px solid #ff6b6b;
+    min-height: 140px;
+}
+
+.pm-kanban-card-content {
+    padding: 16px;
+}
+
+.pm-kanban-card-flex {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pm-kanban-card-flex-start {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.pm-kanban-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.pm-kanban-title-small {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.pm-kanban-text {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.pm-kanban-value {
+    font-size: 14px;
+    color: #495057;
+    background: #e9ecef;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-block;
+    border-left: 3px solid #007bff;
+}
+
+.pm-kanban-badge-container {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.pm-kanban-stats {
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.pm-kanban-stats-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #28a745;
+    margin-bottom: 4px;
+}
+
+.pm-kanban-stats-label {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* ============================================
+   Button Styles
+   ============================================ */
+
+.pm-btn-primary-gradient {
+    background: linear-gradient(45deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    height: 44px;
+    line-height: 44px;
+    padding: 0 24px;
+    display: inline-block;
+}
+
+.pm-btn-warning-gradient {
+    background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    height: 44px;
+    line-height: 44px;
+    padding: 0 24px;
+    display: inline-block;
+    color: white;
+}
+
+.pm-btn-rounded {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 12px 24px;
+}
+
+.pm-btn-full {
+    width: 100%;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* ============================================
+   Stats/Count Display
+   ============================================ */
+
+.pm-stats-container {
+    display: flex;
+    gap: 12px;
+}
+
+.pm-stat-box {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: center;
+}
+
+.pm-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.pm-stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.pm-stat-value-large {
+    font-size: 36px;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 8px;
+}
+
+.pm-stat-label-large {
+    font-size: 16px;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+/* ============================================
+   Progress Display
+   ============================================ */
+
+.pm-progress-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    text-align: center;
+}
+
+.pm-progress-stats {
+    display: flex;
+    justify-content: space-between;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.pm-progress-stat {
+    text-align: center;
+}
+
+.pm-progress-stat-label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.pm-progress-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #495057;
+}
+
+.pm-progress-stat-value-success {
+    font-size: 20px;
+    font-weight: 700;
+    color: #28a745;
+}
+
+/* ============================================
+   QR Code Container
+   ============================================ */
+
+.pm-qr-container {
+    text-align: center;
+}
+
+.pm-qr-box {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 2px dashed #dee2e6;
+}
+
+.pm-qr-text {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.pm-qr-field {
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* ============================================
+   Grid Layouts
+   ============================================ */
+
+.pm-grid-2-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.pm-flex-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pm-flex-row-spaced {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.pm-flex-center {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.pm-empty-state {
+    text-align: center;
+    padding: 40px;
+}
+
+.pm-empty-icon {
+    font-size: 48px;
+    color: #ffc107;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.pm-empty-title {
+    color: #856404;
+    margin-bottom: 16px;
+}
+
+.pm-empty-text {
+    color: #856404;
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   Icon Spacing
+   ============================================ */
+
+.pm-icon-spacing {
+    margin-right: 8px;
+}
+
+.pm-icon-spacing-large {
+    margin-right: 12px;
+}
+
+/* ============================================
+   Field Groups
+   ============================================ */
+
+.pm-field-group {
+    margin-bottom: 16px;
+}
+
+.pm-field-group-small {
+    margin-bottom: 8px;
+}
+
+/* ============================================
+   Sheet Styles
+   ============================================ */
+
+.pm-sheet-full {
+    max-width: none;
+    width: 100%;
+}
+
+/* ============================================
+   Alert/Info Boxes
+   ============================================ */
+
+.pm-info-box {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pm-info-box-text {
+    font-size: 14px;
+    color: #495057;
+}
+
+/* ============================================
+   Icon Color Utilities
+   ============================================ */
+
+.pm-icon-blue {
+    color: #007bff;
+}
+
+.pm-icon-green {
+    color: #28a745;
+}
+
+.pm-icon-orange {
+    color: #fd7e14;
+}
+
+.pm-icon-purple {
+    color: #6f42c1;
+}
+
+.pm-icon-red {
+    color: #ff6b6b;
+}
+
+/* ============================================
+   Specific Width/Height Utilities
+   ============================================ */
+
+.pm-width-280 {
+    width: 280px;
+}
+
+.pm-width-320 {
+    width: 320px;
+    min-height: 160px;
+}
+
+.pm-qr-image {
+    max-width: 150px;
+    max-height: 150px;
+}
+
+/* ============================================
+   Additional Utility Classes
+   ============================================ */
+
+.pm-flex-1 {
+    flex: 1;
+}
+
+.pm-flex-1-min-width {
+    flex: 1;
+    min-width: 0;
+}
+
+.pm-margin-top-12 {
+    margin-top: 12px;
+}
+
+.pm-margin-top-20 {
+    margin-top: 20px;
+}
+
+.pm-margin-bottom-16 {
+    margin-bottom: 16px;
+}
+
+.pm-margin-bottom-8 {
+    margin-bottom: 8px;
+}
+
+.pm-margin-bottom-4 {
+    margin-bottom: 4px;
+}
+
+.pm-text-center {
+    text-align: center;
+}
+
+.pm-width-100 {
+    width: 100%;
+}
+
+.pm-field-inline {
+    color: white;
+    background: transparent;
+    border: none;
+    width: 200px;
+}
+
+.pm-kanban-text-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.pm-kanban-text-value {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.pm-kanban-title-inline {
+    font-size: 14px;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.pm-kanban-title-medium {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.pm-field-group-margin {
+    margin-bottom: 12px;
+}
+
+.pm-field-group-margin-large {
+    margin-bottom: 16px;
+}
+
+.pm-header-field-full {
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    width: 100%;
+}
+
+.pm-red-gradient-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+.pm-grid-1-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}

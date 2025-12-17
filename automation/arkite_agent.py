@@ -78,8 +78,16 @@ client = None
 # Arkite credentials
 # =========================
 
-ARKITE_USER = get_from_env_or_envfile("ARKITE_USER", "Admin")
-ARKITE_PASS = get_from_env_or_envfile("ARKITE_PASS", "Arkite3600")
+ARKITE_USER = get_from_env_or_envfile("ARKITE_USER")
+ARKITE_PASS = get_from_env_or_envfile("ARKITE_PASS")
+
+# Validate required environment variables
+if not ARKITE_USER:
+    log.error("[CONFIG] ARKITE_USER environment variable is required")
+    raise ValueError("ARKITE_USER environment variable is required")
+if not ARKITE_PASS:
+    log.error("[CONFIG] ARKITE_PASS environment variable is required")
+    raise ValueError("ARKITE_PASS environment variable is required")
 
 
 # =========================

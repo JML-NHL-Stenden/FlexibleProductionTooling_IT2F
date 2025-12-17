@@ -33,11 +33,22 @@ PRETTY_JSON = os.getenv("PRETTY_JSON", "false").lower() in ("1", "true", "yes", 
 ODOO_BASE_URL = (os.getenv("ODOO_BASE_URL", "") or "").rstrip("/")
 
 # DB
-DB_HOST = os.getenv("DB_HOST", "db")
-DB_PORT = int(os.getenv("DB_PORT", "5432"))
-DB_NAME = os.getenv("DB_NAME", "odoo")
-DB_USER = os.getenv("DB_USER", "odoo")
-DB_PASS = os.getenv("DB_PASS", "odoo")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT_STR = os.getenv("DB_PORT")
+DB_PORT = int(DB_PORT_STR) if DB_PORT_STR else 5432
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+
+# Validate required database environment variables
+if not DB_HOST:
+    raise ValueError("DB_HOST environment variable is required")
+if not DB_NAME:
+    raise ValueError("DB_NAME environment variable is required")
+if not DB_USER:
+    raise ValueError("DB_USER environment variable is required")
+if not DB_PASS:
+    raise ValueError("DB_PASS environment variable is required")
 
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "5"))  # seconds
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
