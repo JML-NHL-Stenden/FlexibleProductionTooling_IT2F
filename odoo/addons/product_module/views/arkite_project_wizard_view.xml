@@ -1,0 +1,179 @@
+<!-- product_module/views/arkite_project_wizard_view.xml -->
+<odoo>
+    <record id="view_arkite_project_wizard_form" model="ir.ui.view">
+        <field name="name">arkite.project.wizard.form</field>
+        <field name="model">product_module.arkite.project.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Arkite Project">
+                <sheet>
+                    <div class="pm-header-purple" style="border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <h3 class="pm-section-title-white" style="margin: 0 0 8px 0;">
+                            <i class="fa fa-project-diagram pm-icon-spacing"/> Create or Duplicate Arkite Project
+                        </h3>
+                        <p class="pm-header-subtitle" style="margin: 0; font-size: 14px;">
+                            Create a new project or duplicate from an existing template
+                        </p>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="use_template"/>
+                            <field name="template_id" 
+                                   invisible="not use_template"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="template_name" 
+                                   invisible="not use_template or template_id"
+                                   placeholder="Enter template project name"/>
+                        </group>
+                        <group>
+                            <field name="project_name" required="1"/>
+                            <field name="project_comment" placeholder="Optional comment/description"/>
+                            <field name="unit_ids" 
+                                   placeholder="e.g., 12345, 67890 (leave empty for default)"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Jobs &amp; Variants">
+                            <group>
+                                <group string="Template Info" invisible="not use_template">
+                                    <div style="margin-bottom: 12px;">
+                                        <strong style="font-size: 12px;">Jobs in Template:</strong>
+                                        <field name="template_jobs_info" widget="html" nolabel="1" style="margin-top: 4px;"/>
+                                    </div>
+                                    <div>
+                                        <strong style="font-size: 12px;">Variants in Template:</strong>
+                                        <field name="template_variants_info" widget="html" nolabel="1" style="margin-top: 4px;"/>
+                                    </div>
+                                </group>
+                            </group>
+                            <div class="alert alert-warning" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong><i class="fa fa-info-circle"/> Important:</strong> Variants are created at the <strong>project level</strong>. 
+                                Jobs can reference these variants in their steps. To fully configure job variants with options (like Color, Engine type), 
+                                you need to set up <strong>Job Options</strong> in the Arkite UI after creating the project.
+                            </div>
+                            
+                            <group>
+                                <group string="Create Variants">
+                                    <field name="variant_codes" 
+                                           placeholder="e.g., V1, V2, V3 or Red+V6, Blue+V8"
+                                           widget="text"/>
+                                    <div class="alert alert-info" style="margin-top: 8px; font-size: 11px;">
+                                        <strong>Tip:</strong> Enter variant names separated by commas. These will be created as project-level variants 
+                                        that jobs can reference. After creation, configure job options in Arkite UI to associate variants with specific jobs.
+                                    </div>
+                                </group>
+                                <group string="Job Reference (Optional)">
+                                    <field name="job_names" 
+                                           placeholder="e.g., Assembly Job, Inspection Job"
+                                           widget="text"/>
+                                    <div class="alert alert-info" style="margin-top: 8px; font-size: 11px;">
+                                        <strong>Note:</strong> This field is for reference only. Jobs are automatically copied when duplicating templates. 
+                                        To create job variants with options, configure them in Arkite UI after project creation.
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Existing Projects">
+                            <field name="existing_projects_info" widget="html" nolabel="1"/>
+                            <div class="alert alert-info" style="margin-top: 12px; font-size: 11px;">
+                                <strong>Note:</strong> This list shows all projects currently in Arkite. Use these names when duplicating templates.
+                            </div>
+                        </page>
+                        <page string="Inspect Project Tasks">
+                            <div class="alert alert-warning" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>Important:</strong> The API endpoint <code>/projects/{id}/tasks/</code> returns <strong>reusable step groups</strong> (Tasks), 
+                                NOT jobs. Jobs might be represented as <strong>Processes</strong> or may not have a direct API endpoint. 
+                                This tool fetches Tasks, Processes, and Steps to help identify where jobs are stored.
+                            </div>
+                            
+                            <group>
+                                <group string="Fetch by Project ID">
+                                    <field name="project_id_to_inspect"/>
+                                    <button name="action_fetch_tasks_by_id" 
+                                            string="Fetch Tasks by ID" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            style="margin-top: 8px;"/>
+                                </group>
+                                <group string="Fetch by Project Name">
+                                    <field name="project_name_to_inspect" 
+                                           placeholder="Enter exact project name"/>
+                                    <button name="action_fetch_tasks_by_name" 
+                                            string="Fetch Tasks by Name" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            style="margin-top: 8px;"/>
+                                </group>
+                            </group>
+                            
+                            <div style="margin-top: 16px;">
+                                <field name="project_tasks_info" widget="html" nolabel="1"/>
+                            </div>
+                            
+                            <separator string="Compare Projects"/>
+                            <group>
+                                <group>
+                                    <field name="compare_project_id_1"/>
+                                    <field name="compare_project_id_2"/>
+                                    <button name="action_compare_projects" 
+                                            string="Compare Tasks" 
+                                            type="object" 
+                                            class="btn-secondary"
+                                            style="margin-top: 8px;"/>
+                                </group>
+                            </group>
+                            <div style="margin-top: 16px;">
+                                <field name="comparison_info" widget="html" nolabel="1"/>
+                            </div>
+                            
+                            <separator string="All Projects Summary"/>
+                            <group>
+                                <button name="action_fetch_all_projects_summary" 
+                                        string="Fetch All Projects Processes Summary" 
+                                        type="object" 
+                                        class="btn-secondary"
+                                        style="margin-top: 8px;"/>
+                                <div class="alert alert-warning" style="margin-top: 8px; font-size: 11px;">
+                                    <strong>Note:</strong> This may take a while as it fetches processes for all projects. Limited to first 50 projects. 
+                                    Jobs might be represented as processes.
+                                </div>
+                            </group>
+                            <div style="margin-top: 16px;">
+                                <field name="all_projects_tasks_summary" widget="html" nolabel="1"/>
+                            </div>
+                        </page>
+                    </notebook>
+
+                    <div class="alert alert-info" role="alert" style="margin-top: 16px;">
+                        <strong><i class="fa fa-info-circle"/> Instructions:</strong>
+                        <ul style="margin: 8px 0 0 20px;">
+                            <li><strong>Create New:</strong> Uncheck "Duplicate from Template" and provide project name and unit IDs</li>
+                            <li><strong>Duplicate Template:</strong> Check "Duplicate from Template", select a template, and provide new project name</li>
+                            <li><strong>Unit IDs:</strong> Comma-separated list of workstation IDs (e.g., 12345, 67890). Leave empty to use default from environment.</li>
+                            <li><strong>Jobs &amp; Variants:</strong> Use the "Jobs &amp; Variants" tab to assign jobs and variants to your project</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert" invisible="api_base and api_key" style="margin-top: 16px;">
+                        <strong><i class="fa fa-exclamation-triangle"/> Warning:</strong>
+                        Arkite API configuration is missing. Please check ARKITE_API_BASE and ARKITE_API_KEY environment variables.
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_create_project" string="Create Project" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for the wizard -->
+    <record id="action_arkite_project_wizard" model="ir.actions.act_window">
+        <field name="name">Create Arkite Project</field>
+        <field name="res_model">product_module.arkite.project.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_arkite_project_wizard_form"/>
+        <field name="target">new</field>
+    </record>
+</odoo>
