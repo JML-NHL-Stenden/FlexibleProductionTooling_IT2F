@@ -21,20 +21,20 @@
         <field name="arch" type="xml">
             <form string="Component Details">
                 <sheet>
-                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div style="width: 100px; height: 100px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
+                    <div class="pm-red-gradient-header">
+                        <div class="pm-header-content">
+                            <div class="pm-image-container-large">
                                 <field name="image" widget="image" options="{'size': [100, 100]}"/>
                             </div>
-                            <div style="flex: 1;">
-                                <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                    <field name="name" placeholder="Enter Component Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px;"/>
+                            <div class="pm-flex-1">
+                                <h1 class="pm-header-title">
+                                    <field name="name" placeholder="Enter Component Name" required="1" class="pm-header-field"/>
                                 </h1>
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
-                                        <i class="fa fa-tag"/> <field name="component_type" placeholder="Component Type" required="1" style="color: white; background: transparent; border: none; width: 200px;"/>
+                                <div class="pm-flex-center">
+                                    <span class="pm-badge">
+                                        <i class="fa fa-tag"/> <field name="component_type" placeholder="Component Type" required="1" class="pm-field-inline"/>
                                     </span>
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                    <span class="pm-badge">
                                         <i class="fa fa-cube"/> Used in <field name="usage_count"/> Products
                                     </span>
                                 </div>
@@ -42,38 +42,38 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div class="pm-grid-1-1">
                         <!-- Used in Products -->
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-cube" style="color: #28a745; margin-right: 8px;"/> Used in Products
+                        <div class="pm-card-no-margin">
+                            <h3 class="pm-section-title">
+                                <i class="fa fa-cube pm-icon-spacing pm-icon-green"/> Used in Products
                             </h3>
                             <field name="product_ids" widget="many2many_tags"
                                    context="{'default_page_id': page_id}"
                                    options="{'no_create': True}"/>
-                            <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
+                            <div class="pm-info-text">
                                 <i class="fa fa-info-circle"/> Select products that use this component
                             </div>
                         </div>
 
                         <!-- Used in Categories -->
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-folder" style="color: #007bff; margin-right: 8px;"/> Used in Categories
+                        <div class="pm-card-no-margin">
+                            <h3 class="pm-section-title">
+                                <i class="fa fa-folder pm-icon-spacing" style="color: #007bff;"/> Used in Categories
                             </h3>
                             <field name="product_type_ids" widget="many2many_tags"
                                    context="{'default_page_id': page_id}"
                                    options="{'no_create': True}"/>
-                            <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
+                            <div class="pm-info-text">
                                 <i class="fa fa-info-circle"/> Select categories that use this component
                             </div>
                         </div>
                     </div>
 
                     <!-- Products Display -->
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" invisible="not product_ids">
-                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                            <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products Using This Component
+                    <div class="pm-card-no-margin" invisible="not product_ids">
+                        <h3 class="pm-section-title">
+                            <i class="fa fa-list pm-icon-spacing pm-icon-green"/> Products Using This Component
                         </h3>
                         <field name="product_ids" readonly="1">
                             <kanban>
@@ -81,22 +81,22 @@
                                 <field name="product_code"/>
                                 <field name="image"/>
                                 <templates>
-                                    <t t-name="kanban-box">
-                                        <div class="oe_kanban_card" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 280px;">
-                                            <div class="oe_kanban_content" style="padding: 16px;">
-                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <t t-name="card">
+                                        <div class="oe_kanban_card pm-kanban-card pm-kanban-card-green pm-width-280">
+                                            <div class="oe_kanban_content pm-kanban-card-content">
+                                                <div class="pm-kanban-card-flex">
                                                     <!-- Product Image -->
-                                                    <div style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
+                                                    <div class="pm-image-container-small">
                                                         <field name="image" widget="image" options="{'size': [60, 60]}"/>
                                                     </div>
 
                                                     <!-- Product Info -->
-                                                    <div style="flex: 1; min-width: 0;">
-                                                        <strong style="font-size: 14px; color: #2c3e50; display: block; margin-bottom: 4px;">
+                                                    <div class="pm-flex-1-min-width">
+                                                        <strong class="pm-kanban-title-inline">
                                                             <field name="name"/>
                                                         </strong>
-                                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                                            <span style="background: #6c757d; color: white; border-radius: 6px; padding: 2px 6px; font-size: 10px;">
+                                                        <div class="pm-kanban-badge-container">
+                                                            <span class="pm-badge-dark">
                                                                 <i class="fa fa-barcode"/> <field name="product_code"/>
                                                             </span>
                                                         </div>

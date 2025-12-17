@@ -18,17 +18,17 @@
         <field name="arch" type="xml">
             <form string="Category">
                 <sheet>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div style="width: 80px; height: 80px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
+                    <div class="pm-header-purple">
+                        <div class="pm-header-content">
+                            <div class="pm-image-container">
                                 <field name="image" widget="image" options="{'size': [80, 80]}"/>
                             </div>
-                            <div style="flex: 1;">
-                                <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                    <field name="name" placeholder="Category Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px;"/>
+                            <div class="pm-flex-1">
+                                <h1 class="pm-header-title">
+                                    <field name="name" placeholder="Category Name" required="1" class="pm-header-field"/>
                                 </h1>
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                <div class="pm-flex-center pm-margin-top-12">
+                                    <span class="pm-badge">
                                         <i class="fa fa-cube"/> <field name="product_count"/> Variants
                                     </span>
                                 </div>
@@ -36,36 +36,36 @@
                         </div>
                     </div>
 
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 24px;">
-                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                            <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Category Information
+                    <div class="pm-card">
+                        <h3 class="pm-section-title">
+                            <i class="fa fa-info-circle pm-icon-spacing pm-icon-blue"/> Category Information
                         </h3>
                         <div>
-                            <label for="description" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description</label>
-                            <field name="description" placeholder="Describe this product category..." style="width: 100%; min-height: 100px; resize: vertical;"/>
+                            <label for="description" class="pm-label">Description</label>
+                            <field name="description" placeholder="Describe this product category..." class="pm-field-description"/>
                         </div>
                     </div>
 
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                            <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Category
+                    <div class="pm-card-no-margin">
+                        <h3 class="pm-section-title">
+                            <i class="fa fa-list pm-icon-spacing pm-icon-green"/> Products in this Category
                         </h3>
-                        <div class="alert alert-info" role="alert" style="margin-bottom: 16px;">
+                        <div class="alert alert-info pm-margin-bottom-16" role="alert">
                             <i class="fa fa-lightbulb-o"/>
                             <strong>Tip:</strong> Use the field below to select products for this category. You can also assign products to categories when creating or editing them in the Product List tab.
                         </div>
 
-                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Select Products:</div>
+                        <div class="o_form_label pm-label">Select Products:</div>
                         <field name="product_ids" widget="many2many_tags"
                                context="{'default_page_id': page_id}"
                                options="{'no_create': True}"/>
-                        <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">
+                        <div class="pm-info-text">
                             <i class="fa fa-info-circle"/> Selected products will appear as tags above. Products can belong to multiple categories.
                         </div>
 
-                        <div style="margin-top: 20px;" invisible="not product_ids">
-                            <h4 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Products in this Category
+                        <div class="pm-margin-top-20" invisible="not product_ids">
+                            <h4 class="pm-section-title">
+                                <i class="fa fa-list pm-icon-spacing pm-icon-green"/> Products in this Category
                             </h4>
                             <field name="product_ids" readonly="1">
                                 <kanban>
@@ -73,19 +73,19 @@
                                     <field name="product_code"/>
                                     <field name="image"/>
                                     <templates>
-                                        <t t-name="kanban-box">
-                                            <div class="oe_kanban_card" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 280px;">
-                                                <div class="oe_kanban_content" style="padding: 16px;">
-                                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                                        <div style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
+                                        <t t-name="card">
+                                            <div class="oe_kanban_card pm-kanban-card pm-kanban-card-green pm-width-280">
+                                                <div class="oe_kanban_content pm-kanban-card-content">
+                                                    <div class="pm-kanban-card-flex">
+                                                        <div class="pm-image-container-small">
                                                             <field name="image" widget="image" options="{'size': [60, 60]}"/>
                                                         </div>
-                                                        <div style="flex: 1; min-width: 0;">
-                                                            <strong style="font-size: 14px; color: #2c3e50; display: block; margin-bottom: 4px;">
+                                                        <div class="pm-flex-1-min-width">
+                                                            <strong class="pm-kanban-title-inline">
                                                                 <field name="name"/>
                                                             </strong>
-                                                            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                                                <span style="background: #6c757d; color: white; border-radius: 6px; padding: 2px 6px; font-size: 10px;">
+                                                            <div class="pm-kanban-badge-container">
+                                                                <span class="pm-badge-dark">
                                                                     <i class="fa fa-barcode"/> <field name="product_code"/>
                                                                 </span>
                                                             </div>
@@ -126,69 +126,69 @@
         <field name="arch" type="xml">
             <form string="Product Details">
                 <sheet>
-                    <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div style="width: 100px; height: 100px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
+                    <div class="pm-header-green">
+                        <div class="pm-header-content">
+                            <div class="pm-image-container-large">
                                 <field name="image" widget="image" options="{'size': [100, 100]}"/>
                             </div>
-                            <div style="flex: 1;">
-                                <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                    <field name="name" placeholder="Enter Product Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px;"/>
+                            <div class="pm-flex-1">
+                                <h1 class="pm-header-title">
+                                    <field name="name" placeholder="Enter Product Name" required="1" class="pm-header-field"/>
                                 </h1>
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
-                                        <i class="fa fa-barcode"/> <field name="product_code" required="1" style="color: white; background: transparent; border: none; width: 120px;"/>
+                                <div class="pm-flex-center">
+                                    <span class="pm-badge">
+                                        <i class="fa fa-barcode"/> <field name="product_code" required="1" class="pm-field-code"/>
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Product Information
+                    <div class="pm-grid-2-1">
+                        <div class="pm-card-no-margin">
+                            <h3 class="pm-section-title">
+                                <i class="fa fa-info-circle pm-icon-spacing" style="color: #007bff;"/> Product Information
                             </h3>
-                            <div style="margin-bottom: 16px;">
-                                <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Product Categories</div>
-                                <field name="product_type_ids" widget="many2many_tags" style="width: 100%;"/>
-                                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
+                            <div class="pm-field-group">
+                                <div class="o_form_label pm-label">Product Categories</div>
+                                <field name="product_type_ids" widget="many2many_tags" class="pm-width-100"/>
+                                <div class="pm-info-text-small">
                                     <i class="fa fa-info-circle"/> Select multiple categories for this product. You can assign products to categories from both here and from the category management.
                                 </div>
                             </div>
                             <div>
-                                <label for="description" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description</label>
-                                <field name="description" placeholder="Enter detailed product description..." style="width: 100%; min-height: 100px;"/>
+                                <label for="description" class="pm-label">Description</label>
+                                <field name="description" placeholder="Enter detailed product description..." class="pm-field-full"/>
                             </div>
                         </div>
 
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                <i class="fa fa-qrcode" style="color: #6f42c1; margin-right: 8px;"/> QR Code
+                        <div class="pm-card-no-margin">
+                            <h3 class="pm-section-title">
+                                <i class="fa fa-qrcode pm-icon-spacing pm-icon-purple"/> QR Code
                             </h3>
-                            <div style="text-align: center;">
-                                <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 2px dashed #dee2e6;">
+                            <div class="pm-qr-container">
+                                <div class="pm-qr-box">
                                     <field name="qr_image" widget="image" filename="qr_image_name" options="{'size': [150, 150]}" style="max-width: 150px; max-height: 150px;"/>
-                                    <div style="margin-top: 12px; font-size: 12px; color: #6c757d;">
-                                        <field name="qr_text" readonly="1" style="background: transparent; border: none; text-align: center; font-weight: 600;"/>
+                                    <div class="pm-qr-text">
+                                        <field name="qr_text" readonly="1" class="pm-qr-field"/>
                                     </div>
                                 </div>
-                                <button name="action_download_qr" type="object" class="btn btn-primary btn-sm" style="margin-bottom: 8px;" invisible="not id or not product_code">
+                                <button name="action_download_qr" type="object" class="btn btn-primary btn-sm pm-margin-bottom-8" invisible="not id or not product_code">
                                     <i class="fa fa-download"/> Download QR Code
                                 </button>
-                                <div style="font-size: 12px; color: #6c757d; text-align: center;">
+                                <div class="pm-info-text pm-text-center">
                                     QR code automatically generated from Product Code
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3 style="color: #2c3e50; margin: 0; font-weight: 600;">
-                                <i class="fa fa-list-ol" style="color: #fd7e14; margin-right: 8px;"/> Assembly Instructions
+                    <div class="pm-card-no-margin">
+                        <div class="pm-flex-row-spaced">
+                            <h3 class="pm-section-title" style="margin: 0;">
+                                <i class="fa fa-list-ol pm-icon-spacing pm-icon-orange"/> Assembly Instructions
                             </h3>
-                            <div style="display: flex; gap: 8px;" invisible="not id">
+                            <div class="pm-flex-row" invisible="not id">
                                 <button name="action_import_instructions" string="Import" type="object" class="btn btn-secondary"/>
                                 <button name="action_export_instructions" string="Export" type="object" class="btn btn-secondary"/>
                             </div>
@@ -205,9 +205,9 @@
                             </list>
                             <form>
                                 <sheet>
-                                    <div style="background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%); border-radius: 12px; padding: 16px; margin-bottom: 16px; color: white;">
-                                        <h4 style="color: white; margin: 0; font-weight: 600;">
-                                            <i class="fa fa-list-ol" style="margin-right: 8px;"/> Assembly Step
+                                    <div class="pm-header-orange">
+                                        <h4 class="pm-section-title-white">
+                                            <i class="fa fa-list-ol pm-icon-spacing"/> Assembly Step
                                         </h4>
                                     </div>
                                     <group>
@@ -237,29 +237,29 @@
         <field name="model">product_module.page</field>
         <field name="arch" type="xml">
             <form string="Products">
-                <sheet style="max-width: none; width: 100%;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                <sheet class="pm-sheet-full">
+                    <div class="pm-header-purple">
+                        <div class="pm-header-content-spaced">
                             <div>
-                                <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 700;">
-                                    <i class="fa fa-cube" style="margin-right: 12px;"/> <field name="name" readonly="1" style="color: white; background: transparent; border: none; font-size: 32px;"/>
+                                <h1 class="pm-header-title-large">
+                                    <i class="fa fa-cube pm-icon-spacing-large"/> <field name="name" readonly="1" class="pm-header-field-large"/>
                                 </h1>
-                                <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">
+                                <p class="pm-header-subtitle">
                                     Organize your products into categories and manage your complete product catalog
                                 </p>
                             </div>
-                            <div style="display: flex; gap: 12px;">
-                                <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
-                                    <div style="font-size: 24px; font-weight: 700; color: white;">
+                            <div class="pm-stats-container">
+                                <div class="pm-stat-box">
+                                    <div class="pm-stat-value">
                                         <field name="category_count"/>
                                     </div>
-                                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Categories</div>
+                                    <div class="pm-stat-label">Categories</div>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
-                                    <div style="font-size: 24px; font-weight: 700; color: white;">
+                                <div class="pm-stat-box">
+                                    <div class="pm-stat-value">
                                         <field name="product_count"/>
                                     </div>
-                                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Products</div>
+                                    <div class="pm-stat-label">Products</div>
                                 </div>
                             </div>
                         </div>
@@ -273,9 +273,9 @@
                                 <strong>Categories</strong> - Create categories to organize your products. Each category can contain multiple products.
                             </div>
 
-                            <div style="margin-bottom: 16px;">
-                                <button name="action_create_product_type" type="object" class="btn btn-primary" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
-                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Category
+                            <div class="pm-margin-bottom-16">
+                                <button name="action_create_product_type" type="object" class="btn btn-primary pm-btn-primary-gradient">
+                                    <i class="fa fa-plus pm-icon-spacing"/> Add New Category
                                 </button>
                             </div>
 
@@ -285,20 +285,20 @@
                                     <field name="product_count"/>
                                     <field name="image"/>
                                     <templates>
-                                        <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #667eea; width: 300px; min-height: 120px;">
-                                                <div class="oe_kanban_content" style="padding: 16px;">
-                                                    <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
+                                        <t t-name="card">
+                                            <div class="oe_kanban_card oe_kanban_global_click pm-kanban-card pm-kanban-card-purple">
+                                                <div class="oe_kanban_content pm-kanban-card-content">
+                                                    <div class="pm-kanban-card-flex">
+                                                        <div class="pm-image-container-kanban">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <div style="flex: 1;">
-                                                            <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                        <div class="pm-flex-1">
+                                                            <div class="pm-kanban-title">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
+                                                            <div class="pm-badge-light">
                                                                 <field name="product_count"/> Total Products
                                                             </div>
                                                         </div>
@@ -318,14 +318,14 @@
                                 <strong>Product Catalog</strong> - Manage all your products. Assign them to categories to organize and group similar products together.
                             </div>
 
-                            <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-                                <button name="action_create_product" type="object" class="btn btn-success" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
-                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Product
+                            <div class="pm-margin-bottom-16 pm-flex-row">
+                                <button name="action_create_product" type="object" class="btn btn-success pm-btn-primary-gradient">
+                                    <i class="fa fa-plus pm-icon-spacing"/> Add New Product
                                 </button>
 
-                                <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa fa-info-circle" style="color: #007bff;"/>
-                                    <span style="font-size: 14px; color: #495057;">
+                                <div class="pm-info-box">
+                                    <i class="fa fa-info-circle pm-icon-blue"/>
+                                    <span class="pm-info-box-text">
                                         <strong>Tip:</strong> To assign products to categories, edit the category and select products, or edit individual products to set their category.
                                     </span>
                                 </div>
@@ -340,41 +340,41 @@
                                     <field name="instruction_count"/>
                                     <field name="component_ids"/>
                                     <templates>
-                                        <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
-                                                <div class="oe_kanban_content" style="padding: 16px;">
-                                                    <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
+                                        <t t-name="card">
+                                            <div class="oe_kanban_card oe_kanban_global_click pm-kanban-card pm-kanban-card-green">
+                                                <div class="oe_kanban_content pm-kanban-card-content">
+                                                    <div class="pm-kanban-card-flex">
+                                                        <div class="pm-image-container-kanban">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <div style="flex: 1;">
-                                                            <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                        <div class="pm-flex-1">
+                                                            <div class="pm-kanban-title">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <div style="margin-bottom: 12px;">
-                                                                <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
+                                                            <div class="pm-field-group-margin">
+                                                                <div class="pm-kanban-text">
                                                                     <i class="fa fa-barcode" style="margin-right: 4px;"/> Product Code
                                                                 </div>
-                                                                <div style="font-size: 14px; color: #495057; background: #e9ecef; padding: 6px 12px; border-radius: 8px; display: inline-block; border-left: 3px solid #007bff;">
+                                                                <div class="pm-kanban-value">
                                                                     <field name="product_code" options="{'max_length': 16}"/>
                                                                 </div>
                                                             </div>
 
-                                                            <div style="margin-bottom: 8px;">
-                                                                <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
-                                                                    <i class="fa fa-folder" style="margin-right: 4px;"/> Categories
+                                                            <div class="pm-field-group-small">
+                                                                <div class="pm-kanban-text">
+                                                                    <i class="fa fa-folder pm-icon-spacing"/> Categories
                                                                 </div>
-                                                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                                                    <field name="product_type_ids" widget="many2many_tags" readonly="1" options="{'no_create': True}" style="background: #f8f9fa; border: 1px solid #dee2e6; color: #495057;"/>
+                                                                <div class="pm-kanban-badge-container">
+                                                                    <field name="product_type_ids" widget="many2many_tags" readonly="1" options="{'no_create': True}"/>
                                                                 </div>
                                                             </div>
 
-                                                            <div style="margin-bottom: 16px;">
-                                                                <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Components Used</div>
-                                                                <field name="component_ids" widget="many2many_tags" style="width: 100%;"/>
-                                                                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
+                                                            <div class="pm-field-group">
+                                                                <div class="o_form_label pm-label">Components Used</div>
+                                                                <field name="component_ids" widget="many2many_tags" class="pm-width-100"/>
+                                                                <div class="pm-info-text-small">
                                                                     <i class="fa fa-info-circle"/> Select components used in this product
                                                                 </div>
                                                             </div>
@@ -382,9 +382,8 @@
                                                             <!-- Arkite Project button inside each product card -->
                                                             <button name="action_create_arkite_project"
                                                                     type="object"
-                                                                    class="btn btn-secondary"
-                                                                    style="width: 100%; border-radius: 8px; font-weight: 600; margin-top: 4px;">
-                                                                <i class="fa fa-project-diagram" style="margin-right: 8px;"/> Create Arkite Project
+                                                                    class="btn btn-secondary pm-btn-full">
+                                                                <i class="fa fa-project-diagram pm-icon-spacing"/> Create Arkite Project
                                                             </button>
                                                         </div>
                                                     </div>
@@ -403,9 +402,9 @@
                                 <strong>Components</strong> - Manage product components and track which products use them.
                             </div>
 
-                            <div style="margin-bottom: 16px;">
-                                <button name="action_create_component" type="object" class="btn btn-warning" style="background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
-                                    <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Component
+                            <div class="pm-margin-bottom-16">
+                                <button name="action_create_component" type="object" class="btn btn-warning pm-btn-warning-gradient">
+                                    <i class="fa fa-plus pm-icon-spacing"/> Add New Component
                                 </button>
                             </div>
 
@@ -416,29 +415,29 @@
                                     <field name="usage_count"/>
                                     <field name="image"/>
                                     <templates>
-                                        <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #ff6b6b; width: 300px; min-height: 140px;">
-                                                <div class="oe_kanban_content" style="padding: 16px;">
-                                                    <div style="display: flex; align-items: center; gap: 16px;">
-                                                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
+                                        <t t-name="card">
+                                            <div class="oe_kanban_card oe_kanban_global_click pm-kanban-card pm-kanban-card-red">
+                                                <div class="oe_kanban_content pm-kanban-card-content">
+                                                    <div class="pm-kanban-card-flex">
+                                                        <div class="pm-image-container-kanban">
                                                             <field name="image" widget="image" options="{'size': [80, 80]}"/>
                                                         </div>
 
-                                                        <div style="flex: 1;">
-                                                            <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                        <div class="pm-flex-1">
+                                                            <div class="pm-kanban-title">
                                                                 <field name="name"/>
                                                             </div>
 
-                                                            <div style="margin-bottom: 8px;">
-                                                                <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px; font-weight: 600;">
+                                                            <div class="pm-field-group-small">
+                                                                <div class="pm-kanban-text">
                                                                     <i class="fa fa-tag"/> Type
                                                                 </div>
-                                                                <div style="font-size: 14px; color: #495057; background: #e9ecef; padding: 6px 12px; border-radius: 8px; display: inline-block; border-left: 3px solid #007bff;">
+                                                                <div class="pm-kanban-value">
                                                                     <field name="component_type"/>
                                                                 </div>
                                                             </div>
 
-                                                            <div style="font-size: 14px; color: #6c757d; background: #f8f9fa; padding: 4px 12px; border-radius: 20px; display: inline-block;">
+                                                            <div class="pm-badge-light">
                                                                 <field name="usage_count"/> Products
                                                             </div>
                                                         </div>
@@ -553,4 +552,5 @@
               parent="menu_product_module_root"
               action="action_arkite_project"
               sequence="40"/>
+
 </odoo>

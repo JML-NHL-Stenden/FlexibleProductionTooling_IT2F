@@ -26,20 +26,20 @@
             <form string="Workstation Progress">
                 <sheet>
                     <!-- Header matching product design -->
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div style="width: 100px; height: 100px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
+                    <div class="pm-header-purple">
+                        <div class="pm-header-content">
+                            <div class="pm-image-container-large">
                                 <field name="product_image" widget="image" options="{'size': [100, 100]}"/>
                             </div>
-                            <div style="flex: 1;">
-                                <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
-                                    <field name="name" placeholder="Enter workstation name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
+                            <div class="pm-flex-1">
+                                <h1 class="pm-header-title">
+                                    <field name="name" placeholder="Enter workstation name" required="1" class="pm-header-field-full"/>
                                 </h1>
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                <div class="pm-flex-center">
+                                    <span class="pm-badge">
                                         <i class="fa fa-cube"/> <field name="product_name"/>
                                     </span>
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                    <span class="pm-badge">
                                         <i class="fa fa-barcode"/> <field name="product_code"/>
                                     </span>
                                 </div>
@@ -48,9 +48,9 @@
                     </div>
 
                     <!-- Single Column Layout -->
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 24px;">
-                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                            <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Workstation Information
+                    <div class="pm-card">
+                        <h3 class="pm-section-title">
+                            <i class="fa fa-info-circle pm-icon-spacing pm-icon-blue"/> Workstation Information
                         </h3>
 
                         <group>
@@ -60,23 +60,23 @@
                         </group>
 
                         <!-- Progress Display -->
-                        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 16px 0; text-align: center;">
-                            <div style="font-size: 36px; font-weight: 700; color: #28a745; margin-bottom: 8px;">
+                        <div class="pm-progress-container">
+                            <div class="pm-stat-value-large">
                                 <field name="progress_percentage"/>%
                             </div>
-                            <div style="font-size: 16px; color: #6c757d; margin-bottom: 16px;">
+                            <div class="pm-stat-label-large">
                                 Assembly Progress
                             </div>
-                            <div style="display: flex; justify-content: space-between; background: white; padding: 12px; border-radius: 8px;">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 14px; color: #6c757d;">Completed</div>
-                                    <div style="font-size: 20px; font-weight: 700; color: #28a745;">
+                            <div class="pm-progress-stats">
+                                <div class="pm-progress-stat">
+                                    <div class="pm-progress-stat-label">Completed</div>
+                                    <div class="pm-progress-stat-value-success">
                                         <field name="completed_steps"/>
                                     </div>
                                 </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 14px; color: #6c757d;">Total Steps</div>
-                                    <div style="font-size: 20px; font-weight: 700; color: #495057;">
+                                <div class="pm-progress-stat">
+                                    <div class="pm-progress-stat-label">Total Steps</div>
+                                    <div class="pm-progress-stat-value">
                                         <field name="total_steps"/>
                                     </div>
                                 </div>
@@ -85,19 +85,19 @@
                     </div>
 
                     <!-- Placeholder Actions -->
-                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                            <i style="color: #fd7e14; margin-right: 8px;"/> Placeholder Actions
+                    <div class="pm-card-no-margin">
+                        <h3 class="pm-section-title">
+                            <i class="fa fa-cog pm-icon-spacing" style="color: #fd7e14;"/> Placeholder Actions
                         </h3>
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                            <button name="action_mark_complete" type="object" class="btn btn-success" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
-                                <i class="fa fa-check" style="margin-right: 8px;"/> Mark Step Complete
+                        <div class="pm-flex-row">
+                            <button name="action_mark_complete" type="object" class="btn btn-success pm-btn-rounded">
+                                <i class="fa fa-check pm-icon-spacing"/> Mark Step Complete
                             </button>
-                            <button name="action_reset_progress" type="object" class="btn btn-warning" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
-                                <i class="fa fa-refresh" style="margin-right: 8px;"/> Reset Progress
+                            <button name="action_reset_progress" type="object" class="btn btn-warning pm-btn-rounded">
+                                <i class="fa fa-refresh pm-icon-spacing"/> Reset Progress
                             </button>
-                            <button name="action_open_product" type="object" class="btn btn-info" invisible="not product_id" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
-                                <i class="fa fa-external-link" style="margin-right: 8px;"/> View Product Details
+                            <button name="action_open_product" type="object" class="btn btn-info pm-btn-rounded" invisible="not product_id">
+                                <i class="fa fa-external-link pm-icon-spacing"/> View Product Details
                             </button>
                         </div>
                     </div>
@@ -119,6 +119,7 @@
         <field name="name">product.assemble.page.form.with.progress</field>
         <field name="model">product_module.page</field>
         <field name="inherit_id" ref="product_module.view_product_assemble_form"/>
+        <field name="priority" eval="20"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
 
@@ -128,12 +129,12 @@
                         <strong><i class="fa fa-desktop"/> Workstation Tracking</strong> - Monitor assembly progress across different workstations. Select a product to track its assembly progress.
                     </div>
 
-                    <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button name="action_create_progress" type="object" class="btn btn-primary" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
-                            <i class="fa fa-plus" style="margin-right: 8px;"/> Create Workstation
+                    <div class="pm-margin-bottom-16 pm-flex-row">
+                        <button name="action_create_progress" type="object" class="btn btn-primary pm-btn-rounded">
+                            <i class="fa fa-plus pm-icon-spacing"/> Create Workstation
                         </button>
-                        <button name="%(product_module.action_progress)d" type="action" class="btn btn-secondary" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
-                            <i class="fa fa-list" style="margin-right: 8px;"/> View All Workstations
+                        <button name="%(product_module.action_progress)d" type="action" class="btn btn-secondary pm-btn-rounded">
+                            <i class="fa fa-list pm-icon-spacing"/> View All Workstations
                         </button>
                     </div>
 
@@ -149,38 +150,38 @@
                             <field name="completed_steps"/>
                             <field name="progress_percentage"/>
                             <templates>
-                                <t t-name="kanban-box">
-                                    <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #667eea; width: 320px; min-height: 160px;">
-                                        <div class="oe_kanban_content" style="padding: 16px;">
-                                            <div style="display: flex; align-items: flex-start; gap: 16px;">
+                                <t t-name="card">
+                                    <div class="oe_kanban_card oe_kanban_global_click pm-kanban-card pm-kanban-card-purple pm-width-320">
+                                        <div class="oe_kanban_content pm-kanban-card-content">
+                                            <div class="pm-kanban-card-flex-start">
                                                 <!-- Product Image -->
-                                                <div style="width: 60px; height: 60px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
+                                                <div class="pm-image-container-small">
                                                     <field name="product_image" widget="image" options="{'size': [60, 60]}"/>
                                                 </div>
 
                                                 <!-- Workstation Info -->
-                                                <div style="flex: 1;">
+                                                <div class="pm-flex-1">
                                                     <!-- Workstation Name -->
-                                                    <div style="font-size: 16px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
+                                                    <div class="pm-kanban-title-medium">
                                                         <field name="name"/>
                                                     </div>
 
                                                     <!-- Product Info -->
-                                                    <div style="margin-bottom: 12px;">
-                                                        <div style="font-size: 14px; font-weight: 600; color: #495057;">
+                                                    <div class="pm-field-group-margin">
+                                                        <div style="font-size: 14px; color: #495057;">
                                                             <field name="product_name"/>
                                                         </div>
-                                                        <div style="font-size: 12px; color: #6c757d;">
+                                                        <div class="pm-kanban-text-value">
                                                             <i class="fa fa-barcode"/> <field name="product_code"/>
                                                         </div>
                                                     </div>
 
                                                     <!-- Progress Information -->
-                                                    <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
-                                                        <div style="font-size: 14px; font-weight: 600; color: #28a745; margin-bottom: 4px;">
+                                                    <div class="pm-kanban-stats">
+                                                        <div class="pm-kanban-stats-value">
                                                             <field name="progress_percentage"/>% Complete
                                                         </div>
-                                                        <div style="font-size: 12px; color: #6c757d;">
+                                                        <div class="pm-kanban-stats-label">
                                                             <field name="completed_steps"/> / <field name="total_steps"/> Steps
                                                         </div>
                                                     </div>
@@ -194,23 +195,24 @@
                     </field>
 
                     <!-- Empty State -->
-                    <div class="alert alert-warning" invisible="progress_ids" style="text-align: center; padding: 40px;">
-                        <i class="fa fa-desktop" style="font-size: 48px; color: #ffc107; margin-bottom: 16px; display: block;"/>
-                        <h4 style="color: #856404; margin-bottom: 16px;">No Workstations Configured</h4>
-                        <p style="color: #856404; margin-bottom: 20px;">Create your first workstation to start tracking assembly progress.</p>
+                    <div class="alert alert-warning pm-empty-state" invisible="progress_ids">
+                        <i class="fa fa-desktop pm-empty-icon"/>
+                        <h4 class="pm-empty-title">No Workstations Configured</h4>
+                        <p class="pm-empty-text">Create your first workstation to start tracking assembly progress.</p>
                         <button name="action_create_progress" type="object" class="btn btn-warning">
-                            <i class="fa fa-plus" style="margin-right: 8px;"/> Create First Workstation
+                            <i class="fa fa-plus pm-icon-spacing"/> Create First Workstation
                         </button>
                     </div>
                 </page>
             </xpath>
 
-            <xpath expr="//div[@style='display: flex; gap: 12px;']" position="inside">
-                <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: 700; color: white;">
+            <!-- Add Workstations stat to header - using multiple fallback xpaths -->
+            <xpath expr="//div[contains(@class, 'pm-stats-container')]" position="inside">
+                <div class="pm-stat-box">
+                    <div class="pm-stat-value">
                         <field name="progress_count"/>
                     </div>
-                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Workstations</div>
+                    <div class="pm-stat-label">Workstations</div>
                 </div>
             </xpath>
         </field>
