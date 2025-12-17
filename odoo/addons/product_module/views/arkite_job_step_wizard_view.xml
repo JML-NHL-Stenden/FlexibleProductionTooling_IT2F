@@ -1,0 +1,194 @@
+<!-- product_module/views/arkite_job_step_wizard_view.xml -->
+<odoo>
+    <record id="view_arkite_job_step_wizard_form" model="ir.ui.view">
+        <field name="name">arkite.job.step.wizard.form</field>
+        <field name="model">product_module.arkite.job.step.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Add Steps to Arkite Job">
+                <sheet>
+                    <div class="pm-header-purple" style="border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <h3 class="pm-section-title-white" style="margin: 0 0 8px 0;">
+                            <i class="fa fa-list-ol pm-icon-spacing"/> Add Steps to Job
+                        </h3>
+                        <p class="pm-header-subtitle" style="margin: 0; font-size: 14px;">
+                            Step-by-step workflow: Load project → View/Add job steps
+                        </p>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
+                        <strong>Workflow:</strong> Complete each step independently. 
+                        Step 1: Load Project → Step 2: View/Add Job Steps
+                    </div>
+
+                    <notebook>
+                        <page string="Step 1: Load Project">
+                            <group>
+                                <group string="Project Selection">
+                                    <button name="action_list_all_projects" 
+                                            string="List All Projects" 
+                                            type="object" 
+                                            class="btn-secondary"
+                                            style="margin-bottom: 8px;"/>
+                                    <div style="margin-bottom: 16px;">
+                                        <field name="available_projects_info" widget="html" nolabel="1"/>
+                                    </div>
+                                    <field name="project_id" 
+                                           placeholder="Enter Project ID (from list above)"/>
+                                    <field name="project_name" readonly="1"/>
+                                    <field name="project_loaded" readonly="1" widget="boolean_toggle"/>
+                                    <button name="action_load_project" 
+                                            string="Load Project" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            style="margin-top: 8px;"/>
+                                </group>
+                            </group>
+                            
+                            <div class="alert alert-success" invisible="not project_loaded" style="margin-top: 16px; font-size: 11px;">
+                                <strong>✓ Project loaded!</strong> You can now proceed to Step 2 to view and add job steps.
+                            </div>
+                            
+                            <div class="alert alert-info" style="margin-top: 16px; font-size: 11px;">
+                                <strong>Tip:</strong> Click "List All Projects" first to see all available project IDs. 
+                                Then copy a Project ID from the list and paste it in the Project ID field above.
+                            </div>
+                        </page>
+                        
+                        <page string="Step 2: View/Add Job Steps">
+                            <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>Note:</strong> Steps are added directly to the project as <strong>Job steps</strong> (Type="Job", ProcessId="0"). 
+                                Process steps (with ProcessId) are not shown here. Steps list auto-updates after adding a step.
+                            </div>
+                            
+                            <div class="alert alert-warning" invisible="project_loaded" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>⚠ Please complete Step 1 first:</strong> Load a project before viewing/adding steps.
+                            </div>
+                            
+                            <group>
+                                <group string="Existing Job Steps" col="2">
+                                    <button name="action_load_steps" 
+                                            string="Refresh Steps List" 
+                                            type="object" 
+                                            class="btn-secondary"
+                                            invisible="not project_loaded"
+                                            style="margin-top: 8px;"/>
+                                    <div style="margin-top: 16px;" colspan="2">
+                                        <field name="existing_steps_info" widget="html" nolabel="1"/>
+                                    </div>
+                                </group>
+                                
+                                <group string="Add New Job Step" col="2">
+                                    <field name="step_name" 
+                                           placeholder="e.g., Take Screwdriver"
+                                           invisible="not project_loaded"/>
+                                    <field name="step_type" 
+                                           invisible="not project_loaded"/>
+                                    <field name="step_instruction" 
+                                           placeholder="Instruction text (for WORK_INSTRUCTION type)"
+                                           widget="text"
+                                           invisible="not project_loaded"
+                                           colspan="2"/>
+                                    <field name="parent_step_id" 
+                                           help="ID of parent step (leave empty to auto-detect root step)"
+                                           invisible="not project_loaded"/>
+                                    <field name="index" 
+                                           help="Position index (0 = append at end)"
+                                           invisible="not project_loaded"/>
+                                </group>
+                            </group>
+                            
+                            <group string="Step-Specific Fields (Optional)" invisible="not project_loaded" col="3">
+                                <field name="detection_id" 
+                                       help="Required for: TOOL_PLACING, TOOL_TAKING, OBJECT_PLACING, OBJECT_TAKING, PICKING_BIN_PLACING, PICKING_BIN_TAKING, ACTIVITY, CHECK_NO_CHANGE_ZONE, VIRTUAL_BUTTON_PRESS, MATERIAL_GRAB"/>
+                                <field name="material_id" 
+                                       help="Required for MATERIAL_GRAB step type"/>
+                                <field name="button_id" 
+                                       help="Required for VIRTUAL_BUTTON_PRESS step type"/>
+                            </group>
+                            
+                            <div style="margin-top: 20px; text-align: center;">
+                                <button name="action_add_step" 
+                                        string="Add Step" 
+                                        type="object" 
+                                        class="btn-primary"
+                                        invisible="not project_loaded"
+                                        style="font-size: 14px; padding: 10px 20px; margin-right: 10px;"/>
+                                <button name="action_load_steps" 
+                                        string="Refresh List" 
+                                        type="object" 
+                                        class="btn-secondary"
+                                        invisible="not project_loaded"
+                                        style="font-size: 14px; padding: 10px 20px;"/>
+                            </div>
+                            
+                            <div class="alert alert-success" invisible="not project_loaded" style="margin-top: 16px; font-size: 11px;">
+                                <strong>Tip:</strong> After adding a step, the list will auto-refresh. You can add multiple steps in a row without reloading the page.
+                            </div>
+                        </page>
+                        
+                        <page string="Step 3: Reorder Steps" invisible="not project_loaded">
+                            <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>Reorder Steps:</strong> Use the buttons below to move steps up or down in the execution order. 
+                                Steps are executed in order of their Index value.
+                            </div>
+                            
+                            <group>
+                                <group string="Step to Move">
+                                    <field name="move_step_id" 
+                                           placeholder="Enter Step ID from the list above"
+                                           help="Enter the Step ID you want to move"/>
+                                    <field name="move_direction" 
+                                           help="Select direction to move the step"/>
+                                </group>
+                            </group>
+                            
+                            <div style="margin-top: 20px; text-align: center;">
+                                <button name="action_move_step" 
+                                        string="Move Step" 
+                                        type="object" 
+                                        class="btn-primary"
+                                        invisible="not project_loaded"
+                                        style="font-size: 14px; padding: 10px 20px;"/>
+                                <button name="action_load_steps" 
+                                        string="Refresh List" 
+                                        type="object" 
+                                        class="btn-secondary"
+                                        invisible="not project_loaded"
+                                        style="font-size: 14px; padding: 10px 20px;"/>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button name="action_add_step" 
+                            string="Add Step" 
+                            type="object" 
+                            class="btn-primary"
+                            invisible="not project_loaded"/>
+                    <button string="Discard" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- List view for the model -->
+    <record id="view_arkite_job_step_wizard_list" model="ir.ui.view">
+        <field name="name">arkite.job.step.wizard.list</field>
+        <field name="model">product_module.arkite.job.step.wizard</field>
+        <field name="arch" type="xml">
+            <list string="Add Steps to Job">
+                <field name="project_id"/>
+                <field name="project_name"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action for the model (regular page, not wizard) -->
+    <record id="action_arkite_job_step_wizard" model="ir.actions.act_window">
+        <field name="name">Add Steps to Job</field>
+        <field name="res_model">product_module.arkite.job.step.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_arkite_job_step_wizard_form"/>
+        <field name="target">current</field>
+    </record>
+</odoo>
