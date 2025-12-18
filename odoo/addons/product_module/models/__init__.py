@@ -9,3 +9,6 @@ from . import arkite_project
 from . import arkite_template
 from . import arkite_project_wizard
 from . import arkite_job_step_wizard
+from . import arkite_process_step
+from . import arkite_job_step_temp
+from . import arkite_process_temp
