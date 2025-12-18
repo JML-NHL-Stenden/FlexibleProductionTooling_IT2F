@@ -34,9 +34,9 @@ The module provides a clean interface with three main tabs matching the wirefram
 
 ### Tab 1: Product Type
 
-Product category management with visual cards:
+Product job management with visual cards:
 
-- Create and manage product types/categories
+- Create and manage product types/jobs
 - Visual kanban view showing type names and total variants
 - Each type can have an image and description
 - Shows count of products in each type
@@ -68,7 +68,7 @@ Detailed product information and editing:
 2. Go to the **Product Type** tab
 3. Click "Add a line" to create a new product type
 4. Fill in:
-   - Type Name (required)
+   - Job Name (required)
    - Description (optional)
    - Image (optional)
 5. The system will automatically count products in each type
@@ -81,7 +81,7 @@ Detailed product information and editing:
    - Product Name (required)
    - Product Code (required)
    - Variant (optional)
-   - Product Type (optional)
+   - Product Job (optional)
    - Image (optional)
 4. QR code is automatically generated
 

@@ -19,10 +19,8 @@ MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 
 # Topics
 MQTT_TOPIC_CODES = os.getenv("MQTT_TOPIC_CODES", "factory/products/all_product_codes")
-# NOTE: This topic publishes data GROUPED BY CATEGORY
+# NOTE: This topic publishes data GROUPED BY JOB
 MQTT_TOPIC_DETAILS = os.getenv("MQTT_TOPIC_DETAILS", "factory/products/all_product_details")
-# Arkite QR trigger topic
-MQTT_TOPIC_QR = os.getenv("MQTT_TOPIC_QR", "arkite/trigger/QR")
 
 # Pretty JSON output (set PRETTY_JSON=true for indented payloads)
 PRETTY_JSON = os.getenv("PRETTY_JSON", "false").lower() in ("1", "true", "yes", "y")
@@ -99,27 +97,6 @@ ORDER BY product_code;
 
 
 # =========================
-# SQL (Arkite QR mappings)
-# =========================
-# NOTE: only latest entry (by id) will be published
-SQL_ARKITE_QR = """
-SELECT
-    ap.id,
-    ap.product_name,
-    ap.product_code,
-    ap.qr_text
-FROM public.product_module_arkite_project ap
-JOIN public.product_module_product p
-      ON p.id = ap.product_id
-WHERE ap.product_name IS NOT NULL
-  AND ap.qr_text IS NOT NULL
-  AND ap.product_code IS NOT NULL
-ORDER BY ap.id DESC
-LIMIT 1;
-"""
-
-
-# =========================
 # Auto-detect M2M relation table + columns
 # =========================
 def detect_m2m_table_and_cols():
@@ -174,7 +151,7 @@ def detect_m2m_table_and_cols():
 
 
 # =========================
-# SQL (Grouped by Category) – built after M2M detection
+# SQL (Grouped by Job) – built after M2M detection
 # =========================
 def build_sql_by_category(m2m_rel_table: str, left_col: str, right_col: str) -> str:
     return f"""
@@ -272,34 +249,16 @@ def fetch_details_grouped_by_category():
     with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute(sql, {"odoo_base_url": ODOO_BASE_URL})
         rows = cur.fetchall()
-        categories = []
+        jobs = []
         for r in rows:
-            categories.append(
+            jobs.append(
                 {
-                    "category_id": r["category_id"],
-                    "category_name": r["category_name"],
+                    "job_id": r["job_id"],
+                    "job_name": r["job_name"],
                     "products": r["products"],  # list of product objects
                 }
             )
-        return categories
-
-
-def fetch_arkite_qr_rows():
-    with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute(SQL_ARKITE_QR)
-        return cur.fetchall()
-
-
-def delete_arkite_qr_rows(row_ids):
-    """Delete Arkite QR rows by id after publishing."""
-    if not row_ids:
-        return
-    with get_conn() as conn, conn.cursor() as cur:
-        cur.execute(
-            "DELETE FROM public.product_module_arkite_project WHERE id = ANY(%s)",
-            (row_ids,),
-        )
-        log.info("Deleted %d Arkite QR rows from DB", cur.rowcount)
+        return jobs
 
 
 # =========================
@@ -314,12 +273,12 @@ def payload_for_codes(codes):
     }
 
 
-def payload_for_details_grouped(categories):
+def payload_for_details_grouped(jobs):
     return {
         "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "count": len(categories),
-        "categories": categories,
-        "fields": ["category_id", "category_name", "products[*]"],
+        "count": len(jobs),
+        "jobs": jobs,
+        "fields": ["job_id", "job_name", "products[*]"],
         "source": {
             "db": DB_NAME,
             "tables": [
@@ -330,24 +289,6 @@ def payload_for_details_grouped(categories):
             ],
         },
         "odoo_base_url": ODOO_BASE_URL or None,
-    }
-
-
-def payload_for_arkite_qr(rows):
-    items = []
-    for r in rows:
-        items.append(
-            {
-                "product_name": r["product_name"],
-                "product_code": r["product_code"],
-                "qr_text": r["qr_text"],
-            }
-        )
-    return {
-        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "count": len(items),
-        "items": items,
-        "source": {"db": DB_NAME, "table": "public.product_module_arkite_project"},
     }
 
 
@@ -364,12 +305,12 @@ def hash_strings(items):
 
 def hash_categories(items):
     m = hashlib.sha256()
-    for cat in items:
-        m.update(str(cat.get("category_id")).encode("utf-8"))
+    for job in items:
+        m.update(str(job.get("job_id")).encode("utf-8"))
         m.update(b"\x1e")
-        m.update((cat.get("category_name") or "").encode("utf-8"))
+        m.update((job.get("job_name") or "").encode("utf-8"))
         m.update(b"\x1f")
-        m.update(json.dumps(cat.get("products") or [], separators=(",", ":"), sort_keys=True).encode("utf-8"))
+        m.update(json.dumps(job.get("products") or [], separators=(",", ":"), sort_keys=True).encode("utf-8"))
         m.update(b"\x00")
     return m.hexdigest()
 
@@ -403,42 +344,15 @@ def publish_all_product_data():
             else:
                 log.debug("No change in product codes; skipping publish.")
 
-            # 2) Details topic (GROUPED BY CATEGORY)
-            categories = fetch_details_grouped_by_category()
-            h_details = hash_categories(categories)
+            # 2) Details topic (GROUPED BY JOB)
+            jobs = fetch_details_grouped_by_category()
+            h_details = hash_categories(jobs)
             if h_details != last_hash_details:
-                mqtt_client.publish(
-                    MQTT_TOPIC_DETAILS,
-                    dumps(payload_for_details_grouped(categories)),
-                    qos=1,
-                    retain=True,
-                )
-                log.info(
-                    "Published %d categories (grouped details) to '%s'",
-                    len(categories),
-                    MQTT_TOPIC_DETAILS,
-                )
+                mqtt_client.publish(MQTT_TOPIC_DETAILS, dumps(payload_for_details_grouped(jobs)), qos=1, retain=True)
+                log.info("Published %d jobs (grouped details) to '%s'", len(jobs), MQTT_TOPIC_DETAILS)
                 last_hash_details = h_details
             else:
                 log.debug("No change in grouped details; skipping publish.")
-
-            # 3) Arkite QR mappings topic (name + QR code) – publish latest and delete
-            arkite_rows = fetch_arkite_qr_rows()
-            if arkite_rows:
-                mqtt_client.publish(
-                    MQTT_TOPIC_QR,
-                    dumps(payload_for_arkite_qr(arkite_rows)),
-                    qos=1,
-                    retain=True,  # keep last QR on broker even after DB delete
-                )
-                log.info(
-                    "Published %d Arkite QR entries to '%s'",
-                    len(arkite_rows),
-                    MQTT_TOPIC_QR,
-                )
-                delete_arkite_qr_rows([r["id"] for r in arkite_rows])
-            else:
-                log.debug("No Arkite QR entries to publish.")
 
         except Exception as e:
             log.error("Error while publishing product data: %s", e, exc_info=True)

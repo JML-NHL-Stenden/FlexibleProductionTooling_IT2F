@@ -1,13 +1,13 @@
-<!-- product_module/views/progress_views.xml - SIMPLIFIED VERSION -->
+<!-- product_module/views/progress_views.xml - UNIT TRACKING VERSION -->
 <odoo>
-    <!-- Progress List View-->
+    <!-- Unit Tracking List View-->
     <record id="view_progress_list" model="ir.ui.view">
         <field name="name">product.module.progress.list</field>
         <field name="model">product_module.progress</field>
         <field name="arch" type="xml">
-            <list string="Workstation Tracking">
-                <field name="name" string="Workstation"/>
-                <field name="product_id" string="Product" widget="many2one"/>
+            <list string="Unit Tracking">
+                <field name="name" string="Unit Name"/>
+                <field name="product_id" string="Tracked Product" widget="many2one"/>
                 <field name="product_code" string="Product Code"/>
                 <field name="total_steps" string="Total Steps"/>
                 <field name="completed_steps" string="Completed"/>
@@ -18,87 +18,103 @@
         </field>
     </record>
 
-    <!-- Progress Form View - Simplified Single Column -->
+    <!-- Unit Tracking Form View -->
     <record id="view_progress_form" model="ir.ui.view">
         <field name="name">product.module.progress.form</field>
         <field name="model">product_module.progress</field>
         <field name="arch" type="xml">
-            <form string="Workstation Progress">
-                <sheet>
-                    <!-- Header matching product design -->
-                    <div class="pm-header-purple">
-                        <div class="pm-header-content">
-                            <div class="pm-image-container-large">
-                                <field name="product_image" widget="image" options="{'size': [100, 100]}"/>
+            <form string="Unit Tracking">
+                <sheet style="max-width: 900px; margin: 0 auto;">
+                    <!-- Red Header for Unit Name -->
+                    <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border-radius: 12px; padding: 20px; margin-bottom: 24px; color: white;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.3);">
+                                <i class="fa fa-cogs" style="font-size: 24px; color: white;"/>
                             </div>
-                            <div class="pm-flex-1">
-                                <h1 class="pm-header-title">
-                                    <field name="name" placeholder="Enter workstation name" required="1" class="pm-header-field-full"/>
+                            <div style="flex: 1;">
+                                <h1 style="color: white; margin: 0 0 8px 0; font-size: 22px; font-weight: 700;">
+                                    <field name="name" placeholder="Unit Name" required="1" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 8px 12px; width: 100%; font-size: 18px;"/>
                                 </h1>
-                                <div class="pm-flex-center">
-                                    <span class="pm-badge">
-                                        <i class="fa fa-cube"/> <field name="product_name"/>
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <span style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 3px 8px; font-size: 11px; font-weight: 600;" invisible="not product_name">
+                                        <field name="product_name"/>
                                     </span>
-                                    <span class="pm-badge">
-                                        <i class="fa fa-barcode"/> <field name="product_code"/>
+                                    <span style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 3px 8px; font-size: 11px; font-weight: 600;" invisible="not product_code">
+                                        <field name="product_code"/>
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Single Column Layout -->
-                    <div class="pm-card">
-                        <h3 class="pm-section-title">
-                            <i class="fa fa-info-circle pm-icon-spacing pm-icon-blue"/> Workstation Information
+                    <!-- Tracked Product Section -->
+                    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                            Tracked Product:
                         </h3>
-
-                        <group>
-                            <field name="product_id" string="Product" required="1"
+                        
+                        <!-- Product Selection -->
+                        <div invisible="product_id" style="background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px;">
+                            <i class="fa fa-plus-circle" style="font-size: 32px; color: #6c757d; margin-bottom: 12px; display: block;"/>
+                            <p style="color: #6c757d; margin-bottom: 16px; font-size: 14px;">Select a product to track its assembly progress</p>
+                            <field name="product_id" string=""
                                    context="{'default_page_id': page_id}"
-                                   options="{'no_create': False}"/>
-                        </group>
-
-                        <!-- Progress Display -->
-                        <div class="pm-progress-container">
-                            <div class="pm-stat-value-large">
-                                <field name="progress_percentage"/>%
-                            </div>
-                            <div class="pm-stat-label-large">
-                                Assembly Progress
-                            </div>
-                            <div class="pm-progress-stats">
-                                <div class="pm-progress-stat">
-                                    <div class="pm-progress-stat-label">Completed</div>
-                                    <div class="pm-progress-stat-value-success">
-                                        <field name="completed_steps"/>
-                                    </div>
-                                </div>
-                                <div class="pm-progress-stat">
-                                    <div class="pm-progress-stat-label">Total Steps</div>
-                                    <div class="pm-progress-stat-value">
-                                        <field name="total_steps"/>
-                                    </div>
-                                </div>
-                            </div>
+                                   options="{'no_create': False}"
+                                   style="width: 300px; margin: 0 auto;"/>
                         </div>
-                    </div>
 
-                    <!-- Placeholder Actions -->
-                    <div class="pm-card-no-margin">
-                        <h3 class="pm-section-title">
-                            <i class="fa fa-cog pm-icon-spacing" style="color: #fd7e14;"/> Placeholder Actions
-                        </h3>
-                        <div class="pm-flex-row">
-                            <button name="action_mark_complete" type="object" class="btn btn-success pm-btn-rounded">
-                                <i class="fa fa-check pm-icon-spacing"/> Mark Step Complete
-                            </button>
-                            <button name="action_reset_progress" type="object" class="btn btn-warning pm-btn-rounded">
-                                <i class="fa fa-refresh pm-icon-spacing"/> Reset Progress
-                            </button>
-                            <button name="action_open_product" type="object" class="btn btn-info pm-btn-rounded" invisible="not product_id">
-                                <i class="fa fa-external-link pm-icon-spacing"/> View Product Details
-                            </button>
+                        <!-- Selected Product Display -->
+                        <div invisible="not product_id" style="background: #e9ecef; border: 1px solid #d6d8db; border-radius: 8px; padding: 16px;">
+                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                <div style="width: 64px; height: 64px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #d6d8db;">
+                                    <field name="product_image" widget="image" options="{'size': [64, 64]}"/>
+                                </div>
+                                <div style="flex: 1;">
+                                    <h4 style="color: #2c3e50; margin: 0 0 4px 0; font-weight: 600; font-size: 16px;">
+                                        <field name="product_name" readonly="1" style="background: transparent; border: none; font-weight: 600;"/>
+                                    </h4>
+                                     <p style="color: #6c757d; margin: 0; font-size: 13px; line-height: 1.4;">
+                                         <field name="product_description" readonly="1" nolabel="1" style="background: transparent; border: none; color: #6c757d; padding: 0;"/>
+                                     </p>
+                                </div>
+                            </div>
+
+                            <!-- Assembly Progress Table -->
+                            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                                <table style="width: 100%; border-collapse: separate; border-spacing: 8px 4px;">
+                                    <tr>
+                                        <td style="font-weight: 600; color: #495057; padding: 4px 0;">Assembly Progress</td>
+                                        <td style="color: #28a745; font-weight: 700; font-size: 16px;"><field name="progress_percentage" readonly="1"/>%</td>
+                                    </tr>
+                                    <tr style="background: #e9ecef;">
+                                        <td style="font-weight: 600; color: #495057; padding: 8px;">Total Steps Completed</td>
+                                        <td style="color: #495057; font-weight: 600; padding: 8px;"><field name="completed_steps" readonly="1"/></td>
+                                    </tr>
+                                     <tr style="background: #e9ecef;">
+                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Current Step</td>
+                                         <td style="color: #495057; padding: 8px;"><field name="current_step_number" readonly="1"/></td>
+                                     </tr>
+                                     <tr style="background: #e9ecef;">
+                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Process Title</td>
+                                         <td style="color: #495057; padding: 8px;"><field name="current_step_title" readonly="1"/></td>
+                                     </tr>
+                                     <tr style="background: #e9ecef;">
+                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Process Steps</td>
+                                         <td style="color: #495057; padding: 8px;"><field name="current_step_description" readonly="1"/></td>
+                                     </tr>
+                                    <tr style="background: #e9ecef;">
+                                        <td style="font-weight: 600; color: #495057; padding: 8px;">Total Steps</td>
+                                        <td style="color: #495057; font-weight: 600; padding: 8px;"><field name="total_steps" readonly="1"/></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- View Product Details Button -->
+                            <div style="margin-top: 16px; text-align: center;">
+                                <button name="action_open_product" type="object" class="btn btn-info" style="border-radius: 8px; padding: 8px 20px;">
+                                    <i class="fa fa-external-link" style="margin-right: 8px;"/> View Product Details
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </sheet>
@@ -106,9 +122,9 @@
         </field>
     </record>
 
-    <!-- Updated Action for Progress -->
+    <!-- Updated Action for Unit Tracking -->
     <record id="action_progress" model="ir.actions.act_window">
-        <field name="name">All Workstations</field>
+        <field name="name">All Units</field>
         <field name="res_model">product_module.progress</field>
         <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_progress_list"/>
@@ -119,26 +135,25 @@
         <field name="name">product.assemble.page.form.with.progress</field>
         <field name="model">product_module.page</field>
         <field name="inherit_id" ref="product_module.view_product_assemble_form"/>
-        <field name="priority" eval="20"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
 
-                <!-- Workstation Tracking -->
-                <page string="Workstation Tracking" name="progress_tracking">
+                <!-- Unit Tracking -->
+                <page string="Unit Tracking" name="progress_tracking">
                     <div class="alert alert-info">
-                        <strong><i class="fa fa-desktop"/> Workstation Tracking</strong> - Monitor assembly progress across different workstations. Select a product to track its assembly progress.
+                        <strong><i class="fa fa-cogs"/> Unit Tracking</strong> - Monitor assembly progress across different units. Select a product to track its assembly progress.
                     </div>
 
-                    <div class="pm-margin-bottom-16 pm-flex-row">
-                        <button name="action_create_progress" type="object" class="btn btn-primary pm-btn-rounded">
-                            <i class="fa fa-plus pm-icon-spacing"/> Create Workstation
+                    <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button name="action_create_progress" type="object" class="btn btn-primary" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
+                            <i class="fa fa-plus" style="margin-right: 8px;"/> Create Unit
                         </button>
-                        <button name="%(product_module.action_progress)d" type="action" class="btn btn-secondary pm-btn-rounded">
-                            <i class="fa fa-list pm-icon-spacing"/> View All Workstations
+                        <button name="%(product_module.action_progress)d" type="action" class="btn btn-secondary" style="border-radius: 8px; font-weight: 600; padding: 12px 24px;">
+                            <i class="fa fa-list" style="margin-right: 8px;"/> View All Units
                         </button>
                     </div>
 
-                    <!-- Workstation Display -->
+                    <!-- Unit Display -->
                     <field name="progress_ids" context="{'default_page_id': id}" widget="kanban">
                         <kanban create="false">
                             <field name="name"/>
@@ -150,38 +165,38 @@
                             <field name="completed_steps"/>
                             <field name="progress_percentage"/>
                             <templates>
-                                <t t-name="card">
-                                    <div class="oe_kanban_card oe_kanban_global_click pm-kanban-card pm-kanban-card-purple pm-width-320">
-                                        <div class="oe_kanban_content pm-kanban-card-content">
-                                            <div class="pm-kanban-card-flex-start">
+                                <t t-name="kanban-box">
+                                    <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #dc3545; width: 320px; min-height: 160px;">
+                                        <div class="oe_kanban_content" style="padding: 16px;">
+                                            <div style="display: flex; align-items: flex-start; gap: 16px;">
                                                 <!-- Product Image -->
-                                                <div class="pm-image-container-small">
+                                                <div style="width: 60px; height: 60px; border-radius: 12px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef; flex-shrink: 0;">
                                                     <field name="product_image" widget="image" options="{'size': [60, 60]}"/>
                                                 </div>
 
-                                                <!-- Workstation Info -->
-                                                <div class="pm-flex-1">
-                                                    <!-- Workstation Name -->
-                                                    <div class="pm-kanban-title-medium">
+                                                <!-- Unit Info -->
+                                                <div style="flex: 1;">
+                                                    <!-- Unit Name -->
+                                                    <div style="font-size: 16px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
                                                         <field name="name"/>
                                                     </div>
 
                                                     <!-- Product Info -->
-                                                    <div class="pm-field-group-margin">
-                                                        <div style="font-size: 14px; color: #495057;">
+                                                    <div style="margin-bottom: 12px;">
+                                                        <div style="font-size: 14px; font-weight: 600; color: #495057;">
                                                             <field name="product_name"/>
                                                         </div>
-                                                        <div class="pm-kanban-text-value">
+                                                        <div style="font-size: 12px; color: #6c757d;">
                                                             <i class="fa fa-barcode"/> <field name="product_code"/>
                                                         </div>
                                                     </div>
 
                                                     <!-- Progress Information -->
-                                                    <div class="pm-kanban-stats">
-                                                        <div class="pm-kanban-stats-value">
+                                                    <div style="background: #f8f9fa; padding: 8px; border-radius: 6px; text-align: center;">
+                                                        <div style="font-size: 14px; font-weight: 600; color: #28a745; margin-bottom: 4px;">
                                                             <field name="progress_percentage"/>% Complete
                                                         </div>
-                                                        <div class="pm-kanban-stats-label">
+                                                        <div style="font-size: 12px; color: #6c757d;">
                                                             <field name="completed_steps"/> / <field name="total_steps"/> Steps
                                                         </div>
                                                     </div>
@@ -195,32 +210,31 @@
                     </field>
 
                     <!-- Empty State -->
-                    <div class="alert alert-warning pm-empty-state" invisible="progress_ids">
-                        <i class="fa fa-desktop pm-empty-icon"/>
-                        <h4 class="pm-empty-title">No Workstations Configured</h4>
-                        <p class="pm-empty-text">Create your first workstation to start tracking assembly progress.</p>
+                    <div class="alert alert-warning" invisible="progress_ids" style="text-align: center; padding: 40px;">
+                        <i class="fa fa-cogs" style="font-size: 48px; color: #ffc107; margin-bottom: 16px; display: block;"/>
+                        <h4 style="color: #856404; margin-bottom: 16px;">No Units Configured</h4>
+                        <p style="color: #856404; margin-bottom: 20px;">Create your first unit to start tracking assembly progress.</p>
                         <button name="action_create_progress" type="object" class="btn btn-warning">
-                            <i class="fa fa-plus pm-icon-spacing"/> Create First Workstation
+                            <i class="fa fa-plus" style="margin-right: 8px;"/> Create First Unit
                         </button>
                     </div>
                 </page>
             </xpath>
 
-            <!-- Add Workstations stat to header - using multiple fallback xpaths -->
-            <xpath expr="//div[contains(@class, 'pm-stats-container')]" position="inside">
-                <div class="pm-stat-box">
-                    <div class="pm-stat-value">
+            <xpath expr="//div[@style='display: flex; gap: 12px;']" position="inside">
+                <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: white;">
                         <field name="progress_count"/>
                     </div>
-                    <div class="pm-stat-label">Workstations</div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Units</div>
                 </div>
             </xpath>
         </field>
     </record>
 
-    <!-- Menu item for All Progress Tasks -->
+    <!-- Menu item for All Unit Tracking -->
     <menuitem id="menu_all_progress"
-              name="All Workstations"
+              name="All Units"
               parent="menu_product_module_root"
               action="action_progress"
               sequence="50"/>

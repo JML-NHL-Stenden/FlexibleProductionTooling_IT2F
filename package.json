@@ -1,0 +1,14 @@
+{
+  "name": "flexible-production-tooling",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tooling and automation helpers for the Flexible Production project.",
+  "scripts": {
+    "prepare": "husky install",
+    "lint:python": "python -m compileall mqtt_bridge mqtt_publish odoo || py -3 -m compileall mqtt_bridge mqtt_publish odoo",
+    "precommit": "npm run lint:python"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3"
+  }
+}
