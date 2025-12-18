@@ -23,6 +23,7 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/instruction_form_wizard_views.xml',
+        'views/project_views.xml',
         'views/product_views.xml',
         'views/variant_views.xml',
         'views/material_views.xml',

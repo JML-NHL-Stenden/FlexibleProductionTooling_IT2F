@@ -8,6 +8,13 @@ class ProductAssemblePage(models.Model):
     # Header/label
     name = fields.Char(default="Management", readonly=True)
 
+    # Projects on this page
+    project_ids = fields.One2many(
+        comodel_name='product_module.project',
+        inverse_name='page_id',
+        string='Projects'
+    )
+
     # Product types on this page
     product_type_ids = fields.One2many(
         comodel_name='product_module.type',
@@ -37,6 +44,7 @@ class ProductAssemblePage(models.Model):
     )
 
     # Computed counts for display
+    project_count = fields.Integer(string='Project Count', compute='_compute_counts')
     job_count = fields.Integer(string='Job Count', compute='_compute_counts')
     product_count = fields.Integer(string='Product Count', compute='_compute_counts')
     material_count = fields.Integer(string='Material Count', compute='_compute_counts')
@@ -50,10 +58,11 @@ class ProductAssemblePage(models.Model):
     selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
     selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Jobs')
 
-    @api.depends('product_type_ids', 'product_ids', 'material_ids', 'progress_ids')
+    @api.depends('project_ids', 'product_type_ids', 'product_ids', 'material_ids', 'progress_ids')
     def _compute_counts(self):
-        """Compute job, product, material and progress counts for display"""
+        """Compute project, job, product, material and progress counts for display"""
         for record in self:
+            record.project_count = len(record.project_ids)
             record.job_count = len(record.product_type_ids)
             record.product_count = len(record.product_ids)
             record.material_count = len(record.material_ids)
@@ -78,6 +87,19 @@ class ProductAssemblePage(models.Model):
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',
+        }
+
+    def action_create_project(self):
+        """Open form to create a new project"""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Project',
+            'res_model': 'product_module.project',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_page_id': self.id,
+            }
         }
 
     def action_create_product_type(self):

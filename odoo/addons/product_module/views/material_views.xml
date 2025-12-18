@@ -29,12 +29,12 @@
                             </div>
                             <div style="flex: 1;">
                                 <h1 style="color: white; margin: 0 0 12px 0; font-size: 28px; font-weight: 700;">
-                                    <field name="name" readonly="1" style="color: white; background: transparent; border: none; font-size: 28px;"/>
+                                    <field name="name" placeholder="Material Name" required="1" style="color: white; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 8px 12px; font-size: 28px; width: 100%;"/>
                                 </h1>
-                                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                                    <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600;">
-                                        <i class="fa fa-tag"/> <field name="material_type" readonly="1" style="color: white; background: transparent; border: none; font-size: 14px;"/>
-                                    </span>
+                                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+                                    <div style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa fa-tag"/> <field name="material_type" placeholder="Type" required="1" style="color: white; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 4px 8px; font-size: 14px; min-width: 150px;"/>
+                                    </div>
                                     <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600;">
                                         <i class="fa fa-cube"/> Used in <field name="usage_count"/> Products
                                     </span>
