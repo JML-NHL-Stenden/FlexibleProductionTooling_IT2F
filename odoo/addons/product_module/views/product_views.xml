@@ -42,9 +42,22 @@
                                 <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
                                     <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Job Information
                                 </h3>
-                                <div style="flex: 1; display: flex; flex-direction: column;">
-                                    <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description:</div>
-                                    <field name="description" placeholder="Describe this product job..." style="width: 100%; flex: 1; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                                    <!-- Status Field -->
+                                    <!-- TO MAKE STATUS EDITABLE: Remove 'readonly="1"' from line below -->
+                                    <!-- TO MAKE STATUS READ-ONLY: Add 'readonly="1"' to the field below -->
+                                    <div>
+                                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Status:</div>
+                                        <field name="status" widget="radio" options="{'horizontal': true}" style="font-size: 14px;"/>
+                                        <!-- (Read-only version): Uncomment line below and comment line above -->
+                                        <!-- <field name="status" widget="badge" readonly="1"/> -->
+                                    </div>
+                                    
+                                    <!-- Description Field -->
+                                    <div style="flex: 1; display: flex; flex-direction: column;">
+                                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description:</div>
+                                        <field name="description" placeholder="Describe this product job..." style="width: 100%; flex: 1; min-height: 150px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -333,15 +346,28 @@
                                     <field name="name"/>
                                     <field name="product_count"/>
                                     <field name="description"/>
+                                    <field name="status"/>
                                     <templates>
                                         <t t-name="kanban-box">
                                             <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #667eea; width: 300px; min-height: 120px;">
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <!-- Job Info -->
                                                     <div style="flex: 1;">
-                                                        <!-- Type Name -->
-                                                        <div style="font-size: 18px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;">
-                                                            <field name="name"/>
+                                                        <!-- Type Name with Status Badge -->
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                            <div style="font-size: 18px; font-weight: 700; color: #2c3e50;">
+                                                                <field name="name"/>
+                                                            </div>
+                                                            <!-- Status Badge -->
+                                                            <span t-if="record.status.raw_value == 'ready'" style="background: #ffc107; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                                                                Ready to Start
+                                                            </span>
+                                                            <span t-if="record.status.raw_value == 'in_progress'" style="background: #007bff; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                                                                In Progress
+                                                            </span>
+                                                            <span t-if="record.status.raw_value == 'finished'" style="background: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                                                                Finished
+                                                            </span>
                                                         </div>
 
                                                         <!-- Description -->

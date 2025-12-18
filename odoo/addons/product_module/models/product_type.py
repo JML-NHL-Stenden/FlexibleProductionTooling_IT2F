@@ -11,6 +11,11 @@ class ProductModuleType(models.Model):
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
     name = fields.Char(string='Job Name', required=True, size=12)
     description = fields.Text(string='Description', size=250)
+    status = fields.Selection([
+        ('ready', 'Ready to Start'),
+        ('in_progress', 'In Progress'),
+        ('finished', 'Finished'),
+    ], string='Status', default='ready', required=True)
     
     # Related products (Many2many relationship)
     product_ids = fields.Many2many('product_module.product', string='Products')
