@@ -1,6 +1,6 @@
 {
     'name': 'Product Module',
-    'version': '1.0',
+    'version': '1.1',
     'summary': 'Product registration with QR codes and assembly instructions',
     'description': '''
         Product Assembly Management Module
