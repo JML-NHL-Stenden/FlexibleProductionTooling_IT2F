@@ -17,7 +17,7 @@
 
                     <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
                         <strong>Workflow:</strong> Complete each step independently. 
-                        Step 1: Load Project → Step 2: View/Add Job Steps
+                        Step 1: Load Project → Step 2: View/Add/Reorder Job Steps → Step 3: Manage Variants → Step 4: Processes &amp; Steps
                     </div>
 
                     <notebook>
@@ -65,55 +65,97 @@
                             </div>
                             
                             <group>
-                                <group string="Existing Job Steps" col="2">
+                                <group string="Job Steps">
+                                    <div class="alert alert-success" style="margin-bottom: 8px; font-size: 11px;">
+                                        <strong>Tip:</strong> Drag the handle (☰) to reorder steps. Click "Add a line" to create new steps. Click "Refresh Steps List" to load existing steps from Arkite.
+                                    </div>
                                     <button name="action_load_steps" 
                                             string="Refresh Steps List" 
                                             type="object" 
                                             class="btn-secondary"
                                             invisible="not project_loaded"
-                                            style="margin-top: 8px;"/>
-                                    <div style="margin-top: 16px;" colspan="2">
-                                        <field name="existing_steps_info" widget="html" nolabel="1"/>
+                                            style="margin-bottom: 8px;"/>
+                                    <field name="job_step_ids" nolabel="1" context="{'default_wizard_id': id, 'default_step_type': 'WORK_INSTRUCTION'}">
+                                        <list editable="bottom" default_order="sequence" create="1" delete="1">
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="step_name" required="1"/>
+                                            <field name="step_type" required="1"/>
+                                            <field name="step_instruction" placeholder="Instruction text (for WORK_INSTRUCTION type)"/>
+                                            <field name="parent_step_id" placeholder="Leave empty to auto-detect"/>
+                                            <field name="detection_id" placeholder="Required for some step types"/>
+                                            <field name="material_id" placeholder="Required for MATERIAL_GRAB"/>
+                                            <field name="button_id" placeholder="Required for VIRTUAL_BUTTON_PRESS"/>
+                                            <field name="step_id" column_invisible="1"/>
+                                            <field name="index" column_invisible="1"/>
+                                        </list>
+                                    </field>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Step 3: Manage Variants" invisible="not project_loaded">
+                            <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>Manage Variants:</strong> Variants allow you to create different configurations or versions of your project. 
+                                You can add variants individually or in bulk. Variants can be assigned to jobs and steps in Arkite.
+                            </div>
+                            
+                            <group>
+                                <group string="Existing Variants">
+                                    <div class="alert alert-success" style="margin-bottom: 8px; font-size: 11px;">
+                                        <strong>Tip:</strong> Click "Load Variants" to load variants from Arkite.
                                     </div>
+                                    <button name="action_load_variants" 
+                                            string="Load Variants" 
+                                            type="object" 
+                                            class="btn-secondary"
+                                            invisible="not project_loaded"
+                                            style="margin-bottom: 8px;"/>
+                                    <field name="variant_ids" nolabel="1" context="{'default_wizard_id': id}">
+                                        <list>
+                                            <field name="variant_id" readonly="1"/>
+                                            <field name="name" readonly="1"/>
+                                            <field name="description" readonly="1"/>
+                                        </list>
+                                    </field>
                                 </group>
                                 
-                                <group string="Add New Job Step" col="2">
-                                    <field name="step_name" 
-                                           placeholder="e.g., Take Screwdriver"
+                                <group string="Add Single Variant" col="2">
+                                    <field name="variant_name" 
+                                           placeholder="e.g., V1, Red, Model-A"
                                            invisible="not project_loaded"/>
-                                    <field name="step_type" 
-                                           invisible="not project_loaded"/>
-                                    <field name="step_instruction" 
-                                           placeholder="Instruction text (for WORK_INSTRUCTION type)"
+                                    <field name="variant_description" 
+                                           placeholder="Optional description (e.g., Red color variant)"
                                            widget="text"
                                            invisible="not project_loaded"
                                            colspan="2"/>
-                                    <field name="parent_step_id" 
-                                           help="ID of parent step (leave empty to auto-detect root step)"
-                                           invisible="not project_loaded"/>
-                                    <field name="index" 
-                                           help="Position index (0 = append at end)"
-                                           invisible="not project_loaded"/>
+                                </group>
+                                
+                                <group string="Add Multiple Variants" col="2">
+                                    <field name="variant_names_batch" 
+                                           placeholder="e.g., V1, V2, V3 or Red, Blue, Green"
+                                           widget="text"
+                                           invisible="not project_loaded"
+                                           colspan="2"/>
+                                    <div class="alert alert-info" style="margin-top: 8px; font-size: 11px;" colspan="2">
+                                        <strong>Tip:</strong> Enter variant names separated by commas. Existing variants will be skipped automatically.
+                                    </div>
                                 </group>
                             </group>
                             
-                            <group string="Step-Specific Fields (Optional)" invisible="not project_loaded" col="3">
-                                <field name="detection_id" 
-                                       help="Required for: TOOL_PLACING, TOOL_TAKING, OBJECT_PLACING, OBJECT_TAKING, PICKING_BIN_PLACING, PICKING_BIN_TAKING, ACTIVITY, CHECK_NO_CHANGE_ZONE, VIRTUAL_BUTTON_PRESS, MATERIAL_GRAB"/>
-                                <field name="material_id" 
-                                       help="Required for MATERIAL_GRAB step type"/>
-                                <field name="button_id" 
-                                       help="Required for VIRTUAL_BUTTON_PRESS step type"/>
-                            </group>
-                            
                             <div style="margin-top: 20px; text-align: center;">
-                                <button name="action_add_step" 
-                                        string="Add Step" 
+                                <button name="action_add_variant" 
+                                        string="Add Single Variant" 
                                         type="object" 
                                         class="btn-primary"
                                         invisible="not project_loaded"
                                         style="font-size: 14px; padding: 10px 20px; margin-right: 10px;"/>
-                                <button name="action_load_steps" 
+                                <button name="action_add_variants_batch" 
+                                        string="Add Multiple Variants" 
+                                        type="object" 
+                                        class="btn-primary"
+                                        invisible="not project_loaded"
+                                        style="font-size: 14px; padding: 10px 20px; margin-right: 10px;"/>
+                                <button name="action_load_variants" 
                                         string="Refresh List" 
                                         type="object" 
                                         class="btn-secondary"
@@ -122,41 +164,74 @@
                             </div>
                             
                             <div class="alert alert-success" invisible="not project_loaded" style="margin-top: 16px; font-size: 11px;">
-                                <strong>Tip:</strong> After adding a step, the list will auto-refresh. You can add multiple steps in a row without reloading the page.
+                                <strong>Tip:</strong> After adding variants, the list will auto-refresh. You can add multiple variants in a row without reloading the page.
                             </div>
                         </page>
                         
-                        <page string="Step 3: Reorder Steps" invisible="not project_loaded">
+                        <page string="Step 4: Processes &amp; Steps" invisible="not project_loaded">
                             <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
-                                <strong>Reorder Steps:</strong> Use the buttons below to move steps up or down in the execution order. 
-                                Steps are executed in order of their Index value.
+                                <strong>Processes &amp; Steps:</strong> Select a process and load its steps. 
+                                Drag steps to reorder them. Click "Add a line" to create new steps. Assign variants using the many2many_tags widget.
                             </div>
                             
                             <group>
-                                <group string="Step to Move">
-                                    <field name="move_step_id" 
-                                           placeholder="Enter Step ID from the list above"
-                                           help="Enter the Step ID you want to move"/>
-                                    <field name="move_direction" 
-                                           help="Select direction to move the step"/>
+                                <group string="Process Selection">
+                                    <button name="action_load_process_list" 
+                                            string="Load Process List" 
+                                            type="object" 
+                                            class="btn-secondary"
+                                            invisible="not project_loaded"
+                                            style="margin-bottom: 8px;"/>
+                                    <field name="selected_process_id" 
+                                           invisible="not project_loaded"
+                                           placeholder="Enter process name or ID..."/>
+                                    <div invisible="not project_loaded or not available_process_ids" style="margin-top: 4px; font-size: 11px; color: #666;">
+                                        <strong>Tip:</strong> Enter the process name or ID. Available processes are listed below.
+                                    </div>
+                                    <field name="available_process_ids" 
+                                           invisible="not project_loaded"
+                                           nolabel="1"
+                                           readonly="1">
+                                        <list>
+                                            <field name="name"/>
+                                            <field name="process_id"/>
+                                            <field name="comment"/>
+                                        </list>
+                                    </field>
+                                    <field name="selected_process_id" 
+                                           invisible="1"/>
+                                    <button name="action_load_processes" 
+                                            string="Load Steps for Selected Process" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            invisible="not project_loaded or not selected_process_id"
+                                            style="margin-bottom: 8px;"/>
+                                </group>
+                                
+                                <group string="Process Steps">
+                                    <div class="alert alert-success" style="margin-bottom: 8px; font-size: 11px;">
+                                        <strong>Tip:</strong> Drag the handle (☰) to reorder steps. Click "Add a line" to create new steps. Click on variant tags to add/remove variants.
+                                    </div>
+                                    <field name="process_step_ids" nolabel="1" context="{'default_wizard_id': id, 'default_step_type': 'WORK_INSTRUCTION'}">
+                                        <list editable="bottom" default_order="sequence" create="1" delete="1">
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="step_name" required="1"/>
+                                            <field name="step_type" required="1"/>
+                                            <field name="for_all_variants" widget="boolean_toggle"/>
+                                            <field name="variant_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                                            <field name="step_id" column_invisible="1"/>
+                                            <field name="process_id" column_invisible="1"/>
+                                            <field name="index" column_invisible="1"/>
+                                        </list>
+                                    </field>
                                 </group>
                             </group>
                             
-                            <div style="margin-top: 20px; text-align: center;">
-                                <button name="action_move_step" 
-                                        string="Move Step" 
-                                        type="object" 
-                                        class="btn-primary"
-                                        invisible="not project_loaded"
-                                        style="font-size: 14px; padding: 10px 20px;"/>
-                                <button name="action_load_steps" 
-                                        string="Refresh List" 
-                                        type="object" 
-                                        class="btn-secondary"
-                                        invisible="not project_loaded"
-                                        style="font-size: 14px; padding: 10px 20px;"/>
+                            <div class="alert alert-warning" invisible="not project_loaded" style="margin-top: 16px; font-size: 11px;">
+                                <strong>Note:</strong> Variants must be created at the project level (Step 3) before they can be assigned to process steps.
                             </div>
                         </page>
+                        
                     </notebook>
                 </sheet>
                 <footer>
