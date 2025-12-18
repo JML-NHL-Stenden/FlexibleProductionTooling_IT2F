@@ -49,8 +49,8 @@
                             </div>
                             
                             <div class="alert alert-info" style="margin-top: 16px; font-size: 11px;">
-                                <strong>Tip:</strong> Click "List All Projects" first to see all available project IDs. 
-                                Then copy a Project ID from the list and paste it in the Project ID field above.
+                                <strong>Tip:</strong> Click "List All Projects" first to see all available projects. 
+                                Click a project name to load it automatically, or copy a Project ID and paste it in the field above.
                             </div>
                         </page>
                         
@@ -230,6 +230,41 @@
                             <div class="alert alert-warning" invisible="not project_loaded" style="margin-top: 16px; font-size: 11px;">
                                 <strong>Note:</strong> Variants must be created at the project level (Step 3) before they can be assigned to process steps.
                             </div>
+                        </page>
+                        
+                        <page string="Step 5: Detections">
+                            <div class="alert alert-info" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>Detections:</strong> Objects, tools, activities, picking bins, virtual buttons, quality checks, etc. 
+                                Detections can be project-wide (used in all jobs) or job-specific (used in one job only).
+                            </div>
+                            
+                            <div class="alert alert-warning" invisible="project_loaded" style="margin-bottom: 16px; font-size: 11px;">
+                                <strong>⚠ Please complete Step 1 first:</strong> Load a project before viewing/managing detections.
+                            </div>
+                            
+                            <group>
+                                <group string="Detections">
+                                    <button name="action_load_detections" 
+                                            string="Load Detections" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            invisible="not project_loaded"
+                                            style="margin-bottom: 8px;"/>
+                                    <div class="alert alert-success" style="margin-bottom: 8px; font-size: 11px;">
+                                        <strong>Tip:</strong> Drag the handle (☰) to reorder detections. Click "Add a line" to create new detections.
+                                    </div>
+                                    <field name="detection_ids" nolabel="1" context="{'default_wizard_id': id, 'default_detection_type': 'OBJECT'}" invisible="not project_loaded">
+                                        <list editable="bottom" default_order="sequence" create="1" delete="1">
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="name" required="1"/>
+                                            <field name="detection_type" required="1"/>
+                                            <field name="is_job_specific" widget="boolean_toggle"/>
+                                            <field name="job_id" column_invisible="1"/>
+                                            <field name="detection_id" column_invisible="1"/>
+                                        </list>
+                                    </field>
+                                </group>
+                            </group>
                         </page>
                         
                     </notebook>

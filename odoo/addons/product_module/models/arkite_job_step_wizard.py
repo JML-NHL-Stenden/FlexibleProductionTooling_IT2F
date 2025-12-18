@@ -186,6 +186,14 @@ class ArkiteJobStepWizard(models.Model):
         help='All variants available in the project'
     )
     
+    # Detections (read-only display)
+    detection_ids = fields.One2many(
+        'product_module.arkite.detection.temp',
+        'wizard_id',
+        string='Detections',
+        help='Detections in the project (read-only)'
+    )
+    
     @api.model
     def create(self, vals):
         """Set default values when creating new record"""
@@ -256,18 +264,24 @@ class ArkiteJobStepWizard(models.Model):
         
         for proj in data[:50]:  # Limit to 50
             # Use exact same field extraction as bridge.py
-            proj_id = proj.get("Id") or proj.get("ProjectId", "N/A")
+            proj_id = str(proj.get("Id") or proj.get("ProjectId", "N/A"))
             proj_name = proj.get("Name") or proj.get("ProjectName", "Unnamed")
             proj_comment = (proj.get("Comment") or proj.get("Description") or "")[:50]
             
+            # Make project name clickable using Odoo button
             html += f'<tr><td style="padding: 8px; border: 1px solid #dee2e6;"><strong>{proj_id}</strong></td>'
-            html += f'<td style="padding: 8px; border: 1px solid #dee2e6;">{proj_name}</td>'
+            html += f'<td style="padding: 8px; border: 1px solid #dee2e6;">'
+            html += f'<button name="action_load_project_by_id" type="object" '
+            html += f'context="{{&quot;project_id_to_load&quot;: &quot;{proj_id}&quot;}}" '
+            html += f'class="btn btn-link" style="padding: 0; color: #007bff; text-decoration: underline; font-weight: 500; border: none; background: none; cursor: pointer;">'
+            html += f'{proj_name}</button>'
+            html += f'</td>'
             html += f'<td style="padding: 8px; border: 1px solid #dee2e6;">{proj_comment}</td></tr>'
         
         html += '</tbody></table>'
         if len(data) > 50:
             html += f'<p style="font-size: 11px; color: #666;">Showing first 50 of {len(data)} projects</p>'
-        html += '<p style="font-size: 11px; color: #666; margin-top: 8px;"><em>Copy a Project ID from this list and paste it in the Project ID field above, then click "Load Project".</em></p>'
+        html += '<p style="font-size: 11px; color: #666; margin-top: 8px;"><em>Click a project name to load it automatically, or copy a Project ID and paste it in the field above.</em></p>'
         html += '</div>'
         
         # Write the HTML field to ensure it's saved
@@ -278,6 +292,16 @@ class ArkiteJobStepWizard(models.Model):
             'type': 'ir.actions.client',
             'tag': 'reload',
         }
+    
+    def action_load_project_by_id(self):
+        """Load project by ID from context (called from clickable project name)"""
+        project_id_to_load = self.env.context.get('project_id_to_load')
+        if not project_id_to_load:
+            raise UserError("No project ID provided")
+        
+        # Set the project_id and trigger load
+        self.write({'project_id': project_id_to_load})
+        return self.action_load_project()
     
     def action_load_project(self):
         """Step 1: Load project by ID - using exact same pattern as working code"""
@@ -354,6 +378,8 @@ class ArkiteJobStepWizard(models.Model):
         project_name = project.get("Name") or project.get("ProjectName") or "Unknown"
         
         _logger.info("[ARKITE] Found project '%s' with ID %s", project_name, project_id)
+        
+        # Detections will be loaded when user goes to Step 5 (Detections page)
         
         # Write all fields and reload form
         self.write({
@@ -838,6 +864,63 @@ class ArkiteJobStepWizard(models.Model):
         except Exception as e:
             _logger.error("Error loading variants: %s", e)
             raise UserError(f"Error loading variants: {str(e)}")
+    
+    def action_load_detections(self):
+        """Step 5a: Load existing detections for the project"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            url = f"{api_base}/projects/{self.project_id}/detections/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            _logger.info("[ARKITE] Fetching detections for project %s", self.project_id)
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            
+            if response.ok:
+                detections = response.json()
+                if isinstance(detections, list):
+                    # Clear existing detections
+                    self.detection_ids.unlink()
+                    
+                    # Create detection records
+                    detection_records = []
+                    for idx, d in enumerate(detections):
+                        detection_id = str(d.get("Id", ""))
+                        detection_name = d.get("Name", "Unnamed Detection")
+                        detection_type = d.get("DetectionType", "OBJECT")
+                        job_id = d.get("JobId")  # Check if detection is job-specific
+                        is_job_specific = bool(job_id)
+                        
+                        detection_temp = self.env['product_module.arkite.detection.temp'].create({
+                            'wizard_id': self.id,
+                            'detection_id': detection_id,
+                            'name': detection_name,
+                            'detection_type': detection_type,
+                            'sequence': (idx + 1) * 10,
+                            'is_job_specific': is_job_specific,
+                            'job_id': str(job_id) if job_id else ""
+                        })
+                        detection_records.append(detection_temp.id)
+                    
+                    # Reload form to show the detections
+                    return {'type': 'ir.actions.client', 'tag': 'reload'}
+                else:
+                    self.detection_ids.unlink()
+                    return {'type': 'ir.actions.client', 'tag': 'reload'}
+            else:
+                error_text = response.text[:200] if response.text else "Unknown error"
+                raise UserError(f"Failed to fetch detections: HTTP {response.status_code} - {error_text}")
+        except Exception as e:
+            _logger.error("Error loading detections: %s", e)
+            raise UserError(f"Error loading detections: {str(e)}")
     
     def action_add_variant(self):
         """Step 3b: Add a single variant to the project"""
