@@ -60,15 +60,25 @@ services:
       - db
       - mqtt
     environment:
+      # MQTT connection (broker is your mosquitto service in Docker)
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
+
+      # Topic that carries the Arkite QR payload
+      MQTT_TOPIC_QR: arkite/trigger/QR
+
+      # Arkite API config
+      ARKITE_API_BASE: "https://192.168.178.99/api/v1"
+      ARKITE_API_KEY: "Xpz2f7dRi"
+      ARKITE_UNIT_ID: "97640866481035"
+      ARKITE_TEMPLATE_NAME: "FPT-Template"
+
+      # Optional logging / loop tuning
+      LOG_LEVEL: "INFO"
+      IDLE_INTERVAL_SEC: "1"
     networks:
       - odoo-net
+
 
   mqtt-publish:
     build: ./mqtt_publish
@@ -81,6 +91,7 @@ services:
       MQTT_PORT: ${MQTT_PORT}
       MQTT_TOPIC_CODES: ${MQTT_TOPIC_CODES}
       MQTT_TOPIC_DETAILS: ${MQTT_TOPIC_DETAILS}
+      MQTT_TOPIC_QR: ${MQTT_TOPIC_QR}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}

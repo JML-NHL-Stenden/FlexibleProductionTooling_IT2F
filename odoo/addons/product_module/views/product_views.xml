@@ -20,7 +20,7 @@
                 <sheet>
                     <!-- Two Column Layout -->
                     <div style="display: flex; width: 100%; height: calc(100vh - 200px); gap: 24px;">
-                        
+
                         <!-- LEFT COLUMN - Job Information -->
                         <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
                             <!-- Top Section: Name -->
@@ -120,10 +120,10 @@
                 <sheet>
                     <!-- Two Column Layout: Left (4 sections) + Right (2 sections) -->
                     <div style="display: flex; gap: 24px; width: 100%; min-height: 600px;">
-                        
+
                         <!-- LEFT COLUMN - 4 Sections -->
                         <div style="flex: 1; display: flex; flex-direction: column; gap: 24px;">
-                            
+
                             <!-- 1. Name & Product Details (Merged) -->
                             <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 12px; padding: 18px; color: white;">
                                 <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
@@ -135,7 +135,7 @@
                                         <field name="name" placeholder="Enter Product Name" required="1" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 6px; padding: 10px 14px; width: 100%; font-size: 15px; font-weight: 600;"/>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Product Details integrated into Name section -->
                                 <div>
                                     <div style="color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Product Code</div>
@@ -154,7 +154,7 @@
                                 </div>
                             </div>
 
-                            <!-- 3 & 4. QR Code and Components (Side by Side) -->
+                            <!-- 3 & 4. QR Code and Materials (Side by Side) -->
                             <div style="display: flex; gap: 24px;">
                                 <!-- QR Code -->
                                 <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
@@ -189,7 +189,7 @@
 
                         <!-- RIGHT COLUMN - 2 Sections -->
                         <div style="flex: 1; display: flex; flex-direction: column; gap: 24px;">
-                            
+
                             <!-- 1. Description -->
                             <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1;">
                                 <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; display: flex; align-items: center;">
@@ -226,7 +226,9 @@
                         <div style="display: flex; gap: 8px;">
                             <button string="Save &amp; Close" special="save" class="btn btn-success" data-hotkey="s"/>
                             <button string="Cancel" special="cancel" class="btn btn-secondary"/>
-                            <button name="action_delete_product" type="object" string="Delete" class="btn btn-danger" confirm="Are you sure you want to delete this product?" invisible="not id"/>
+
+                            <button name="unlink" type="object" string="Delete" class="btn btn-danger" confirm="Are you sure you want to delete this product?"/>
+                            <button name="action_start_project" type="object" string="Start Project" class="btn btn-info" invisible="not id or not product_code"/>
                         </div>
                         <!-- Right Side Buttons -->
                         <div style="display: flex; gap: 8px;">
@@ -411,7 +413,22 @@
                                     <field name="instruction_count"/>
                                     <templates>
                                         <t t-name="kanban-box">
-                                            <div class="oe_kanban_card" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
+                                            <div class="oe_kanban_card oe_kanban_global_click"
+                                                 style="position:relative; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
+
+                                                <t t-if="record.product_code.raw_value">
+                                                    <button type="object"
+                                                            name="action_start_project"
+                                                            class="btn btn-success btn-sm oe_kanban_action oe_kanban_action_button"
+                                                            title="Run in Arkite"
+                                                            style="position:absolute; bottom:12px; right:12px;
+                                                                   border-radius:999px; width:36px; height:36px;
+                                                                   padding:0; display:flex; align-items:center; justify-content:center;
+                                                                   box-shadow:0 6px 14px rgba(0,0,0,0.18);">
+                                                        <i class="fa fa-play" style="margin-left:2px;"/>
+                                                    </button>
+                                                </t>
+
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
                                                         <!-- Product Image -->

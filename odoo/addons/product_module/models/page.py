@@ -156,6 +156,20 @@ class ProductAssemblePage(models.Model):
             }
         }
 
+    def action_create_arkite_project(self):
+        """Called by 'Create Arkite Project' button on the Product List tab."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Arkite Project'),
+                'message': _('Create Arkite Project clicked. Implement project creation logic here.'),
+                'type': 'info',
+                'sticky': False,
+            }
+        }
+
     def write(self, vals):
         """Override write to update progress records when processes change"""
         result = super().write(vals)
