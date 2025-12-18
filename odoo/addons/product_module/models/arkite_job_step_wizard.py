@@ -97,45 +97,99 @@ class ArkiteJobStepWizard(models.Model):
         help='List of available projects in Arkite'
     )
     
-    available_processes_info = fields.Html(
+    # Step 2: Job Steps - Using One2many for native Odoo interface
+    job_step_ids = fields.One2many(
+        'product_module.arkite.job.step.temp',
+        'wizard_id',
+        string='Job Steps',
+        help='Job steps in the project (drag to reorder)'
+    )
+    
+    # Step 3: Variant Management
+    variant_name = fields.Char(
+        string='Variant Name',
+        help='Name of the variant to add (e.g., V1, Red, Model-A)'
+    )
+    
+    variant_description = fields.Text(
+        string='Variant Description',
+        help='Optional description for the variant'
+    )
+    
+    variant_names_batch = fields.Text(
+        string='Multiple Variant Names',
+        help='Enter multiple variant names separated by commas (e.g., V1, V2, V3 or Red, Blue, Green)'
+    )
+    
+    # Step 3: Variants - Using One2many for native Odoo interface  
+    variant_ids = fields.One2many(
+        'product_module.arkite.variant.temp',
+        'wizard_id',
+        string='Variants',
+        help='Variants in the project'
+    )
+    
+    # Step 4: Process & Step Management - Using One2many for proper Odoo interface
+    selected_process_id = fields.Char(
+        string='Process ID',
+        help='ID of the selected process (enter process name or ID, it will be auto-filled)'
+    )
+    
+    # Temporarily removed selected_process_selection to fix upgrade issue
+    # Will be re-added after successful upgrade
+    # selected_process_selection = fields.Char(
+    #     string='Select Process',
+    #     help='Enter process name or ID (process ID will be auto-filled)'
+    # )
+    
+    available_process_ids = fields.One2many(
+        'product_module.arkite.process.temp',
+        'wizard_id',
         string='Available Processes',
-        readonly=True,
-        help='List of available processes (jobs) in the project'
+        help='All processes available in the project'
     )
     
-    existing_steps_info = fields.Html(
-        string='Existing Steps',
-        readonly=True,
-        help='List of existing steps in the process/job'
+    # Temporarily removed onchange - will be re-added after upgrade
+    # @api.onchange('selected_process_selection')
+    # def _onchange_selected_process_selection(self):
+    #     """Update selected_process_id when selection changes"""
+    #     if self.selected_process_selection and self.available_process_ids:
+    #         # Try to find by name first
+    #         matching_process = self.available_process_ids.filtered(
+    #             lambda p: p.name == self.selected_process_selection
+    #         )
+    #         if matching_process:
+    #             self.selected_process_id = matching_process[0].process_id
+    #         elif self.selected_process_selection.isdigit() or (self.selected_process_selection.startswith('-') and self.selected_process_selection[1:].isdigit()):
+    #             # If it's a numeric ID, use it directly
+    #             self.selected_process_id = self.selected_process_selection
+    #         else:
+    #             # Try to find by partial name match
+    #             matching_process = self.available_process_ids.filtered(
+    #                 lambda p: self.selected_process_selection.lower() in p.name.lower()
+    #             )
+    #             if matching_process:
+    #                 self.selected_process_id = matching_process[0].process_id
+    
+    process_step_ids = fields.One2many(
+        'product_module.arkite.process.step',
+        'wizard_id',
+        string='Process Steps',
+        help='Steps in the selected process (drag to reorder)'
     )
     
-    # For step reordering
-    step_order_data = fields.Text(
-        string='Step Order Data',
-        readonly=True,
-        help='JSON data for step reordering (internal use)'
+    available_variant_ids = fields.Many2many(
+        'product_module.arkite.variant.temp',
+        'wizard_variant_rel',
+        'wizard_id', 'variant_id',
+        string='Available Variants',
+        help='All variants available in the project'
     )
-    
-    # For move step action
-    move_step_id = fields.Char(
-        string='Step ID to Move',
-        help='Internal field for step reordering'
-    )
-    
-    move_direction = fields.Selection([
-        ('up', 'Move Up'),
-        ('down', 'Move Down'),
-    ], string='Move Direction', help='Internal field for step reordering')
     
     @api.model
     def create(self, vals):
         """Set default values when creating new record"""
-        if 'available_projects_info' not in vals:
-            vals['available_projects_info'] = '<p style="color: #666; font-size: 12px;">Click "List All Projects" to see available project IDs.</p>'
-        if 'available_processes_info' not in vals:
-            vals['available_processes_info'] = '<p style="color: #666; font-size: 12px;">Project loaded. You can now view and add steps.</p>'
-        if 'existing_steps_info' not in vals:
-            vals['existing_steps_info'] = '<p style="color: #666; font-size: 12px;">Click "Refresh Steps List" to see job steps in this project. The list will auto-update after adding steps.</p>'
+        # Note: job_step_ids, variant_ids, and available_process_ids are One2many fields, no default needed
         return super().create(vals)
     
     def action_list_all_projects(self):
@@ -305,8 +359,6 @@ class ArkiteJobStepWizard(models.Model):
         self.write({
             'project_name': project_name,
             'project_loaded': True,
-            'available_processes_info': '<p style="color: #666; font-size: 12px;">Project loaded. You can now view and add steps.</p>',
-            'existing_steps_info': '<p style="color: #666; font-size: 12px;">Click "Load Existing Steps" to see job steps in this project.</p>'
         })
         
         return {'type': 'ir.actions.client', 'tag': 'reload'}
@@ -346,73 +398,63 @@ class ArkiteJobStepWizard(models.Model):
                     # Sort by Index for better display
                     job_steps.sort(key=lambda x: x.get("Index", 0))
                     
+                    # Clear existing job steps
+                    self.job_step_ids.unlink()
+                    
                     if job_steps:
-                        # Store step data for reordering
-                        step_data_list = []
-                        for step in job_steps:
-                            step_data_list.append({
-                                'Id': str(step.get("Id", "")),
-                                'Name': step.get("Name", "Unnamed"),
-                                'Index': step.get("Index", 0),
-                                'StepType': step.get("StepType", step.get("Type", "N/A")),
-                                'ParentStepId': str(step.get("ParentStepId", "0"))
-                            })
-                        self.write({'step_order_data': json.dumps(step_data_list)})
-                        
-                        html = '<div style="margin-top: 8px;">'
-                        html += f'<p style="font-size: 12px; margin-bottom: 8px;"><strong>Found {len(job_steps)} job step(s) (out of {len(all_steps)} total steps):</strong></p>'
-                        html += '<div style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">'
-                        html += '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">'
-                        html += '<thead><tr style="background-color: #f8f9fa; position: sticky; top: 0;"><th style="padding: 8px; border: 1px solid #dee2e6;">Index</th><th style="padding: 8px; border: 1px solid #dee2e6;">ID</th><th style="padding: 8px; border: 1px solid #dee2e6;">Name</th><th style="padding: 8px; border: 1px solid #dee2e6;">Step Type</th><th style="padding: 8px; border: 1px solid #dee2e6;">Parent Step ID</th><th style="padding: 8px; border: 1px solid #dee2e6;">Actions</th></tr></thead>'
-                        html += '<tbody>'
-                        
+                        # Create job step records
+                        step_records = []
                         for idx, step in enumerate(job_steps):
-                            step_id = step.get("Id", "N/A")
+                            step_id = str(step.get("Id", ""))
                             step_name = step.get("Name", "Unnamed")
                             step_type = step.get("StepType", step.get("Type", "N/A"))
-                            parent_id = step.get("ParentStepId", "0")
-                            step_index = step.get("Index", 0)
+                            parent_id = str(step.get("ParentStepId", "0"))
+                            step_index = step.get("Index", idx * 10)
                             
-                            html += f'<tr><td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;"><strong>{step_index}</strong></td>'
-                            html += f'<td style="padding: 8px; border: 1px solid #dee2e6; font-family: monospace; font-size: 11px;">{step_id}</td>'
-                            html += f'<td style="padding: 8px; border: 1px solid #dee2e6;"><strong>{step_name}</strong></td>'
-                            html += f'<td style="padding: 8px; border: 1px solid #dee2e6;">{step_type}</td>'
-                            html += f'<td style="padding: 8px; border: 1px solid #dee2e6; font-family: monospace; font-size: 11px;">{parent_id}</td>'
-                            html += f'<td style="padding: 8px; border: 1px solid #dee2e6; text-align: center;">'
-                            if idx > 0:
-                                html += f'<button type="button" class="btn btn-sm btn-secondary" onclick="odoo.define(\'step_reorder\', function(require) {{ var rpc = require(\'web.rpc\'); rpc.query({{model: \'product_module.arkite.job.step.wizard\', method: \'action_move_step\', args: [[{self.id}], \'{step_id}\', \'up\']}}).then(function() {{ location.reload(); }}); }});" style="margin: 2px; padding: 4px 8px; font-size: 11px;">↑</button>'
-                            if idx < len(job_steps) - 1:
-                                html += f'<button type="button" class="btn btn-sm btn-secondary" onclick="odoo.define(\'step_reorder\', function(require) {{ var rpc = require(\'web.rpc\'); rpc.query({{model: \'product_module.arkite.job.step.wizard\', method: \'action_move_step\', args: [[{self.id}], \'{step_id}\', \'down\']}}).then(function() {{ location.reload(); }}); }});" style="margin: 2px; padding: 4px 8px; font-size: 11px;">↓</button>'
-                            html += '</td></tr>'
-                        
-                        html += '</tbody></table>'
-                        html += '</div>'
-                        html += '<p style="font-size: 11px; color: #666; margin-top: 8px;"><em>Steps are sorted by Index. Use the "Reorder Steps" section below to change step order.</em></p>'
-                        html += '</div>'
-                        self.write({'existing_steps_info': html})
+                            step_record = self.env['product_module.arkite.job.step.temp'].create({
+                                'wizard_id': self.id,
+                                'step_id': step_id,
+                                'step_name': step_name,
+                                'step_type': step_type,
+                                'sequence': step_index,
+                                'index': step_index,
+                                'parent_step_id': parent_id
+                            })
+                        step_records.append(step_record.id)
+                    
+                        # Reload form to show the new records
+                        return {'type': 'ir.actions.client', 'tag': 'reload'}
                     else:
-                        self.write({'existing_steps_info': f'<p style="color: #666; font-size: 12px;">No job steps found. You can add the first step. (Found {len(all_steps)} total steps, all are process steps.)</p>'})
+                        # Reload form even if no steps found (to clear old data)
+                        return {'type': 'ir.actions.client', 'tag': 'reload'}
                 else:
-                    self.write({'existing_steps_info': '<p style="color: #dc3545; font-size: 12px;">Unexpected response format.</p>'})
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': 'Error',
+                            'message': 'Unexpected response format.',
+                            'type': 'danger',
+                        }
+                    }
             else:
                 error_text = response.text[:200] if response.text else "Unknown error"
-                self.write({'existing_steps_info': f'<p style="color: #dc3545; font-size: 12px;">Failed to fetch steps: HTTP {response.status_code} - {error_text}</p>'})
-            
-            return {'type': 'ir.actions.client', 'tag': 'reload'}
+                raise UserError(f"Failed to fetch steps: HTTP {response.status_code} - {error_text}")
         except Exception as e:
             _logger.error("Error loading steps: %s", e)
             raise UserError(f"Error loading steps: {str(e)}")
     
-    def action_move_step(self):
-        """Move a step up or down in the order by updating its Index"""
-        if not self.move_step_id or not self.move_direction:
-            raise UserError("Step ID and direction must be specified")
-        
-        step_id = self.move_step_id
-        direction = self.move_direction
-        
+    def action_move_step_quick(self):
+        """Move a step up or down quickly from the steps list"""
         if not self.project_loaded or not self.project_id:
             raise UserError("Please load a project first (Step 1)")
+        
+        # Get step_id and direction from context
+        step_id = self.env.context.get('step_id')
+        direction = self.env.context.get('direction')
+        
+        if not step_id or not direction:
+            raise UserError("Step ID and direction must be specified")
         
         api_base = os.getenv('ARKITE_API_BASE')
         api_key = os.getenv('ARKITE_API_KEY')
@@ -496,12 +538,6 @@ class ArkiteJobStepWizard(models.Model):
                 requests.patch(update_url, params=params, headers=headers, json={"Index": target_index_value}, verify=False, timeout=10)
                 raise UserError(f"Failed to update swap step index: HTTP {swap_update_response.status_code} - {error_text}")
             
-            # Clear move fields
-            self.write({
-                'move_step_id': '',
-                'move_direction': False
-            })
-            
             # Reload steps to show updated order
             time.sleep(0.5)
             self.action_load_steps()
@@ -519,6 +555,7 @@ class ArkiteJobStepWizard(models.Model):
         except Exception as e:
             _logger.error("Error moving step: %s", e, exc_info=True)
             raise UserError(f"Error moving step: {str(e)}")
+    
     
     def action_add_step(self):
         """Step 2b: Add a job step to the project - independent action"""
@@ -738,3 +775,1060 @@ class ArkiteJobStepWizard(models.Model):
         except Exception as e:
             _logger.error("Error adding step: %s", e, exc_info=True)
             raise UserError(f"Error adding step: {str(e)}")
+    
+    def action_load_variants(self):
+        """Step 3a: Load existing variants for the project"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            url = f"{api_base}/projects/{self.project_id}/variants/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            _logger.info("[ARKITE] Fetching variants for project %s", self.project_id)
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            
+            if response.ok:
+                variants = response.json()
+                if isinstance(variants, list):
+                    # Clear existing variants
+                    self.variant_ids.unlink()
+                    
+                    # Create variant records
+                    variant_records = []
+                    for v in variants:
+                        variant_id = str(v.get("Id", ""))
+                        variant_name = v.get("Name", "Unnamed")
+                        variant_desc = v.get("Description", "")
+                        
+                        variant_temp = self.env['product_module.arkite.variant.temp'].create({
+                            'wizard_id': self.id,
+                            'variant_id': variant_id,
+                            'name': variant_name,
+                            'description': variant_desc
+                        })
+                        variant_records.append(variant_temp.id)
+                    
+                    # Also update available_variant_ids for Step 4
+                    self.available_variant_ids = [(6, 0, variant_records)]
+                    
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': 'Success',
+                            'message': f'Loaded {len(variant_records)} variant(s)',
+                            'type': 'success',
+                        }
+                    }
+                else:
+                    self.variant_ids.unlink()
+                    # Reload form even if no variants found (to clear old data)
+                    return {'type': 'ir.actions.client', 'tag': 'reload'}
+            else:
+                error_text = response.text[:200] if response.text else "Unknown error"
+                raise UserError(f"Failed to fetch variants: HTTP {response.status_code} - {error_text}")
+        except Exception as e:
+            _logger.error("Error loading variants: %s", e)
+            raise UserError(f"Error loading variants: {str(e)}")
+    
+    def action_add_variant(self):
+        """Step 3b: Add a single variant to the project"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        if not self.variant_name:
+            raise UserError("Please enter a variant name")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Check if variant already exists
+            url = f"{api_base}/projects/{self.project_id}/variants/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if response.ok:
+                existing_variants = response.json()
+                if isinstance(existing_variants, list):
+                    for var in existing_variants:
+                        if var.get("Name", "").upper() == self.variant_name.upper():
+                            raise UserError(f"Variant '{self.variant_name}' already exists in this project")
+            
+            # Create variant
+            variant_data = {
+                "Type": "Variant",
+                "Name": self.variant_name,
+                "Description": self.variant_description or f"Variant {self.variant_name}"
+            }
+            
+            response = requests.post(url, params=params, headers=headers, json=[variant_data], verify=False, timeout=10)
+            
+            variant_name_saved = self.variant_name  # Save before clearing
+            
+            # IMPORTANT: Arkite API may have a bug - it might create the variant successfully but return 500 error
+            # So we need to verify if the variant was actually created even if we get an error
+            if response.ok:
+                created = response.json()
+                variant_id = "N/A"
+                
+                if isinstance(created, list) and len(created) > 0:
+                    variant_id = created[0].get("Id", "N/A")
+                elif isinstance(created, dict):
+                    variant_id = created.get("Id", "N/A")
+                
+                # Clear fields
+                self.write({
+                    'variant_name': '',
+                    'variant_description': ''
+                })
+                
+                # Reload variants
+                time.sleep(0.5)
+                self.action_load_variants()
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': 'Success',
+                        'message': f'Variant "{variant_name_saved}" added successfully (ID: {variant_id}). Variants list updated.',
+                        'type': 'success',
+                        'sticky': False,
+                    }
+                }
+            else:
+                # API returned an error - verify if variant was actually created
+                error_text = response.text[:500] if response.text else "Unknown error"
+                _logger.warning("[ARKITE] Variant creation returned HTTP %s, but verifying if variant was actually created: %s", response.status_code, error_text)
+                
+                # Wait a moment for API to process
+                time.sleep(1)
+                
+                # Verify by fetching variants
+                verify_response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                if verify_response.ok:
+                    existing_variants = verify_response.json()
+                    if isinstance(existing_variants, list):
+                        for var in existing_variants:
+                            if var.get("Name", "").upper() == variant_name_saved.upper():
+                                variant_id = var.get("Id", "N/A")
+                                _logger.info("[ARKITE] Variant was created despite API error (ID: %s)", variant_id)
+                                
+                                # Clear fields
+                                self.write({
+                                    'variant_name': '',
+                                    'variant_description': ''
+                                })
+                                
+                                # Reload variants
+                                self.action_load_variants()
+                                
+                                return {
+                                    'type': 'ir.actions.client',
+                                    'tag': 'display_notification',
+                                    'params': {
+                                        'title': 'Success',
+                                        'message': f'Variant "{variant_name_saved}" added successfully (ID: {variant_id}) despite API error. Variants list updated.',
+                                        'type': 'success',
+                                        'sticky': False,
+                                    }
+                                }
+                
+                # Variant was not created - this is a real error
+                _logger.error("[ARKITE] Failed to add variant: HTTP %s - %s", response.status_code, error_text)
+                
+                # The error message suggests there's an issue with steps in the project
+                if "should link to job" in error_text:
+                    raise UserError(f"Failed to add variant: The project has invalid step configuration.\n\nError: {error_text}\n\nPlease fix the step configuration in Arkite UI first. The error suggests a step (Id: 4098507055823504094) needs to be properly linked to a job.")
+                else:
+                    raise UserError(f"Failed to add variant: HTTP {response.status_code}\n{error_text}")
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error adding variant: %s", e, exc_info=True)
+            raise UserError(f"Error adding variant: {str(e)}")
+    
+    def action_add_variants_batch(self):
+        """Step 3c: Add multiple variants at once"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        if not self.variant_names_batch:
+            raise UserError("Please enter variant names (separated by commas)")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Parse variant names
+            variant_names = [name.strip() for name in self.variant_names_batch.split(',') if name.strip()]
+            if not variant_names:
+                raise UserError("No valid variant names found. Please enter names separated by commas.")
+            
+            # Check existing variants
+            url = f"{api_base}/projects/{self.project_id}/variants/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            existing_variant_names = set()
+            if response.ok:
+                existing_variants = response.json()
+                if isinstance(existing_variants, list):
+                    for var in existing_variants:
+                        existing_variant_names.add(var.get("Name", "").upper())
+            
+            # Filter out existing variants
+            variants_to_add = []
+            skipped = []
+            for name in variant_names:
+                if name.upper() in existing_variant_names:
+                    skipped.append(name)
+                else:
+                    variants_to_add.append({
+                        "Type": "Variant",
+                        "Name": name,
+                        "Description": f"Variant {name}"
+                    })
+            
+            if skipped:
+                _logger.info("Skipping %d existing variants: %s", len(skipped), skipped)
+            
+            if not variants_to_add:
+                raise UserError(f"All variants already exist: {', '.join(variant_names)}")
+            
+            # Create variants
+            response = requests.post(url, params=params, headers=headers, json=variants_to_add, verify=False, timeout=10)
+            
+            if response.ok:
+                created = response.json()
+                created_count = len(created) if isinstance(created, list) else 1
+                
+                # Clear field
+                self.write({'variant_names_batch': ''})
+                
+                # Reload variants
+                time.sleep(0.5)
+                self.action_load_variants()
+                
+                message = f'Successfully added {created_count} variant(s): {", ".join([v.get("Name", "Unknown") for v in (created if isinstance(created, list) else [created])])}'
+                if skipped:
+                    message += f'\nSkipped {len(skipped)} existing variant(s): {", ".join(skipped)}'
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': 'Success',
+                        'message': message,
+                        'type': 'success',
+                        'sticky': False,
+                    }
+                }
+            else:
+                error_text = response.text[:500] if response.text else "Unknown error"
+                _logger.error("[ARKITE] Failed to add variants: HTTP %s - %s", response.status_code, error_text)
+                raise UserError(f"Failed to add variants: HTTP {response.status_code}\n{error_text}")
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error adding variants: %s", e, exc_info=True)
+            raise UserError(f"Error adding variants: {str(e)}")
+    
+    def action_load_processes(self):
+        """Load processes and populate One2many field with steps for selected process"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        if not self.selected_process_id:
+            raise UserError("Please select a process first. Click 'Load Process List' to see available processes.")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Get all steps for the selected process
+            url_steps = f"{api_base}/projects/{self.project_id}/steps/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response_steps = requests.get(url_steps, params=params, headers=headers, verify=False, timeout=10)
+            if not response_steps.ok:
+                raise UserError(f"Failed to fetch steps: HTTP {response_steps.status_code}")
+            
+            all_steps = response_steps.json()
+            if not isinstance(all_steps, list):
+                raise UserError("Unexpected response format for steps")
+            
+            # Filter steps for selected process
+            selected_process_id_str = str(self.selected_process_id) if self.selected_process_id else ""
+            process_steps = [s for s in all_steps if str(s.get("ProcessId", "")) == selected_process_id_str]
+            process_steps.sort(key=lambda x: x.get("Index", 0))
+            
+            # Get all variants
+            url_variants = f"{api_base}/projects/{self.project_id}/variants/"
+            response_variants = requests.get(url_variants, params=params, headers=headers, verify=False, timeout=10)
+            
+            # Create/update variant temp records
+            variant_records = []
+            if response_variants.ok:
+                variants = response_variants.json()
+                if isinstance(variants, list):
+                    for v in variants:
+                        variant_id = str(v.get("Id", ""))
+                        # Find or create variant temp record
+                        variant_temp = self.env['product_module.arkite.variant.temp'].search([
+                            ('variant_id', '=', variant_id),
+                            ('wizard_id', '=', self.id)
+                        ], limit=1)
+                        if not variant_temp:
+                            variant_temp = self.env['product_module.arkite.variant.temp'].create({
+                                'wizard_id': self.id,
+                                'variant_id': variant_id,
+                                'name': v.get("Name", "Unknown"),
+                                'description': v.get("Description", "")
+                            })
+                        variant_records.append(variant_temp.id)
+            
+            # Clear existing process steps
+            self.process_step_ids.unlink()
+            
+            # Create process step records
+            step_records = []
+            for idx, step in enumerate(process_steps):
+                step_id = str(step.get("Id", ""))
+                step_name = step.get("Name", "Unnamed Step")
+                step_type = step.get("StepType", "UNKNOWN")
+                variant_ids = step.get("VariantIds", [])
+                for_all_variants = step.get("ForAllVariants", False)
+                step_index = step.get("Index", idx * 10)
+                
+                # Get variant records for this step
+                step_variant_records = []
+                for vid in variant_ids:
+                    variant_temp = self.env['product_module.arkite.variant.temp'].search([
+                        ('variant_id', '=', str(vid)),
+                        ('wizard_id', '=', self.id)
+                    ], limit=1)
+                    if variant_temp:
+                        step_variant_records.append(variant_temp.id)
+                
+                step_record = self.env['product_module.arkite.process.step'].create({
+                    'wizard_id': self.id,
+                    'process_id': str(self.selected_process_id),
+                    'step_id': step_id,
+                    'step_name': step_name,
+                    'step_type': step_type,
+                    'sequence': step_index,
+                    'index': step_index,
+                    'variant_ids': [(6, 0, step_variant_records)],
+                    'for_all_variants': for_all_variants
+                })
+                step_records.append(step_record.id)
+            
+            # Update available variants
+            self.available_variant_ids = [(6, 0, variant_records)]
+            
+            # Reload form to show the new records
+            return {'type': 'ir.actions.client', 'tag': 'reload'}
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error loading processes: %s", e, exc_info=True)
+            raise UserError(f"Error loading processes: {str(e)}")
+    
+    def action_load_process_list(self):
+        """Load list of available processes"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            url = f"{api_base}/projects/{self.project_id}/processes/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(f"Failed to fetch processes: HTTP {response.status_code}")
+            
+            processes = response.json()
+            if not isinstance(processes, list):
+                raise UserError("Unexpected response format for processes")
+            
+            if not processes:
+                raise UserError("No processes found in this project")
+            
+            # Clear existing process records
+            self.available_process_ids.unlink()
+            
+            # Create process temp records
+            process_records = []
+            for p in processes:
+                process_id = str(p.get("Id", ""))
+                process_name = p.get("Name", "Unnamed Process")
+                process_comment = p.get("Comment", "")
+                
+                process_temp = self.env['product_module.arkite.process.temp'].create({
+                    'wizard_id': self.id,
+                    'process_id': process_id,
+                    'name': process_name,
+                    'comment': process_comment
+                })
+                process_records.append(process_temp.id)
+            
+            # Auto-select if only one process
+            if len(process_records) == 1:
+                process_temp = self.env['product_module.arkite.process.temp'].browse(process_records[0])
+                self.selected_process_id = process_temp.process_id
+                # selected_process_selection temporarily removed
+                return self.action_load_processes()
+            
+            # Reload form to show process selection
+            return {'type': 'ir.actions.client', 'tag': 'reload'}
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error loading process list: %s", e, exc_info=True)
+            raise UserError(f"Error loading process list: {str(e)}")
+    
+    def write(self, vals):
+        """Override write to handle sequence changes from drag-and-drop"""
+        result = super().write(vals)
+        
+        # If job_step_ids sequence changed, update Arkite
+        if 'job_step_ids' in vals and self.job_step_ids:
+            api_base = os.getenv('ARKITE_API_BASE')
+            api_key = os.getenv('ARKITE_API_KEY')
+            
+            if api_base and api_key:
+                try:
+                    # Sort by sequence and update Arkite API
+                    sorted_steps = self.job_step_ids.sorted('sequence')
+                    
+                    # Update indices in Arkite based on new sequence
+                    for idx, step_record in enumerate(sorted_steps):
+                        new_index = idx * 10  # Use increments of 10 for flexibility
+                        if step_record.index != new_index:
+                            url = f"{api_base}/projects/{self.project_id}/steps/{step_record.step_id}"
+                            params = {"apiKey": api_key}
+                            headers = {"Content-Type": "application/json"}
+                            
+                            # Get current step data
+                            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                            if response.ok:
+                                step_data = response.json()
+                                step_data["Index"] = new_index
+                                patch_response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+                                if patch_response.ok:
+                                    step_record.index = new_index
+                except Exception as e:
+                    _logger.error("Error updating job step sequence: %s", e)
+        
+        # If process_step_ids sequence changed, update Arkite
+        if 'process_step_ids' in vals and self.process_step_ids and self.selected_process_id:
+            api_base = os.getenv('ARKITE_API_BASE')
+            api_key = os.getenv('ARKITE_API_KEY')
+            
+            if api_base and api_key:
+                try:
+                    # Sort by sequence and update Arkite API
+                    sorted_steps = self.process_step_ids.sorted('sequence')
+                    
+                    # Update indices in Arkite based on new sequence
+                    for idx, step_record in enumerate(sorted_steps):
+                        new_index = idx * 10  # Use increments of 10 for flexibility
+                        if step_record.index != new_index:
+                            url = f"{api_base}/projects/{self.project_id}/steps/{step_record.step_id}"
+                            params = {"apiKey": api_key}
+                            headers = {"Content-Type": "application/json"}
+                            
+                            # Get current step data
+                            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                            if response.ok:
+                                step_data = response.json()
+                                step_data["Index"] = new_index
+                                patch_response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+                                if patch_response.ok:
+                                    step_record.index = new_index
+                except Exception as e:
+                    _logger.error("Error updating step sequence: %s", e)
+        
+        return result
+    
+    def action_move_process_step_sequence(self, step_record_id, direction):
+        """Move step up or down (called from buttons)"""
+        step_record = self.env['product_module.arkite.process.step'].browse(step_record_id)
+        if not step_record.exists():
+            raise UserError("Step record not found")
+        
+        # Get all steps for this process, sorted
+        all_steps = self.process_step_ids.filtered(lambda s: s.process_id == step_record.process_id).sorted('sequence')
+        current_idx = None
+        for idx, s in enumerate(all_steps):
+            if s.id == step_record.id:
+                current_idx = idx
+                break
+        
+        if current_idx is None:
+            raise UserError("Step not found in list")
+        
+        if direction == 'up' and current_idx > 0:
+            # Swap with previous
+            prev_step = all_steps[current_idx - 1]
+            step_record.sequence, prev_step.sequence = prev_step.sequence, step_record.sequence
+        elif direction == 'down' and current_idx < len(all_steps) - 1:
+            # Swap with next
+            next_step = all_steps[current_idx + 1]
+            step_record.sequence, next_step.sequence = next_step.sequence, step_record.sequence
+        
+        # Trigger onchange to update Arkite
+        self._onchange_step_sequence()
+        
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
+    
+    def action_show_variant_selection_for_step(self, step_id, step_name):
+        """Show variant selection for a step - opens a wizard or updates the step's variant_ids"""
+        # This will be handled by the tree view's many2many_tags widget
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
+    
+    def action_show_variant_selection(self):
+        """Show interactive variant selection interface for a step"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        # Get step_id from context
+        step_id = self.env.context.get('step_id')
+        step_name = self.env.context.get('step_name', 'Unknown Step')
+        
+        if not step_id:
+            raise UserError("Step ID not provided")
+        
+        # Load variants data - now using available_variant_ids Many2many field
+        variants_data = []
+        # Note: This method is deprecated - variant selection now uses native many2many_tags widget
+        
+        # Get current step to see which variants are already assigned
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            url = f"{api_base}/projects/{self.project_id}/steps/{step_id}"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            current_variant_ids = set()
+            for_all_variants = False
+            
+            if response.ok:
+                step_data = response.json()
+                current_variant_ids = set(str(vid) for vid in step_data.get("VariantIds", []))
+                for_all_variants = step_data.get("ForAllVariants", False)
+            
+            # Build selection interface
+            html = f'<div style="padding: 16px; background-color: #f8f9fa; border-radius: 8px;">'
+            html += f'<h4 style="margin-top: 0;">Assign Variants to Step: <strong>{step_name}</strong></h4>'
+            html += f'<p style="font-size: 12px; color: #666; margin-bottom: 16px;">Step ID: <code>{step_id}</code></p>'
+            
+            if for_all_variants:
+                html += '<div class="alert alert-info" style="margin-bottom: 16px; padding: 8px; font-size: 12px;">'
+                html += 'This step is currently set to "For All Variants". Assigning specific variants will override this setting.'
+                html += '</div>'
+            
+            if not variants_data:
+                html += '<p style="color: #dc3545;">No variants available. Please create variants in Step 3 first.</p>'
+            else:
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-bottom: 16px;">'
+                for variant in variants_data:
+                    variant_id = variant.get('id', '')
+                    variant_name = variant.get('name', 'Unknown')
+                    variant_desc = variant.get('description', '')
+                    is_selected = variant_id in current_variant_ids
+                    
+                    html += f'<div style="padding: 12px; border: 2px solid {"#28a745" if is_selected else "#dee2e6"}; border-radius: 6px; background-color: {"#d4edda" if is_selected else "white"};">'
+                    html += f'<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">'
+                    html += f'<div style="flex: 1;">'
+                    html += f'<strong style="font-size: 14px; color: {"#155724" if is_selected else "#333"};">{variant_name}</strong>'
+                    if variant_desc:
+                        html += f'<br/><small style="color: #666; font-size: 11px;">{variant_desc}</small>'
+                    html += f'<br/><small style="color: #999; font-family: monospace; font-size: 9px;">ID: {variant_id}</small>'
+                    html += '</div>'
+                    
+                    # Toggle button
+                    if is_selected:
+                        html += f'<button name="action_toggle_variant" type="object" '
+                        html += f'context="{{&quot;step_id&quot;: &quot;{step_id}&quot;, &quot;variant_id&quot;: &quot;{variant_id}&quot;, &quot;action&quot;: &quot;remove&quot;}}" '
+                        html += f'class="btn btn-sm btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 8px;" title="Remove Variant">✕</button>'
+                    else:
+                        html += f'<button name="action_toggle_variant" type="object" '
+                        html += f'context="{{&quot;step_id&quot;: &quot;{step_id}&quot;, &quot;variant_id&quot;: &quot;{variant_id}&quot;, &quot;action&quot;: &quot;add&quot;}}" '
+                        html += f'class="btn btn-sm btn-success" style="padding: 4px 8px; font-size: 11px; margin-left: 8px;" title="Add Variant">+</button>'
+                    html += '</div>'
+                    html += '</div>'
+                html += '</div>'
+                
+                html += '<div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #dee2e6;">'
+                html += f'<button name="action_clear_variant_selection" type="object" '
+                html += f'context="{{&quot;step_id&quot;: &quot;{step_id}&quot;}}" '
+                html += f'class="btn btn-secondary" style="padding: 10px 20px; font-size: 14px; margin: 0 5px;">'
+                html += 'Clear All Variants</button>'
+                html += f' <button name="action_set_all_variants" type="object" '
+                html += f'context="{{&quot;step_id&quot;: &quot;{step_id}&quot;}}" '
+                html += f'class="btn btn-info" style="padding: 10px 20px; font-size: 14px; margin: 0 5px;">'
+                html += 'Set "For All Variants"</button>'
+                html += '</div>'
+            
+            html += '</div>'
+            
+            # Note: step_variant_selection_info field removed - using native widgets now
+            self.write({
+                'selected_step_id': step_id
+            })
+            
+            return {'type': 'ir.actions.client', 'tag': 'reload'}
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error showing variant selection: %s", e, exc_info=True)
+            raise UserError(f"Error showing variant selection: {str(e)}")
+    
+    def action_toggle_variant(self):
+        """Add or remove a single variant from a step"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        step_id = self.env.context.get('step_id')
+        variant_id = self.env.context.get('variant_id')
+        action = self.env.context.get('action')  # 'add' or 'remove'
+        
+        if not step_id or not variant_id or not action:
+            raise UserError("Missing parameters")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Get current step
+            url = f"{api_base}/projects/{self.project_id}/steps/{step_id}"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(f"Failed to fetch step: HTTP {response.status_code}")
+            
+            step_data = response.json()
+            current_variant_ids = [str(vid) for vid in step_data.get("VariantIds", [])]
+            
+            # Add or remove variant
+            if action == "add":
+                if variant_id not in current_variant_ids:
+                    current_variant_ids.append(variant_id)
+                    step_data["ForAllVariants"] = False  # Disable ForAllVariants when adding specific variants
+            elif action == "remove":
+                if variant_id in current_variant_ids:
+                    current_variant_ids.remove(variant_id)
+            
+            # Update step
+            step_data["VariantIds"] = current_variant_ids
+            
+            response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+            
+            if response.ok:
+                # Verify update
+                time.sleep(0.3)
+                verify_response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                if verify_response.ok:
+                    # Get step name for re-display
+                    step_name = self.env.context.get('step_name', 'Unknown Step')
+                    # Reload selection interface and processes
+                    time.sleep(0.3)
+                    # Re-show selection interface
+                    self.env.context = dict(self.env.context, step_id=step_id, step_name=step_name)
+                    self.action_show_variant_selection()
+                    time.sleep(0.3)
+                    self.action_load_processes()
+                    
+                    action_text = "added to" if action == "add" else "removed from"
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': 'Success',
+                            'message': f'Variant {action_text} step',
+                            'type': 'success',
+                            'sticky': False,
+                        }
+                    }
+            else:
+                error_text = response.text[:500] if response.text else "Unknown error"
+                raise UserError(f"Failed to update variant: HTTP {response.status_code}\n{error_text}")
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error toggling variant: %s", e, exc_info=True)
+            raise UserError(f"Error toggling variant: {str(e)}")
+    
+    def action_assign_variants_to_step(self):
+        """Assign variants to a specific process step"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        if not self.selected_step_id:
+            raise UserError("Please enter a Step ID")
+        
+        if not self.step_variant_ids:
+            raise UserError("Please enter Variant IDs (comma-separated)")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Parse variant IDs
+            variant_id_list = [vid.strip() for vid in self.step_variant_ids.split(',') if vid.strip()]
+            if not variant_id_list:
+                raise UserError("No valid variant IDs found")
+            
+            # Get current step
+            url = f"{api_base}/projects/{self.project_id}/steps/{step_id}"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(f"Failed to fetch step: HTTP {response.status_code}")
+            
+            step_data = response.json()
+            
+            # Update step with new variant IDs
+            step_data["VariantIds"] = variant_id_list
+            step_data["ForAllVariants"] = False  # Set to False when specific variants are assigned
+            
+            # Update step
+            response = requests.patch(
+                url,
+                params=params,
+                headers=headers,
+                json=step_data,
+                verify=False,
+                timeout=10
+            )
+            
+            if response.ok:
+                # Verify update (API bug workaround)
+                time.sleep(0.5)
+                verify_response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                if verify_response.ok:
+                    updated_step = verify_response.json()
+                    updated_variant_ids = updated_step.get("VariantIds", [])
+                    if set(str(vid) for vid in updated_variant_ids) == set(variant_id_list):
+                        # Reload processes
+                        time.sleep(0.5)
+                        self.action_load_processes()
+                        
+                        return {
+                            'type': 'ir.actions.client',
+                            'tag': 'display_notification',
+                            'params': {
+                                'title': 'Success',
+                                'message': f'Successfully assigned {len(variant_id_list)} variant(s) to step',
+                                'type': 'success',
+                            }
+                        }
+                    else:
+                        _logger.warning("Variant assignment may have failed - verification mismatch")
+                
+                # Clear selection interface
+                self.write({'step_variant_selection_info': ''})
+                # Reload processes anyway
+                time.sleep(0.5)
+                self.action_load_processes()
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': 'Success',
+                        'message': f'Variant assignment completed (please verify)',
+                        'type': 'success',
+                    }
+                }
+            else:
+                error_text = response.text[:500] if response.text else "Unknown error"
+                _logger.error("[ARKITE] Failed to assign variants: HTTP %s - %s", response.status_code, error_text)
+                raise UserError(f"Failed to assign variants: HTTP {response.status_code}\n{error_text}")
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error assigning variants: %s", e, exc_info=True)
+            raise UserError(f"Error assigning variants: {str(e)}")
+    
+    def action_move_process_step(self):
+        """Move a process step up or down"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        step_id = self.env.context.get('step_id')
+        process_id = self.env.context.get('process_id')
+        direction = self.env.context.get('direction')
+        
+        if not step_id or not direction:
+            raise UserError("Step ID and direction must be specified")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Get all steps for this process
+            url = f"{api_base}/projects/{self.project_id}/steps/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(f"Failed to fetch steps: HTTP {response.status_code}")
+            
+            all_steps = response.json()
+            if not isinstance(all_steps, list):
+                raise UserError("Unexpected response format")
+            
+            # Filter steps for this process
+            process_steps = [s for s in all_steps if str(s.get("ProcessId", "")) == str(process_id)]
+            process_steps.sort(key=lambda x: x.get("Index", 0))
+            
+            # Find target step
+            target_step = None
+            for s in process_steps:
+                if str(s.get("Id", "")) == str(step_id):
+                    target_step = s
+                    break
+            
+            if not target_step:
+                raise UserError(f"Step with ID {step_id} not found in process")
+            
+            # Find current position
+            current_index = None
+            for idx, step in enumerate(process_steps):
+                if str(step.get("Id", "")) == str(step_id):
+                    current_index = idx
+                    break
+            
+            if current_index is None:
+                raise UserError("Step not found in process steps list")
+            
+            # Determine new position
+            if direction == "up" and current_index > 0:
+                new_index = current_index - 1
+            elif direction == "down" and current_index < len(process_steps) - 1:
+                new_index = current_index + 1
+            else:
+                raise UserError(f"Cannot move step {direction} - already at boundary")
+            
+            # Get the step we're swapping with
+            swap_step = process_steps[new_index]
+            target_index_value = target_step.get("Index", 0)
+            swap_index_value = swap_step.get("Index", 0)
+            
+            # Swap indices
+            target_step_id = str(target_step.get("Id", ""))
+            swap_step_id = str(swap_step.get("Id", ""))
+            
+            # Update target step
+            url_target = f"{api_base}/projects/{self.project_id}/steps/{target_step_id}"
+            target_step_data = target_step.copy()
+            target_step_data["Index"] = swap_index_value
+            response = requests.patch(url_target, params=params, headers=headers, json=target_step_data, verify=False, timeout=10)
+            
+            if not response.ok:
+                raise UserError(f"Failed to update step: HTTP {response.status_code}")
+            
+            # Update swap step
+            url_swap = f"{api_base}/projects/{self.project_id}/steps/{swap_step_id}"
+            swap_step_data = swap_step.copy()
+            swap_step_data["Index"] = target_index_value
+            response = requests.patch(url_swap, params=params, headers=headers, json=swap_step_data, verify=False, timeout=10)
+            
+            if not response.ok:
+                raise UserError(f"Failed to update step: HTTP {response.status_code}")
+            
+            # Reload processes
+            time.sleep(0.5)
+            self.action_load_processes()
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Success',
+                    'message': f'Step moved {direction} successfully',
+                    'type': 'success',
+                }
+            }
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error moving process step: %s", e, exc_info=True)
+            raise UserError(f"Error moving process step: {str(e)}")
+    
+    def action_clear_variant_selection(self):
+        """Clear all variants from a step"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        step_id = self.env.context.get('step_id') or self.selected_step_id
+        if not step_id:
+            raise UserError("Step ID not provided")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Get current step
+            url = f"{api_base}/projects/{self.project_id}/steps/{step_id}"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(f"Failed to fetch step: HTTP {response.status_code}")
+            
+            step_data = response.json()
+            step_name = step_data.get("Name", "Unknown Step")
+            
+            # Clear variants
+            step_data["VariantIds"] = []
+            step_data["ForAllVariants"] = False
+            
+            # Update step
+            response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+            
+            if response.ok:
+                # Verify update
+                time.sleep(0.5)
+                verify_response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                if verify_response.ok:
+                    # Clear selection interface and reload
+                    time.sleep(0.5)
+                    self.action_load_processes()
+                    # Note: Variant selection now handled by native many2many_tags widget
+                    
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': 'Success',
+                            'message': 'All variants cleared from step',
+                            'type': 'success',
+                        }
+                    }
+            else:
+                error_text = response.text[:500] if response.text else "Unknown error"
+                raise UserError(f"Failed to clear variants: HTTP {response.status_code}\n{error_text}")
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error clearing variants: %s", e, exc_info=True)
+            raise UserError(f"Error clearing variants: {str(e)}")
+    
+    def action_set_all_variants(self):
+        """Set step to "For All Variants" mode"""
+        if not self.project_loaded or not self.project_id:
+            raise UserError("Please load a project first (Step 1)")
+        
+        step_id = self.env.context.get('step_id') or self.selected_step_id
+        if not step_id:
+            raise UserError("Step ID not provided")
+        
+        api_base = os.getenv('ARKITE_API_BASE')
+        api_key = os.getenv('ARKITE_API_KEY')
+        
+        if not api_base or not api_key:
+            raise UserError("Arkite API configuration is missing.")
+        
+        try:
+            # Get current step
+            url = f"{api_base}/projects/{self.project_id}/steps/{step_id}"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(f"Failed to fetch step: HTTP {response.status_code}")
+            
+            step_data = response.json()
+            step_name = step_data.get("Name", "Unknown Step")
+            
+            # Set ForAllVariants
+            step_data["ForAllVariants"] = True
+            step_data["VariantIds"] = []  # Clear specific variants when using ForAllVariants
+            
+            # Update step
+            response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+            
+            if response.ok:
+                # Verify update
+                time.sleep(0.5)
+                verify_response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                if verify_response.ok:
+                    # Clear selection interface and reload
+                    time.sleep(0.5)
+                    self.action_load_processes()
+                    # Note: Variant selection now handled by native many2many_tags widget
+                    
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': 'Success',
+                            'message': 'Step set to "For All Variants"',
+                            'type': 'success',
+                        }
+                    }
+            else:
+                error_text = response.text[:500] if response.text else "Unknown error"
+                raise UserError(f"Failed to set For All Variants: HTTP {response.status_code}\n{error_text}")
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error setting For All Variants: %s", e, exc_info=True)
+            raise UserError(f"Error setting For All Variants: {str(e)}")
