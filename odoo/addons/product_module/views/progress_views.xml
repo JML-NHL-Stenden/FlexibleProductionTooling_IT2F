@@ -221,7 +221,7 @@
                 </page>
             </xpath>
 
-            <xpath expr="//div[@style='display: flex; gap: 12px;']" position="inside">
+            <xpath expr="//div[contains(@style, 'display: flex') and contains(@style, 'gap: 12px') and .//field[@name='project_count'] and .//field[@name='job_count'] and .//field[@name='product_count']]" position="inside">
                 <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; text-align: center;">
                     <div style="font-size: 24px; font-weight: 700; color: white;">
                         <field name="progress_count"/>
