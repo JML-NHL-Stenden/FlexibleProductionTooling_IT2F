@@ -16,7 +16,9 @@ class ArkiteProcessStep(models.TransientModel):
     _order = 'sequence, id'
     _rec_name = 'step_name'
     
-    wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', required=True, ondelete='cascade')
+    wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', ondelete='cascade')
+    job_id = fields.Many2one('product_module.type', string='Job', ondelete='cascade')
+    project_id = fields.Many2one('product_module.project', string='Project', ondelete='cascade')
     process_id = fields.Char(string='Process ID', required=True)
     
     # Step data
@@ -40,6 +42,25 @@ class ArkiteProcessStep(models.TransientModel):
     sequence = fields.Integer(string='Sequence', default=10)
     index = fields.Integer(string='Index', readonly=True)
     
+    # Parent-child relationship for tree structure
+    parent_step_id = fields.Char(string='Parent Step ID', readonly=True, help='ID of parent step (for nested steps)')
+    parent_step_record = fields.Many2one('product_module.arkite.process.step', 
+                                         string='Parent Step',
+                                         ondelete='cascade',
+                                         help='Parent step record (for tree structure)')
+    
+    @api.model
+    def _compute_parent_from_step_id(self, parent_step_id_str, project_id, process_id):
+        """Helper to find parent step record by step_id"""
+        if not parent_step_id_str or parent_step_id_str == "0" or parent_step_id_str == "":
+            return False
+        parent = self.search([
+            ('step_id', '=', parent_step_id_str),
+            ('project_id', '=', project_id),
+            ('process_id', '=', process_id)
+        ], limit=1)
+        return parent.id if parent else False
+    
     # Variants
     variant_ids = fields.Many2many(
         'product_module.arkite.variant.temp',
@@ -57,21 +78,44 @@ class ArkiteProcessStep(models.TransientModel):
             return super().create(vals)
         
         # Otherwise, create a new step in Arkite for the process
-        wizard = self.env['product_module.arkite.job.step.wizard'].browse(vals.get('wizard_id'))
-        if not wizard or not wizard.project_id:
-            raise UserError("Please load a project first (Step 1)")
-        
         process_id = vals.get('process_id')
-        if not process_id:
-            # Try to get from wizard's selected_process_id (Char field)
-            if wizard.selected_process_id:
-                process_id = wizard.selected_process_id
-                vals['process_id'] = process_id
-            else:
-                raise UserError("Process ID is required. Please select a process first (click 'Load Process List' then select a process).")
+        project_id = None
         
+        # Try to get project_id and process_id from different sources
+        if vals.get('wizard_id'):
+            wizard = self.env['product_module.arkite.job.step.wizard'].browse(vals.get('wizard_id'))
+            if wizard and wizard.project_id:
+                project_id = wizard.project_id
+                if not process_id and wizard.selected_process_id:
+                    process_id = wizard.selected_process_id
+                    vals['process_id'] = process_id
+        elif vals.get('project_id'):
+            project = self.env['product_module.project'].browse(vals.get('project_id'))
+            if project and project.arkite_project_id:
+                project_id = project.arkite_project_id
+                if not process_id and project.selected_arkite_process_id:
+                    process_id = project.selected_arkite_process_id.process_id
+                    vals['process_id'] = process_id
+        
+        if not project_id:
+            raise UserError("Please load a project first")
+        
+        if not process_id:
+            raise UserError("Process ID is required. Please select a process first.")
+        
+        # Get credentials from project if available, otherwise use env vars
         api_base = os.getenv('ARKITE_API_BASE')
         api_key = os.getenv('ARKITE_API_KEY')
+        
+        if vals.get('project_id'):
+            try:
+                project = self.env['product_module.project'].browse(vals.get('project_id'))
+                if project:
+                    creds = project._get_arkite_credentials()
+                    api_base = creds['api_base']
+                    api_key = creds['api_key']
+            except Exception:
+                pass
         
         if not api_base or not api_key:
             raise UserError("Arkite API configuration is missing.")
@@ -80,7 +124,7 @@ class ArkiteProcessStep(models.TransientModel):
         # Process steps might need a ParentStepId pointing to a composite step within the process
         parent_composite_id = None
         try:
-            url_check = f"{api_base}/projects/{wizard.project_id}/steps/"
+            url_check = f"{api_base}/projects/{project_id}/steps/"
             params_check = {"apiKey": api_key}
             headers_check = {"Content-Type": "application/json"}
             check_response = requests.get(url_check, params=params_check, headers=headers_check, verify=False, timeout=10)
@@ -141,7 +185,7 @@ class ArkiteProcessStep(models.TransientModel):
                      step_data.get("Name"), step_data.get("ProcessId"), list(step_data.keys()))
         
         # Create step in Arkite (API expects an array)
-        url = f"{api_base}/projects/{wizard.project_id}/steps/"
+        url = f"{api_base}/projects/{project_id}/steps/"
         params = {"apiKey": api_key}
         headers = {"Content-Type": "application/json"}
         
@@ -229,21 +273,44 @@ class ArkiteProcessStep(models.TransientModel):
         result = super().write(vals)
         
         for record in self:
-            if not record.wizard_id or not record.wizard_id.project_id:
+            # Get project ID from either wizard, project, or job's project
+            project_id = None
+            if record.wizard_id and record.wizard_id.project_id:
+                project_id = record.wizard_id.project_id
+            elif record.project_id and record.project_id.arkite_project_id:
+                project_id = record.project_id.arkite_project_id
+            elif record.job_id:
+                # Try to get from job's project
+                project = self.env['product_module.project'].search([
+                    ('job_ids', 'in', [record.job_id.id])
+                ], limit=1)
+                if project and project.arkite_project_id:
+                    project_id = project.arkite_project_id
+            
+            if not project_id:
                 continue
             
             # Skip if step_id is not set (new step being created)
             if not record.step_id:
                 continue
             
+            # Get credentials from project if available
             api_base = os.getenv('ARKITE_API_BASE')
             api_key = os.getenv('ARKITE_API_KEY')
+            
+            if record.project_id:
+                try:
+                    creds = record.project_id._get_arkite_credentials()
+                    api_base = creds['api_base']
+                    api_key = creds['api_key']
+                except Exception:
+                    pass
             
             if not api_base or not api_key:
                 continue
             
             try:
-                url = f"{api_base}/projects/{record.wizard_id.project_id}/steps/{record.step_id}"
+                url = f"{api_base}/projects/{project_id}/steps/{record.step_id}"
                 params = {"apiKey": api_key}
                 headers = {"Content-Type": "application/json"}
                 
@@ -306,16 +373,23 @@ class ArkiteProcessStep(models.TransientModel):
     def unlink(self):
         """Override unlink to delete step from Arkite when removed from list"""
         for record in self:
-            if record.step_id and record.wizard_id and record.wizard_id.project_id:
+            # Get project ID from either wizard or job
+            project_id = None
+            if record.wizard_id and record.wizard_id.project_id:
+                project_id = record.wizard_id.project_id
+            elif record.job_id and record.job_id.arkite_project_id:
+                project_id = record.job_id.arkite_project_id
+            
+            if record.step_id and project_id:
                 api_base = os.getenv('ARKITE_API_BASE')
                 api_key = os.getenv('ARKITE_API_KEY')
-                
+
                 if api_base and api_key:
                     try:
-                        url = f"{api_base}/projects/{record.wizard_id.project_id}/steps/{record.step_id}"
+                        url = f"{api_base}/projects/{project_id}/steps/{record.step_id}"
                         params = {"apiKey": api_key}
                         headers = {"Content-Type": "application/json"}
-                        
+
                         # Delete step from Arkite
                         response = requests.delete(url, params=params, headers=headers, verify=False, timeout=10)
                         if not response.ok and response.status_code != 404:  # 404 is OK (already deleted)
@@ -323,7 +397,7 @@ class ArkiteProcessStep(models.TransientModel):
                     except Exception as e:
                         _logger.error("Error deleting step from Arkite: %s", e)
                         # Continue with deletion even if API call fails
-        
+
         return super().unlink()
 
 
@@ -334,6 +408,8 @@ class ArkiteVariantTemp(models.TransientModel):
     _rec_name = 'name'
     
     wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', ondelete='cascade')
-    variant_id = fields.Char(string='Variant ID', required=True)
+    job_id = fields.Many2one('product_module.type', string='Job', ondelete='cascade')
+    project_id = fields.Many2one('product_module.project', string='Project', ondelete='cascade')
+    variant_id = fields.Char(string='Variant ID', default='0')
     name = fields.Char(string='Name', required=True)
     description = fields.Text(string='Description')

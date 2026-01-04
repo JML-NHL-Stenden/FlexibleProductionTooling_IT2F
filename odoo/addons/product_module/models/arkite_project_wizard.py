@@ -1202,6 +1202,32 @@ class ArkiteProjectWizard(models.TransientModel):
                 
                 if self.job_names or self.variant_codes:
                     message += _('\n\nJobs and variants have been assigned to the project.')
+                
+                # Link back to Odoo project if context provided
+                odoo_project_id = self.env.context.get('default_odoo_project_id')
+                if odoo_project_id:
+                    odoo_project = self.env['product_module.project'].browse(odoo_project_id)
+                    if odoo_project.exists():
+                        # Get project name from Arkite
+                        api_base = os.getenv('ARKITE_API_BASE')
+                        api_key = os.getenv('ARKITE_API_KEY')
+                        project_name = self.project_name
+                        if api_base and api_key:
+                            try:
+                                url = f"{api_base}/projects/{project_id}"
+                                params = {"apiKey": api_key}
+                                headers = {"Content-Type": "application/json"}
+                                response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                                if response.ok:
+                                    proj_data = response.json()
+                                    project_name = proj_data.get("Name") or self.project_name
+                            except Exception:
+                                pass
+                        
+                        odoo_project.write({
+                            'arkite_project_id': str(project_id),
+                            'arkite_project_name': project_name,
+                        })
             
             # Show success message
             return {

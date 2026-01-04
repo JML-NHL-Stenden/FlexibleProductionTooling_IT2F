@@ -306,8 +306,12 @@ class ArkiteJobStepWizard(models.Model):
     def action_load_project(self):
         """Step 1: Load project by ID - using exact same pattern as working code"""
         if not self.project_id:
-            self.write({'available_projects_info': '<p style="color: #dc3545; font-size: 12px;">Please enter a Project ID.</p>'})
-            return {'type': 'ir.actions.client', 'tag': 'reload'}
+            # If opened from project context, try to auto-load
+            if self.env.context.get('default_project_id'):
+                self.project_id = self.env.context.get('default_project_id')
+            else:
+                self.write({'available_projects_info': '<p style="color: #dc3545; font-size: 12px;">Please enter a Project ID.</p>'})
+                return {'type': 'ir.actions.client', 'tag': 'reload'}
         
         api_base = os.getenv('ARKITE_API_BASE')
         api_key = os.getenv('ARKITE_API_KEY')

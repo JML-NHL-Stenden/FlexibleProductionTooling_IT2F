@@ -140,6 +140,14 @@ class ProductAssemblePage(models.Model):
                 'default_page_id': self.id,
             }
         }
+    
+    def action_refresh_materials(self):
+        """Refresh the materials kanban view without full page reload"""
+        self.ensure_one()
+        # Invalidate cache to force reload
+        self.material_ids.invalidate_recordset(['name', 'material_type', 'image', 'usage_count'])
+        # Return empty dict - JavaScript will handle the reload
+        return {}
 
     def action_create_progress(self):
         """Open form to create a new progress tracking item with better defaults"""

@@ -1,4 +1,4 @@
-# mqtt_publish/publisher.py
+# mqtt_publish/publish.py
 import os
 import json
 import time
@@ -172,7 +172,7 @@ base AS (
         i.id            AS instr_id,
         i.sequence      AS instr_sequence,
         i.title         AS instr_title,
-        i.description   AS instr_description,
+        i.process_step  AS instr_description,
         CASE
             WHEN %(odoo_base_url)s <> '' AND a.attachment_id IS NOT NULL THEN
                 %(odoo_base_url)s || '/web/image/' || a.attachment_id::text
@@ -208,8 +208,8 @@ prod_details AS (
     GROUP BY b.id, b.name, b.product_code
 )
 SELECT
-    t.id        AS category_id,
-    t.name      AS category_name,
+    t.id        AS job_id,
+    t.name      AS job_name,
     COALESCE(
         json_agg(
             json_build_object(

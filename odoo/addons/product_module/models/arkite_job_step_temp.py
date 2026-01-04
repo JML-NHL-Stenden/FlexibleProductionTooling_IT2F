@@ -16,7 +16,9 @@ class ArkiteJobStepTemp(models.TransientModel):
     _order = 'sequence, id'
     _rec_name = 'step_name'
     
-    wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', required=True, ondelete='cascade')
+    wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', ondelete='cascade')
+    job_id = fields.Many2one('product_module.type', string='Job', ondelete='cascade')
+    project_id = fields.Many2one('product_module.project', string='Project', ondelete='cascade')
     
     # Step data
     step_id = fields.Char(string='Step ID', readonly=True, help='Arkite Step ID (auto-filled when loaded from Arkite)')
@@ -43,6 +45,14 @@ class ArkiteJobStepTemp(models.TransientModel):
     detection_id = fields.Char(string='Detection ID', help='Required for some step types')
     material_id = fields.Char(string='Material ID', help='Required for MATERIAL_GRAB')
     button_id = fields.Char(string='Button ID', help='Required for VIRTUAL_BUTTON_PRESS')
+    variant_ids = fields.Many2many(
+        'product_module.arkite.variant.temp',
+        'arkite_step_variant_rel',
+        'step_id',
+        'variant_id',
+        string='Assigned Variants',
+        help='Variants assigned to this step (leave empty for all variants)'
+    )
     
     @api.model
     def create(self, vals):
@@ -51,10 +61,19 @@ class ArkiteJobStepTemp(models.TransientModel):
         if vals.get('step_id'):
             return super().create(vals)
         
-        # Otherwise, create a new step in Arkite
-        wizard = self.env['product_module.arkite.job.step.wizard'].browse(vals.get('wizard_id'))
-        if not wizard or not wizard.project_id:
-            raise UserError("Please load a project first (Step 1)")
+        # Get project ID from either wizard or job
+        project_id = None
+        if vals.get('wizard_id'):
+            wizard = self.env['product_module.arkite.job.step.wizard'].browse(vals.get('wizard_id'))
+            if wizard and wizard.project_id:
+                project_id = wizard.project_id
+        elif vals.get('job_id'):
+            job = self.env['product_module.type'].browse(vals.get('job_id'))
+            if job and job.arkite_project_id:
+                project_id = job.arkite_project_id
+        
+        if not project_id:
+            raise UserError("Please load a project first")
         
         # Use the wizard's action_add_step logic to create the step
         # We'll create the step via API and then update vals with the returned step_id
@@ -91,7 +110,7 @@ class ArkiteJobStepTemp(models.TransientModel):
         # Auto-detect parent if not provided
         if not parent_step_id:
             try:
-                url = f"{api_base}/projects/{wizard.project_id}/steps/"
+                url = f"{api_base}/projects/{project_id}/steps/"
                 params = {"apiKey": api_key}
                 headers = {"Content-Type": "application/json"}
                 response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
@@ -136,7 +155,7 @@ class ArkiteJobStepTemp(models.TransientModel):
             step_data["ButtonId"] = vals['button_id']
         
         # Create step in Arkite (API expects an array)
-        url = f"{api_base}/projects/{wizard.project_id}/steps/"
+        url = f"{api_base}/projects/{project_id}/steps/"
         params = {"apiKey": api_key}
         headers = {"Content-Type": "application/json"}
         
@@ -202,7 +221,21 @@ class ArkiteJobStepTemp(models.TransientModel):
         result = super().write(vals)
         
         for record in self:
-            if not record.wizard_id or not record.wizard_id.project_id:
+            # Get project ID from either wizard, project, or job's project
+            project_id = None
+            if record.wizard_id and record.wizard_id.project_id:
+                project_id = record.wizard_id.project_id
+            elif record.project_id and record.project_id.arkite_project_id:
+                project_id = record.project_id.arkite_project_id
+            elif record.job_id:
+                # Try to get from job's project
+                project = self.env['product_module.project'].search([
+                    ('job_ids', 'in', [record.job_id.id])
+                ], limit=1)
+                if project and project.arkite_project_id:
+                    project_id = project.arkite_project_id
+            
+            if not project_id:
                 continue
             
             # Update sequence/index if changed
@@ -249,7 +282,7 @@ class ArkiteJobStepTemp(models.TransientModel):
                 
                 if api_base and api_key:
                     try:
-                        url = f"{api_base}/projects/{record.wizard_id.project_id}/steps/{record.step_id}"
+                        url = f"{api_base}/projects/{project_id}/steps/{record.step_id}"
                         params = {"apiKey": api_key}
                         headers = {"Content-Type": "application/json"}
                         

@@ -14,7 +14,8 @@ class ArkiteDetectionTemp(models.TransientModel):
     _rec_name = 'name'
     _order = 'sequence, id'
     
-    wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', required=True, ondelete='cascade')
+    wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', ondelete='cascade')
+    project_id = fields.Many2one('product_module.project', string='Project', ondelete='cascade')
     detection_id = fields.Char(string='Detection ID', readonly=True, help='Arkite Detection ID (auto-filled when loaded from Arkite)')
     name = fields.Char(string='Name', required=True)
     detection_type = fields.Selection([

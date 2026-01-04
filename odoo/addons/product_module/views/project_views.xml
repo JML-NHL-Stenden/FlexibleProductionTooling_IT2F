@@ -20,10 +20,10 @@
             <form string="Project">
                 <sheet>
                     <!-- Two Column Layout -->
-                    <div style="display: flex; width: 100%; height: calc(100vh - 200px); gap: 24px;">
+                    <div style="display: flex; width: 100%; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; box-sizing: border-box;">
                         
                         <!-- LEFT COLUMN - Project Information -->
-                        <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
+                        <div style="display: flex; flex-direction: column; flex: 1; min-width: 300px; max-width: 100%;">
                             <!-- Top Section: Name -->
                             <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
                                 <div>
@@ -38,14 +38,134 @@
                                 </div>
                             </div>
 
-                            <!-- Bottom Section: Description (fills remaining space) -->
-                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column;">
-                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Project Information
-                                </h3>
-                                <div style="flex: 1; display: flex; flex-direction: column;">
+                            <!-- Bottom Section: Description and Arkite Management -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 24px;">
+                                <!-- Project Information -->
+                                <div style="display: flex; flex-direction: column;">
+                                    <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                        <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Project Information
+                                    </h3>
                                     <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description:</div>
-                                    <field name="description" placeholder="Describe this project..." style="width: 100%; flex: 1; min-height: 200px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                    <field name="description" placeholder="Describe this project..." style="width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                </div>
+                                
+                                <!-- Arkite Management Section -->
+                                <div style="border-top: 2px solid #e9ecef; padding-top: 24px;">
+                                    <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                        <i class="fa fa-project-diagram" style="color: #667eea; margin-right: 8px;"/> Arkite Project Management
+                                    </h3>
+                                    
+                                    <!-- Unit Selection -->
+                                    <div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Unit:</div>
+                                            <button name="%(action_arkite_unit)d" 
+                                                    type="action" 
+                                                    class="btn btn-sm btn-secondary"
+                                                    string="Manage Units"
+                                                    style="white-space: nowrap; padding: 4px 12px; font-size: 12px;"
+                                                    help="Open Arkite Units management to create or edit units"/>
+                                        </div>
+                                        <field name="arkite_unit_id" 
+                                               options="{'no_create': True, 'no_create_edit': True}"
+                                               context="{'default_active': True}"
+                                               placeholder="Select an Arkite unit..."/>
+                                        <div style="margin-top: 12px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">
+                                            <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                            <strong>Note:</strong> Assign an Arkite unit to use its API credentials. If no unit is assigned, the system will use environment variables (if configured). Click "Manage Units" to create or edit units.
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Arkite Project Info -->
+                                    <div invisible="not arkite_linked" style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                            <i class="fa fa-check-circle" style="color: #28a745; font-size: 18px;"/>
+                                            <span style="font-weight: 600; color: #2c3e50;">Linked to Arkite Project</span>
+                                        </div>
+                                        <div style="margin-left: 30px; color: #495057; font-size: 14px;">
+                                            <div><strong>Project ID:</strong> <field name="arkite_project_id" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                                            <div><strong>Project Name:</strong> <field name="arkite_project_name" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                        <button name="action_create_arkite_project" 
+                                                type="object" 
+                                                class="btn btn-success" 
+                                                invisible="arkite_linked"
+                                                style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+                                            <i class="fa fa-plus" style="margin-right: 8px;"/> Create Arkite Project
+                                        </button>
+                                        
+                                        <button name="action_duplicate_arkite_project" 
+                                                type="object" 
+                                                class="btn btn-info" 
+                                                invisible="arkite_linked"
+                                                style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+                                            <i class="fa fa-copy" style="margin-right: 8px;"/> Duplicate from Template
+                                        </button>
+                                        
+                                        <button name="action_link_arkite_project" 
+                                                type="object" 
+                                                class="btn btn-secondary" 
+                                                invisible="arkite_linked"
+                                                style="border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+                                            <i class="fa fa-link" style="margin-right: 8px;"/> Link Existing Project
+                                        </button>
+                                        
+                                        <button name="action_sync_from_arkite" 
+                                                type="object" 
+                                                class="btn btn-primary" 
+                                                invisible="not arkite_linked"
+                                                style="background: linear-gradient(45deg, #007bff 0%, #0056b3 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;"
+                                                id="sync_from_arkite_btn">
+                                            <i class="fa fa-sync" style="margin-right: 8px;"/> Sync from Arkite
+                                        </button>
+                                        <script>
+                                            <![CDATA[
+                                                // Refresh only material_ids and instruction_ids fields after sync
+                                                (function() {
+                                                    setTimeout(function() {
+                                                        var syncBtn = document.getElementById('sync_from_arkite_btn');
+                                                        if (syncBtn && !syncBtn.dataset.listenerAdded) {
+                                                            syncBtn.dataset.listenerAdded = 'true';
+                                                            syncBtn.addEventListener('click', function() {
+                                                                setTimeout(function() {
+                                                                    var form = syncBtn.closest('.o_form_view');
+                                                                    if (form && form.__controller__) {
+                                                                        var controller = form.__controller__;
+                                                                        
+                                                                        // Reload the entire form view to ensure all fields are refreshed
+                                                                        // This is more reliable than trying to reload individual field widgets
+                                                                        if (controller && typeof controller.reload === 'function') {
+                                                                            console.log('[ARKITE SYNC] Reloading form view to refresh instruction_ids and material_ids');
+                                                                            controller.reload();
+                                                                        } else {
+                                                                            // Fallback: try to trigger a page reload
+                                                                            console.log('[ARKITE SYNC] Controller reload not available, triggering page reload');
+                                                                            window.location.reload();
+                                                                        }
+                                                                    } else {
+                                                                        // Last resort: full page reload
+                                                                        console.log('[ARKITE SYNC] Form controller not found, reloading page');
+                                                                        window.location.reload();
+                                                                    }
+                                                                }, 1500); // Wait 1.5s for sync to complete
+                                                            });
+                                                        }
+                                                    }, 500);
+                                                })();
+                                            ]]>
+                                        </script>
+                                        
+                                    </div>
+                                    
+                                    <!-- Help Text -->
+                                    <div style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #6c757d;">
+                                        <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
+                                        <strong>Note:</strong> Create or link an Arkite project to manage steps, variants, processes, and detections.
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -79,6 +199,466 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Inline Sections: Processes, Materials, QR Code -->
+                    <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; box-sizing: border-box;">
+                        <!-- Processes Section -->
+                        <div style="flex: 1; min-width: 0; width: 100%; max-width: 100%; background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-x: auto; box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                    <i class="fa fa-cogs" style="color: #007bff; margin-right: 8px;"/> Arkite Processes &amp; Steps
+                                </h3>
+                                <button name="action_load_process_list" 
+                                        string="Load Processes" 
+                                        type="object" 
+                                        class="btn-primary"
+                                        invisible="not arkite_linked"
+                                        icon="fa-refresh"
+                                        help="Load available processes from Arkite"/>
+                            </div>
+                            
+                            <!-- Hidden fields for selected process -->
+                            <field name="selected_process_id_char" invisible="1"/>
+                            <field name="selected_arkite_process_id" invisible="1"/>
+                            
+                            <!-- Process Selection -->
+                            <group col="1">
+                                <group string="Process Selection" col="1">
+                                    <button name="action_load_process_list" 
+                                            string="Load Process List" 
+                                            type="object" 
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked"
+                                            style="margin-bottom: 8px;"/>
+                                    
+                                    <!-- Selected Process Display (Clear Visual Indicator) -->
+                                    <div invisible="not arkite_linked or not selected_process_id_char" 
+                                         style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
+                                                border: 2px solid #28a745; 
+                                                border-radius: 8px; 
+                                                padding: 16px; 
+                                                margin-bottom: 16px;
+                                                box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <i class="fa fa-check-circle" style="font-size: 24px; color: #28a745;"/>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 12px; color: #155724; font-weight: 600; margin-bottom: 4px;">
+                                                    SELECTED PROCESS:
+                                                </div>
+                                                <div style="font-size: 16px; color: #155724; font-weight: 700;">
+                                                    <field name="selected_arkite_process_name" readonly="1" 
+                                                           style="display: inline; border: none; background: transparent; font-weight: 700; color: #155724;"/>
+                                                </div>
+                                                <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">
+                                                    ID: <field name="selected_process_id_char" readonly="1" 
+                                                              style="display: inline; border: none; background: transparent;"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <field name="arkite_process_ids" 
+                                           invisible="not arkite_linked"
+                                           nolabel="1"
+                                           readonly="1">
+                                        <list decoration-success="process_id == parent.selected_process_id_char">
+                                            <field name="name"/>
+                                            <field name="process_id"/>
+                                            <field name="comment"/>
+                                            <button name="action_select_process" 
+                                                    type="object" 
+                                                    string="Select"
+                                                    class="btn btn-sm btn-success"
+                                                    icon="fa-check-circle"
+                                                    invisible="process_id == parent.selected_process_id_char"
+                                                    help="Click to select this process and automatically load its steps"/>
+                                            <button name="action_select_process" 
+                                                    type="object" 
+                                                    string="Selected ✓"
+                                                    class="btn btn-sm"
+                                                    style="background-color: #28a745; color: white; cursor: default;"
+                                                    invisible="process_id != parent.selected_process_id_char"
+                                                    readonly="1"
+                                                    help="This process is currently selected"/>
+                                        </list>
+                                    </field>
+                                </group>
+                                
+                                <group string="Process Steps" col="1">
+                                    <div invisible="not selected_process_id_char" 
+                                         style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                        <div style="font-size: 13px; color: #0056b3; font-weight: 600; margin-bottom: 8px;">
+                                            <i class="fa fa-list-ol" style="margin-right: 6px;"/> 
+                                            Steps for: <field name="selected_arkite_process_name" readonly="1" 
+                                                              style="display: inline; border: none; background: transparent; font-weight: 700;"/>
+                                        </div>
+                                        <div style="font-size: 11px; color: #495057;">
+                                            <strong>Tip:</strong> Drag the handle (☰) to reorder steps. Click "Add a line" to create new steps. Click on variant tags to add/remove variants.
+                                        </div>
+                                    </div>
+                                    
+                                    <field name="arkite_process_step_ids" 
+                                           nolabel="1" 
+                                           invisible="not selected_process_id_char"
+                                           context="{'default_project_id': id, 'default_process_id': selected_process_id_char}">
+                                        <list editable="bottom" 
+                                              default_order="sequence" 
+                                              create="1" 
+                                              delete="1"
+                                              decoration-muted="parent_step_id">
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="step_name" required="1"/>
+                                            <field name="step_type" required="1"/>
+                                            <field name="for_all_variants" widget="boolean_toggle"/>
+                                            <field name="variant_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                                            <field name="parent_step_id" column_invisible="1"/>
+                                            <field name="step_id" column_invisible="1"/>
+                                            <field name="process_id" column_invisible="1"/>
+                                            <field name="index" column_invisible="1"/>
+                                        </list>
+                                    </field>
+                                    
+                                    <!-- Empty state when no process selected -->
+                                    <div invisible="selected_process_id_char" 
+                                         style="text-align: center; padding: 40px; color: #6c757d; border: 2px dashed #dee2e6; border-radius: 8px; background: #f8f9fa;">
+                                        <i class="fa fa-hand-pointer" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                                        <h4 style="color: #6c757d; margin-bottom: 8px;">No Process Selected</h4>
+                                        <p style="font-size: 14px; margin-bottom: 0;">Click "Select" on a process above to automatically view its steps.</p>
+                                    </div>
+                                </group>
+                            </group>
+                            <script>
+                                <![CDATA[
+                                    // Update fields via RPC without any reload
+                                    (function() {
+                                        function updateFieldsViaRPC() {
+                                            var form = document.querySelector('.o_form_view');
+                                            if (!form || !form.__controller__) return;
+                                            
+                                            var controller = form.__controller__;
+                                            var recordId = controller.handle;
+                                            
+                                            if (!recordId) return;
+                                            
+                                            // Use Odoo's RPC to read updated data
+                                            require(['web.rpc'], function(rpc) {
+                                                rpc.query({
+                                                    model: 'product_module.project',
+                                                    method: 'read',
+                                                    args: [[recordId], ['arkite_process_ids', 'arkite_process_step_ids', 'selected_process_id_char', 'selected_arkite_process_name']]
+                                                }).then(function(result) {
+                                                    if (result && result[0] && controller.renderer) {
+                                                        var data = result[0];
+                                                        
+                                                        // Update controller's state
+                                                        if (controller.renderer.state) {
+                                                            // Merge new data into state
+                                                            Object.assign(controller.renderer.state.data, data);
+                                                            
+                                                            // Update field widgets
+                                                            if (controller.renderer.widgets) {
+                                                                // Update process list
+                                                                if (controller.renderer.widgets.arkite_process_ids) {
+                                                                    var widget = controller.renderer.widgets.arkite_process_ids;
+                                                                    if (widget && typeof widget.reset === 'function') {
+                                                                        widget.reset(data.arkite_process_ids, {});
+                                                                    }
+                                                                }
+                                                                
+                                                                // Update steps list
+                                                                if (controller.renderer.widgets.arkite_process_step_ids) {
+                                                                    var widget = controller.renderer.widgets.arkite_process_step_ids;
+                                                                    if (widget && typeof widget.reset === 'function') {
+                                                                        widget.reset(data.arkite_process_step_ids, {});
+                                                                    }
+                                                                }
+                                                                
+                                                                // Update selected process name
+                                                                if (controller.renderer.widgets.selected_arkite_process_name) {
+                                                                    var widget = controller.renderer.widgets.selected_arkite_process_name;
+                                                                    if (widget && typeof widget.reset === 'function') {
+                                                                        widget.reset(data.selected_arkite_process_name, {});
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            });
+                                        }
+                                        
+                                        // Listen for Select button clicks
+                                        setTimeout(function() {
+                                            function setupListeners() {
+                                                var processList = document.querySelector('field[name="arkite_process_ids"]');
+                                                if (processList) {
+                                                    var selectButtons = processList.querySelectorAll('button[name="action_select_process"]');
+                                                    selectButtons.forEach(function(btn) {
+                                                        if (!btn.dataset.listenerAdded) {
+                                                            btn.dataset.listenerAdded = 'true';
+                                                            btn.addEventListener('click', function() {
+                                                                // Wait for RPC to complete, then update fields
+                                                                setTimeout(updateFieldsViaRPC, 1500);
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                            
+                                            setupListeners();
+                                            
+                                            // Watch for new buttons
+                                            var processList = document.querySelector('field[name="arkite_process_ids"]');
+                                            if (processList) {
+                                                var observer = new MutationObserver(setupListeners);
+                                                observer.observe(processList, { childList: true, subtree: true });
+                                            }
+                                        }, 500);
+                                    })();
+                                ]]>
+                            </script>
+                            
+                        </div>
+                        
+                        <!-- Materials & QR Code Section -->
+                        <div style="flex: 1; min-width: 0; width: 100%; max-width: 100%; display: flex; flex-direction: column; gap: 24px;">
+                            <!-- Materials -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials Used
+                                    </h3>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button name="action_help_browse_images" 
+                                                type="object" 
+                                                class="btn btn-sm btn-info"
+                                                string="Browse Images"
+                                                icon="fa-image"
+                                                help="Show available Arkite image IDs"/>
+                                    <button name="action_help_load_picking_bins" 
+                                            type="object" 
+                                            class="btn btn-sm btn-success"
+                                            string="Load Picking Bins"
+                                            icon="fa-download"
+                                            help="Auto-fill picking bin IDs from detections for the first empty material"/>
+                                    <button name="action_link_existing_materials" 
+                                            type="object" 
+                                            class="btn btn-sm btn-primary"
+                                            string="Link Existing Material"
+                                            icon="fa-link"
+                                            help="Select and link existing materials from the Materials tab"/>
+                                    </div>
+                                </div>
+                                <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Tip:</strong> Click "Add a line" to create new materials, or "Link Existing Material" to select materials from the Materials tab. Upload an image to automatically send it to Arkite and get the Image ID. <strong>Save the project form to sync all materials to Arkite</strong> - they will then appear in the Materials tab.
+                                </div>
+                                <field name="material_ids" nolabel="1" context="{'default_project_id': id, 'default_page_id': page_id}">
+                                    <list editable="bottom" create="1" delete="1">
+                                        <field name="name" string="Name" required="1"/>
+                                        <field name="material_type" string="Type" required="1"/>
+                                        <field name="image" widget="image" options="{'size': [64, 64]}" string="Image" help="Upload image to automatically send to Arkite and get Image ID"/>
+                                        <field name="image_id" string="Image ID" placeholder="Auto-filled when image uploaded" readonly="1"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="picking_bin_ids_text" string="Picking Bins" placeholder="e.g., 1111,2222,3333"/>
+                                    </list>
+                                </field>
+                            </div>
+                            
+                            <!-- QR Code -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                                <h3 style="margin: 0 0 16px 0; color: #2c3e50; font-weight: 600;">
+                                    <i class="fa fa-qrcode" style="color: #667eea; margin-right: 8px;"/> QR Code
+                                </h3>
+                                <div style="display: inline-block; padding: 16px; background: #f8f9fa; border-radius: 12px;">
+                                    <field name="qr_image" widget="image" options="{'size': [200, 200]}" nolabel="1"/>
+                                    <div style="margin-top: 12px; color: #6c757d; font-size: 13px;">
+                                        <field name="qr_text" readonly="1" style="display: inline; border: none; background: transparent; font-weight: 600;"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notebook with Tabs for Arkite Data -->
+                    <notebook>
+                        
+                        <!-- Arkite Steps Tab -->
+                        <page string="Arkite Steps" name="arkite_steps" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-list-ol" style="color: #667eea; margin-right: 8px;"/> Job Steps
+                                    </h3>
+                                    <button name="action_load_arkite_steps" 
+                                            type="object" 
+                                            class="btn btn-sm btn-primary"
+                                            string="Refresh Steps"
+                                            icon="fa-refresh"
+                                            help="Refresh steps from Arkite project"/>
+                                </div>
+                                <field name="arkite_job_step_ids" nolabel="1" editable="bottom">
+                                    <list>
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="step_name" string="Step Name"/>
+                                        <field name="step_type" string="Type"/>
+                                        <field name="step_instruction" string="Instruction"/>
+                                        <field name="variant_ids" widget="many2many_tags" string="Variants" 
+                                               options="{'no_create': True, 'no_create_edit': True}"
+                                               help="Assign specific variants to this step. Leave empty to apply to all variants."/>
+                                    </list>
+                                </field>
+                                <div style="margin-top: 16px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; font-size: 13px; color: #0056b3;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Variant Assignment:</strong> Assign specific variants to steps by selecting them in the "Variants" column. Steps with no assigned variants will apply to all variants by default.
+                                </div>
+                            </div>
+                        </page>
+                        
+                        <!-- Variants Tab -->
+                        <page string="Variants" name="variants" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-tags" style="color: #ffc107; margin-right: 8px;"/> Variants
+                                    </h3>
+                                    <button name="action_load_arkite_variants" 
+                                            type="object" 
+                                            class="btn btn-sm btn-warning"
+                                            string="Refresh Variants"
+                                            icon="fa-refresh"
+                                            help="Refresh variants from Arkite project"/>
+                                </div>
+                                <field name="arkite_variant_ids" nolabel="1" editable="bottom">
+                                    <list>
+                                        <field name="name" string="Variant Name"/>
+                                        <field name="description" string="Description"/>
+                                    </list>
+                                </field>
+                                <div style="margin-top: 16px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-size: 13px; color: #856404;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Variant Assignment:</strong> You can assign different variants to different steps. Use the steps tab to configure variant assignments.
+                                </div>
+                            </div>
+                        </page>
+                        
+                        <!-- Detections Tab -->
+                        <page string="Detections" name="detections" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-eye" style="color: #dc3545; margin-right: 8px;"/> Detections
+                                    </h3>
+                                    <button name="action_load_arkite_detections" 
+                                            type="object" 
+                                            class="btn btn-sm btn-danger"
+                                            string="Refresh Detections"
+                                            icon="fa-refresh"
+                                            help="Refresh detections from Arkite project"/>
+                                </div>
+                                <field name="arkite_detection_ids" nolabel="1" editable="bottom">
+                                    <list>
+                                        <field name="name" string="Detection Name"/>
+                                        <field name="detection_type" string="Type"/>
+                                        <field name="is_job_specific" widget="boolean_toggle" string="Job-Specific"/>
+                                    </list>
+                                </field>
+                            </div>
+                        </page>
+                        
+                        <!-- Arkite Materials Tab -->
+                        <page string="Arkite Materials" name="arkite_materials" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials in Arkite
+                                    </h3>
+                                    <button name="action_load_arkite_materials" 
+                                            type="object" 
+                                            class="btn btn-sm btn-success"
+                                            string="Refresh Materials"
+                                            icon="fa-refresh"
+                                            help="Refresh materials from Arkite project"/>
+                                </div>
+                                <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Tip:</strong> Click "Add a line" to create new materials in Arkite. All changes are synced automatically. For picking bins, enter IDs separated by commas (e.g., 1111,2222,3333).
+                                </div>
+                                <field name="arkite_material_ids" nolabel="1" context="{'default_project_id': id}" editable="bottom" create="1" delete="1">
+                                    <list>
+                                        <field name="name" string="Material Name" required="1"/>
+                                        <field name="material_type" string="Type" required="1"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="image_id" string="Image ID" placeholder="Optional"/>
+                                        <field name="picking_bin_ids_text" string="Picking Bin IDs" placeholder="e.g., 1111,2222,3333"/>
+                                        <field name="material_id" column_invisible="1"/>
+                                    </list>
+                                    <form>
+                                        <sheet>
+                                            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                                                <h2 style="color: white; margin: 0 0 16px 0; font-size: 24px; font-weight: 700;">
+                                                    <i class="fa fa-box" style="margin-right: 12px;"/> Material Details
+                                                </h2>
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Material Name *</div>
+                                                        <field name="name" required="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; font-size: 16px;"/>
+                                                    </div>
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Type *</div>
+                                                        <field name="material_type" required="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white;"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; font-size: 18px;">
+                                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Additional Information
+                                                </h3>
+                                                <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Description</div>
+                                                        <field name="description" placeholder="Enter material description..." style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; resize: vertical;"/>
+                                                    </div>
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Image ID</div>
+                                                        <field name="image_id" placeholder="Enter Arkite Image ID (optional)" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px;"/>
+                                                        <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                                                            <i class="fa fa-info-circle"/> Optional: ID of an image uploaded to Arkite
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                            <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Picking Bin IDs</div>
+                                                            <button name="action_load_picking_bins_from_detections" 
+                                                                    type="object" 
+                                                                    class="btn btn-sm btn-info"
+                                                                    string="Load from Detections"
+                                                                    icon="fa-download"
+                                                                    help="Automatically load picking bin IDs from detections in this project"/>
+                                                        </div>
+                                                        <field name="picking_bin_ids_text" placeholder="e.g., 1111,2222,3333" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace;"/>
+                                                        <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                                                            <i class="fa fa-info-circle"/> Enter picking bin IDs separated by commas, or click "Load from Detections" to automatically populate from picking bin detections.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div invisible="not material_id" style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 16px;">
+                                                <div style="font-weight: 600; color: #0056b3; margin-bottom: 8px;">
+                                                    <i class="fa fa-check-circle" style="margin-right: 6px;"/> Material ID
+                                                </div>
+                                                <div style="color: #495057; font-size: 14px;">
+                                                    <field name="material_id" readonly="1" style="display: inline; border: none; background: transparent; font-weight: 600; font-family: monospace;"/>
+                                                </div>
+                                            </div>
+                                        </sheet>
+                                    </form>
+                                </field>
+                            </div>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>

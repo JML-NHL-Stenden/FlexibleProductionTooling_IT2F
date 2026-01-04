@@ -1,0 +1,3442 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "This describes the Arkite Server API. It contains rest calls for retrieving and modifying project data, as well as a number of calls to run operations on a currently running unit. A unit is also called a workstation in other parts of the documentation.\nFor authorization, the users 'API KEY' should be passed either using the 'apiKey' header value, or the 'apiKey' query parameter.",
+    "version": "2025.1",
+    "title": "Server Communication",
+    "contact": {
+      "email": "info@arkite.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "data",
+      "description": "Calls for sending and requesting data"
+    },
+    {
+      "name": "operation",
+      "description": "Calls during operations"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyInHeader": []
+    },
+    {
+      "ApiKeyInQuery": []
+    }
+  ],
+  "paths": {
+    "/units/": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all units",
+        "operationId": "fetchUnits",
+        "description": "Fetch all units which have been connected to this server. Units are also known as workstations.",
+        "responses": {
+          "200": {
+            "description": "unit list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Unit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unitId}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of unit (use units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the unit for the given ID",
+        "operationId": "fetchUnit",
+        "description": "Fetch the unit for the given ID. Units are also known as workstations.",
+        "responses": {
+          "200": {
+            "description": "the unit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unit"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of unit (use units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the unit for the given ID",
+        "operationId": "deleteUnit",
+        "description": "Delete the unit for the given ID. Units are also known as workstations.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all projects",
+        "operationId": "fetchProjects",
+        "description": "Fetch all projects which have not been archived",
+        "responses": {
+          "200": {
+            "description": "project list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more Projects",
+        "operationId": "addProject",
+        "description": "Add one or more Projects",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List Of Created Projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the project for the given ID",
+        "operationId": "fetchProject",
+        "description": "Fetch the project for the given ID",
+        "responses": {
+          "200": {
+            "description": "the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a project, for example its name.",
+        "operationId": "patchProject",
+        "description": "Change some properties of a project, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the project for the given ID",
+        "operationId": "deleteProject",
+        "description": "Delete the project for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/duplicate/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Duplicate the project for the given ID",
+        "operationId": "DuplicateProject",
+        "description": "Duplicate the project for the given ID",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "duplicated Project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/processes/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all processes for the given project",
+        "operationId": "fetchProcessesForProject",
+        "description": "Fetch all processes for the given project",
+        "responses": {
+          "200": {
+            "description": "process list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Process"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more processes for the given project",
+        "operationId": "addProcessForProject",
+        "description": "Add one or more processes for the given project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Process"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List Of Created Processes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Process"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/processes/{processId}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "description": "Id of process",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the process for the given ID",
+        "operationId": "fetchProcess",
+        "description": "Fetch the process for the given ID",
+        "responses": {
+          "200": {
+            "description": "the process",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Process"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "description": "Id of process",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the process for the given ID",
+        "operationId": "deleteProcess",
+        "description": "Delete the process for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/processes/{processId}/duplicate/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "description": "Id of process",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Duplicate the process for the given ID",
+        "operationId": "DuplicateProcess",
+        "description": "Duplicate the process for the given ID",
+        "responses": {
+          "200": {
+            "description": "duplicated process",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Process"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/processes/{processId}/steps/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "description": "Id of process",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the step from the given Process ID",
+        "operationId": "fetchProcessSteps",
+        "description": "Fetch the steps from the given Process ID",
+        "responses": {
+          "200": {
+            "description": "the Steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Step"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/tasks/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all Tasks for the given project",
+        "operationId": "fetchTasksForProject",
+        "description": "Fetch all Tasks for the given project",
+        "responses": {
+          "200": {
+            "description": "Tasks list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/tasks/{taskId}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "Id of task",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the task for the given ID",
+        "operationId": "fetchTask",
+        "description": "Fetch the task for the given ID",
+        "responses": {
+          "200": {
+            "description": "the task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/detections/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all detections for the given project",
+        "operationId": "fetchDetectionsForProject",
+        "description": "Fetch all detections (object/tool/activity/picking bin/...) for the given project",
+        "responses": {
+          "200": {
+            "description": "Detections list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Detection"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more detections for the given project. The LocationSizeBasedOnVariable is only applicable for DetectionType other than GROUP. If specified, the other properties can be used to refer to variables that specify the location and size of the detection.",
+        "operationId": "addDetectionForProject",
+        "description": "Adds one or more detections (object/tool/activity/picking bin/...) to the given project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Detection"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List Of Created Detections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Detection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/detections/{detectionId}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "detectionId",
+            "in": "path",
+            "description": "Id of detection",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the detection for the given ID",
+        "operationId": "fetchDetection",
+        "description": "Fetch the detection for the given ID",
+        "responses": {
+          "200": {
+            "description": "the detection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Detection"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "detectionId",
+            "in": "path",
+            "description": "Id of detection",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a detection, for example its name.",
+        "operationId": "patchDetection",
+        "description": "Change some properties of a detection, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "detectionId",
+            "in": "path",
+            "description": "Id of detection",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the detection for the given ID",
+        "operationId": "deleteDetection",
+        "description": "Delete the detection for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/detections/{detectionId}/duplicate/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "detectionId",
+            "in": "path",
+            "description": "Id of detection",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Duplicate the detection for the given ID",
+        "operationId": "DuplicateDetection",
+        "description": "Duplicate the detection for the given ID",
+        "responses": {
+          "200": {
+            "description": "duplicated detection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Detection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/detections/createFromCAD/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "CAD/CAM detections allow to create a detection where the size and location in 3D space is based on a CAD model.",
+        "operationId": "CreateCadDetection",
+        "description": "CAD/CAM detections are just like other detections (objects, tools …), but their location in 3D space is provided by both a 3D model (.STL file) and a transformation matrix that positions the CAD model in space. Such a transformation is typically provided by the CAD/CAM system. All other properties (such as which sensor to use) are taken from the template. <br/><br/> The 3D object (.STL file) needs to be uploaded first, using a POST to /projects/{projectId}/images. The template detection needs to be created in the software, and should be taught as normally. The transformation matrix is a 3x4 matrix specifying the transformation as an array of 12 numbers. It is in row major order (row 1, followed by row 2, followed by row 3). In the below example, the X-axis of the 3D object is put at (1, 2, 3), the Y-axis at (4, 5, 6) and the Z-axis at (7, 8, 9). The origin of the 3D object is positioned at (100, 200, 300) for XYZ. <br/><br/> Additional information and an example can be found when starting the software. Go to the 'Detections' tab, click 'New' and choose \"CAD/CAM detection\". Click the 'Help' button.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "optional name"
+                  },
+                  "templateDetectionId": {
+                    "type": "number",
+                    "example": 12345
+                  },
+                  "object3DImageId": {
+                    "type": "number",
+                    "example": 23456
+                  },
+                  "whichProjection": {
+                    "type": "string",
+                    "example": "Best|Preserve"
+                  },
+                  "transformationMatrix": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "example": [
+                      1,
+                      4,
+                      7,
+                      100,
+                      2,
+                      5,
+                      8,
+                      200,
+                      3,
+                      6,
+                      9,
+                      300
+                    ]
+                  },
+                  "unitId": {
+                    "type": "number",
+                    "example": 34567
+                  },
+                  "GroupId": {
+                    "type": "number",
+                    "example": 45678
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The created CAD detection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Detection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/materials/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all materials for the given project",
+        "operationId": "fetchMaterialsForProject",
+        "description": "Fetch all materials for the given project",
+        "responses": {
+          "200": {
+            "description": "Materials list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Material"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more materials for the given project",
+        "operationId": "addMaterialForProject",
+        "description": "Add materials to the given project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Material"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of created materials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Material"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/materials/{materialId}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "materialId",
+            "in": "path",
+            "description": "Id of material",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the material for the given ID",
+        "operationId": "fetchMaterial",
+        "description": "Fetch the material for the given ID",
+        "responses": {
+          "200": {
+            "description": "the material",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Material"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "materialId",
+            "in": "path",
+            "description": "Id of material",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a material, for example its name.",
+        "operationId": "patchMaterial",
+        "description": "Change some properties of a material, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "materialId",
+            "in": "path",
+            "description": "Id of material",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the material for the given ID",
+        "operationId": "deleteMaterial",
+        "description": "Delete the material for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/images/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all images for the given project",
+        "operationId": "listAllImagesForProject",
+        "description": "Fetch all images for the given project",
+        "responses": {
+          "200": {
+            "description": "Resources list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Resource"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more images for the given project",
+        "operationId": "addImageForProject",
+        "description": "Add images to the given project",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of created resources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/images/{imageId}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "imageId",
+            "in": "path",
+            "description": "Id of image",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the image for the given ID",
+        "operationId": "fetchImage",
+        "description": "Fetch the image for the given ID",
+        "responses": {
+          "200": {
+            "description": "the image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "imageId",
+            "in": "path",
+            "description": "Id of image",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the image for the given ID",
+        "operationId": "deleteImage",
+        "description": "Delete the image for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/images/{imageId}/replace/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "imageId",
+            "in": "path",
+            "description": "Id of image to be replaced (use images/ to fetch the images)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Replace one or more images for the given project",
+        "operationId": "replaceImageForProject",
+        "description": "Replace one or more images for the given project",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of created resources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/images/{imageId}/show/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "imageId",
+            "in": "path",
+            "description": "Id of resource (use images/ to fetch all the images)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch and show an image",
+        "operationId": "showImageById",
+        "description": "Fetch and show an image",
+        "responses": {
+          "200": {
+            "description": "ok response and show Image"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/steps/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all steps for the given project",
+        "operationId": "listAllStepsForProject",
+        "description": "Fetch all steps for the given project",
+        "responses": {
+          "200": {
+            "description": "list of steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Step"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add a step of a given type to a parent step",
+        "description": "Add a step of a given steptype as the last step of a parent node",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Step"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "list of created steps"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/steps/{stepId}": {
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "stepId",
+            "in": "path",
+            "description": "Id of step",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a step, for example its name.",
+        "operationId": "patchStep",
+        "description": "Change some properties of a step, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "stepId",
+            "in": "path",
+            "description": "Id of step",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the step for the given ID",
+        "operationId": "deleteStep",
+        "description": "Delete the step for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/steps/{stepId}/duplicate/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "stepId",
+            "in": "path",
+            "description": "Id of step",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Duplicate the step for the given ID",
+        "operationId": "DuplicateStep",
+        "description": "Duplicate the step for the given ID",
+        "responses": {
+          "200": {
+            "description": "duplicated steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Step"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/steps/{compositeStepId}/childSteps/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "compositeStepId",
+            "in": "path",
+            "description": "Id of composite step",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch the step from the given composite step ID",
+        "operationId": "fetchCompositeStepSteps",
+        "description": "Fetch the steps from the given composite step ID",
+        "responses": {
+          "200": {
+            "description": "the Steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Step"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/conditions/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetches all conditions with subconditions for the given project",
+        "operationId": "listAllconditionsForProject",
+        "description": "Fetches all conditions with subconditions for the given project",
+        "responses": {
+          "200": {
+            "description": "list of conditions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Condition"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more conditions with one or more subconditions for the given project",
+        "description": "Add conditions with subconditions to the given project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Condition"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "list of created conditions"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/conditions/{conditionId}": {
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "conditionId",
+            "in": "path",
+            "description": "Id of condition",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a condition, for example its name.",
+        "operationId": "patchCondition",
+        "description": "Change some properties of a condition, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "conditionId",
+            "in": "path",
+            "description": "Id of condition",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the condition for the given ID",
+        "operationId": "deleteCondition",
+        "description": "Delete the condition for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/conditions/{conditionId}/duplicate/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "conditionId",
+            "in": "path",
+            "description": "Id of condition",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Duplicate the condition for the given ID",
+        "operationId": "DuplicateCondition",
+        "description": "Duplicate the condition for the given ID",
+        "responses": {
+          "200": {
+            "description": "duplicated condition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Step"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/variants/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetches all variants for the given project",
+        "operationId": "listAllvariantsForProject",
+        "description": "Fetches all variants for the given project",
+        "responses": {
+          "200": {
+            "description": "list of variants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Variant"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more variants to the given project",
+        "description": "Add variants to the given project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Variant"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "list of created variants"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/variants/{variantId}": {
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "variantId",
+            "in": "path",
+            "description": "Id of variant",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a variant, for example its name.",
+        "operationId": "patchVariant",
+        "description": "Change some properties of a variant, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "variantId",
+            "in": "path",
+            "description": "Id of variant",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the variant for the given ID",
+        "operationId": "deleteVariant",
+        "description": "Delete the variant for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/variants/{variantId}/duplicate/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "variantId",
+            "in": "path",
+            "description": "Id of variant",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Duplicate the variant for the given ID",
+        "operationId": "DuplicateVariant",
+        "description": "Duplicate the variant for the given ID",
+        "responses": {
+          "200": {
+            "description": "duplicated variant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Step"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/variables/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Fetch all variables for the given project",
+        "operationId": "listAllVariablesForProject",
+        "description": "Fetch all variables for the given project",
+        "responses": {
+          "200": {
+            "description": "list of variables",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Variable"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Add one or more variables for the given project",
+        "description": "Add one or more variables for the given project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Variable"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "list of created conditions"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/variables/{variableId}": {
+      "patch": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "variableId",
+            "in": "path",
+            "description": "Id of variable",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchEntity"
+              }
+            }
+          }
+        },
+        "summary": "Change some properties of a variable, for example its name.",
+        "operationId": "patchVariable",
+        "description": "Change some properties of a variable, for example its name. The format is JSON Merge Patch, which allows to only list the modified properties. To know the available properties, refer to get request with the same URL.",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "400": {
+            "description": "Invalid property name."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "variableId",
+            "in": "path",
+            "description": "Id of variable",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "data"
+        ],
+        "summary": "Delete the variable for the given ID",
+        "operationId": "deleteVariable",
+        "description": "Delete the variable for the given ID",
+        "responses": {
+          "204": {
+            "description": "OK response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/projects/{projectId}/load/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "Id of project (use projects/ to fetch the projects)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Load the given project on the (running) unit",
+        "operationId": "loadProject",
+        "description": "Load the project by the given projectId on the unit with the given unitId. Be aware that the unit should be running (turned on with Workstation software running)",
+        "responses": {
+          "204": {
+            "description": "ok response"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/loadedProject/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Fetch the currently loaded project for the given unit",
+        "operationId": "retrieveCurrentlyLoadedProject",
+        "description": "Fetch the currently loaded project for the given unit. Be aware that the unit should be running (turned on with Workstation software running)",
+        "responses": {
+          "200": {
+            "description": "Project object or Error Message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No project loaded on unit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/variables/{variableName}/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "variableName",
+            "in": "path",
+            "description": "Name of the variable to fetch",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Fetch the current value of a specific variable.",
+        "operationId": "retrieveVariableByName",
+        "description": "Fetch the current value of a specific variable for the project which is currently loaded. Be aware that the unit should be running (turned on with Workstation software running)",
+        "responses": {
+          "200": {
+            "description": "Variable object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunningUnitVariable"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/variables/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Fetch all variables.",
+        "operationId": "retrieveVariables",
+        "description": "Fetch the current value of a specific variable for the project which is currently loaded. Be aware that the unit should be running (turned on with Workstation software running)",
+        "responses": {
+          "200": {
+            "description": "Variable object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunningUnitVariable"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Change the state of multiple variables",
+        "operationId": "setVariableState",
+        "description": "Change the state of multiple variables for the project which is currently loaded. They are created if they don't already exist. Be aware that the unit should be running (turned on with Workstation software running)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RunningUnitVariable"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "ok response"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/processes/control/": {
+      "post": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Control several processes, based on the control type (Next step, Previous step, Reset, Play, Pause, Restart, Goto)",
+        "operationId": "processControl",
+        "description": "Control the given processes, based on the control type (Next step, Previous step, Reset, Play, Pause, Restart, Goto) for the project which is currently loaded. For the Goto functionality, please refer to the ProcessControl schema. Be aware that the unit should be running (turned on with Workstation software running)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProcessControl"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "ok response"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/processes/{processId}/activeSteps/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "description": "Id of the process to get the active steps for.",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Fetch a list of active steps",
+        "operationId": "activeSteps",
+        "description": "Fetch a list of active steps. Be aware that the unit should be running (turned on with Workstation software running).",
+        "responses": {
+          "200": {
+            "description": "Array of Step objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Step"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/material/{materialId}/pickingBins/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "materialId",
+            "in": "path",
+            "description": "Id of the material",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Fetch the picking bins linked to a material.",
+        "operationId": "retrievePickingBinsByMaterialId",
+        "description": "Fetch picking bins linked to a material for the project which is currently loaded. Be aware that the unit should be running (turned on with Workstation software running)",
+        "responses": {
+          "200": {
+            "description": "array",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Detection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/units/{unitId}/pickingBin/{pickingBinId}/material/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "description": "Id of the unit to run the operation on (use /units/ to fetch the units)",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "pickingBinId",
+            "in": "path",
+            "description": "Id of the picking bin",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "tags": [
+          "operation"
+        ],
+        "summary": "Fetch the material linked to a picking bin.",
+        "operationId": "retrieveMaterialByPickingBinId",
+        "description": "Fetch material linked to a picking bin for the project which is currently loaded. Be aware that the unit should be running (turned on with Workstation software running)",
+        "responses": {
+          "200": {
+            "description": "object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Material"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://myServerUrl/api/v1"
+    },
+    {
+      "url": "https://localhost/api/v1"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyInHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "apiKey"
+      },
+      "ApiKeyInQuery": {
+        "type": "apiKey",
+        "in": "query",
+        "name": "apiKey"
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "The specified resource was not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "The request does not conform",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            }
+          }
+        }
+      },
+      "UnAuthenticated": {
+        "description": "Missing or incorrect API key",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorMessage": {
+        "type": "object",
+        "description": "Error message",
+        "required": [
+          "Type",
+          "ErrorMessage"
+        ],
+        "properties": {
+          "Type": {
+            "type": "string",
+            "example": "ERROR"
+          },
+          "ErrorMessage": {
+            "type": "string",
+            "example": "Project with id -1234 does not exist."
+          }
+        }
+      },
+      "BaseObject": {
+        "type": "object",
+        "description": "Base for all objects",
+        "required": [
+          "Id",
+          "Type"
+        ],
+        "properties": {
+          "Type": {
+            "type": "string",
+            "example": "BaseObject"
+          },
+          "Id": {
+            "type": "number",
+            "example": 123454321
+          },
+          "Name": {
+            "type": "string",
+            "example": "My object"
+          },
+          "Comment": {
+            "type": "string",
+            "example": "My Comment"
+          }
+        }
+      },
+      "PatchEntity": {
+        "type": "object",
+        "description": "Example patch object",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "example": "My new name"
+          }
+        }
+      },
+      "ProcessControl": {
+        "type": "object",
+        "description": "Object containing a process ID and a control type",
+        "required": [
+          "ProcessId",
+          "ControlType"
+        ],
+        "properties": {
+          "ProcessId": {
+            "type": "number",
+            "example": 13453021
+          },
+          "ControlType": {
+            "type": "string",
+            "description": "Defines the action to be performed",
+            "default": "Restart",
+            "enum": [
+              "Next",
+              "Previous",
+              "Reset",
+              "Play",
+              "Pause",
+              "Restart",
+              "PauseAndReset",
+              "Goto"
+            ]
+          },
+          "GotoBasedOnVariable": {
+            "type": "boolean",
+            "example": true,
+            "default": false,
+            "description": "Optional: Only used for Goto. If false the GotoStepId is used to select the GotoStep. If true, the value of the GotoVariable is used to select the GotoStep"
+          },
+          "GotoStepId": {
+            "type": "number",
+            "example": "123456",
+            "description": "Optional: Only used for Goto when BasedOnVariable is false. If a step with this Id exists it will be selected, else and error will be returned"
+          },
+          "GotoVariableForStep": {
+            "type": "string",
+            "description": "Optional: Only used for Goto when BasedOnVariable is true. If a variable with the same name is found, its value will be used to select the step in the target process",
+            "example": "Goto variable name"
+          }
+        }
+      },
+      "Project": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Project",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Project"
+              },
+              "UnitIds": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "example": "[1111,2222,3333,4444]"
+              },
+              "AutoOpenperUnit": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "UnitId": {
+                      "type": "integer"
+                    },
+                    "AutoOpen": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Unit": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Unit. Units are also known as workstations.",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Unit"
+              },
+              "LastHeartbeat": {
+                "type": "string",
+                "example": "2019-09-09T17:04:52.8155703+02:00"
+              },
+              "LastIp": {
+                "type": "string",
+                "example": "123.123.123.2"
+              }
+            }
+          }
+        ]
+      },
+      "RunningUnitVariable": {
+        "type": "object",
+        "description": "RunningUnitVariable",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "example": "myVariable"
+          },
+          "CurrentState": {
+            "type": "string",
+            "example": "123ABC"
+          }
+        }
+      },
+      "Variable": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Variable",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Variable"
+              },
+              "CreationType": {
+                "type": "string",
+                "example": "Manual"
+              },
+              "Shared": {
+                "type": "boolean",
+                "example": false
+              },
+              "DefaultState": {
+                "type": "string",
+                "example": "123ABC"
+              }
+            }
+          }
+        ]
+      },
+      "Process": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Process",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Process"
+              }
+            }
+          }
+        ]
+      },
+      "Task": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Task",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Task"
+              }
+            }
+          }
+        ]
+      },
+      "TaskStep": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "TaskStep",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Task"
+              },
+              "TaskId": {
+                "type": "number",
+                "example": 12345
+              }
+            }
+          }
+        ]
+      },
+      "Resource": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Resource",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Resource"
+              },
+              "Guid": {
+                "type": "string",
+                "example": "e0464a14-a11f-4aad-a497-697a755a32fd"
+              },
+              "Extension": {
+                "type": "string",
+                "example": ".jpg"
+              }
+            }
+          }
+        ]
+      },
+      "Step": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Step supported types are (COMPOSITE, WORK_INSTRUCTION, TOOL_PLACING, TOOL_TAKING, OBJECT_PLACING, OBJECT_TAKING, PICKING_BIN_PLACING, PICKING_BIN_TAKING, ACTIVITY, CHECK_NO_CHANGE_ZONE, VIRTUAL_BUTTON_PRESS, MATERIAL_GRAB)",
+            "required": [
+              "ParentStepId"
+            ],
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Step"
+              },
+              "ProcessId": {
+                "type": "number",
+                "example": 123454321
+              },
+              "ParentStepId": {
+                "type": "number",
+                "example": 123454321
+              },
+              "Index": {
+                "type": "number",
+                "example": 1
+              },
+              "StepConditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/StepCondition"
+                }
+              },
+              "ForAllVariants": {
+                "type": "boolean",
+                "example": true,
+                "description": "If true (the default) this step is always executed, regardless the active variant. If false, this step is only executed if the active variant is part of the specified VariantIds. This property can be specified for all step types, except for composite steps."
+              },
+              "VariantIds": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "example": "[1111, 2222, 3333, 4444]",
+                "description": "Specifies the variants for which this step is executed. For this property to take effect, you have to set ForAllVariants to false. This property can be specified for all step types, except for composite steps."
+              },
+              "DetectionId": {
+                "type": "number",
+                "example": 123454321,
+                "description": "Used for TOOL_PLACING, TOOL_TAKING, OBJECT_PLACING, OBJECT_TAKING, PICKING_BIN_PLACING, PICKING_BIN_TAKING, ACTIVITY, CHECK_NO_CHANGE_ZONE, VIRTUAL_BUTTON_PRESS, MATERIAL_GRAB"
+              },
+              "MaterialId": {
+                "type": "number",
+                "example": 123454321,
+                "description": "Used for MATERIAL_GRAB"
+              },
+              "ButtonId": {
+                "type": "number",
+                "example": 123454321,
+                "description": "Used for BUTTON_PRESS"
+              },
+              "ChildStepOrder": {
+                "type": "string",
+                "example": "Sequential",
+                "description": "Used for COMPOSITE, types are Sequential, AnyOrder and OneArbitaryStep"
+              },
+              "StepControlflow": {
+                "type": "string",
+                "example": "Repeat",
+                "description": "Used for COMPOSITE, types are Repeat and None"
+              },
+              "StepType": {
+                "type": "string",
+                "example": "COMPOSITE"
+              },
+              "TextInstruction": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "example": {
+                  "en-US": "Take Tool",
+                  "nl-BE": "Neem Tool"
+                }
+              },
+              "ImageInstructionId": {
+                "type": "number",
+                "example": 123454321
+              }
+            }
+          }
+        ]
+      },
+      "Condition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Condition",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Condition"
+              },
+              "Match": {
+                "type": "string",
+                "example": "ANY"
+              },
+              "InterruptStep": {
+                "type": "boolean",
+                "example": true
+              },
+              "SubConditions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SubCondition"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "SubCondition": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Condition",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "SubCondition"
+              },
+              "FirstArgumentVariableId": {
+                "type": "string",
+                "example": 1234
+              },
+              "CompareSign": {
+                "type": "string",
+                "example": "EQUAL"
+              },
+              "SecondArgument": {
+                "type": "string",
+                "example": "test"
+              },
+              "UseVariableAsSecondArgument": {
+                "type": "boolean",
+                "example": true
+              },
+              "SecondArgumentVariableId": {
+                "type": "string",
+                "example": 4321
+              }
+            }
+          }
+        ]
+      },
+      "Variant": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Variant",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Variant"
+              },
+              "Description": {
+                "type": "string",
+                "example": "My description"
+              }
+            }
+          }
+        ]
+      },
+      "Detection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Detection",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "Detection"
+              },
+              "DetectionType": {
+                "type": "string",
+                "example": "PICKING_BIN",
+                "description": "can be one of OBJECT, TOOL, ACTIVITY, PICKING_BIN, VIRTUAL_BUTTON, QUALITY_CHECK, OBJECT_WITH_QUALITY_CHECK, GROUP"
+              },
+              "GroupId": {
+                "type": "number",
+                "example": "1234"
+              },
+              "LocationSizeBasedOnVariable": {
+                "type": "boolean",
+                "example": "false"
+              },
+              "LocationXVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "LocationYVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "LocationZVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "LocationProjectionZVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "SizeXVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "SizeYVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "SizeZVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "OrientationVariableId": {
+                "type": "number",
+                "example": "12345"
+              },
+              "OrientationOffCenterPivot": {
+                "type": "boolean",
+                "example": true
+              },
+              "OrientationPivotX": {
+                "type": "string",
+                "example": "100"
+              },
+              "OrientationPivotY": {
+                "type": "string",
+                "example": "{{nameOfVariable}}"
+              }
+            }
+          }
+        ]
+      },
+      "Material": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseObject"
+          },
+          {
+            "type": "object",
+            "description": "Material",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "example": "PickingBinMaterial"
+              },
+              "Description": {
+                "type": "string",
+                "example": "Generated by api"
+              },
+              "ImageId": {
+                "type": "number",
+                "example": "1234"
+              },
+              "PickingBinIds": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "example": "[1111,2222,3333,4444]"
+              }
+            }
+          }
+        ]
+      },
+      "StepCondition": {
+        "allOf": [
+          {
+            "type": "object",
+            "description": "StepCondition",
+            "properties": {
+              "ConsitionId": {
+                "type": "number",
+                "example": "1111"
+              },
+              "Expected": {
+                "type": "boolean",
+                "example": "true"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

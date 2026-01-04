@@ -773,3 +773,43 @@
     gap: 24px;
     margin-bottom: 24px;
 }
+
+/* ============================================
+   Process Selection Styles
+   ============================================ */
+
+/* Selected process row highlighting */
+.o_list_view tbody tr.decoration-success {
+    background-color: #d4edda !important;
+    border-left: 4px solid #28a745 !important;
+}
+
+.o_list_view tbody tr.decoration-success:hover {
+    background-color: #c3e6cb !important;
+}
+
+/* Selected button styling */
+.btn-selected-process {
+    background-color: #28a745 !important;
+    color: white !important;
+    border-color: #28a745 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
+}
+
+.btn-selected-process:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+}
+
+/* Select button styling */
+.btn-select-process {
+    background-color: #007bff !important;
+    color: white !important;
+    border-color: #007bff !important;
+}
+
+.btn-select-process:hover {
+    background-color: #0056b3 !important;
+    border-color: #004085 !important;
+}

@@ -108,7 +108,7 @@
                                     <list editable="bottom">
                                         <field name="sequence" widget="handle"/>
                                         <field name="title" string="Process Title"/>
-                                        <field name="process_step" string="Process Steps"/>
+                                        <field name="process_trigger" string="Start Trigger"/>
                                     </list>
                                 </field>
                             </div>

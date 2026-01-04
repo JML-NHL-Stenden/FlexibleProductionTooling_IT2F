@@ -1,0 +1,52 @@
+<!-- product_module/views/material_link_wizard_views.xml -->
+<odoo>
+    <record id="view_material_link_wizard_form" model="ir.ui.view">
+        <field name="name">material.link.wizard.form</field>
+        <field name="model">product_module.material.link.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Link Materials to Project">
+                <sheet>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: white;">
+                        <h3 style="margin: 0 0 8px 0; color: white; font-weight: 600;">
+                            <i class="fa fa-link" style="margin-right: 8px;"/> Link Existing Materials
+                        </h3>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">
+                            Select materials from the list below to link them to this project
+                        </p>
+                    </div>
+                    
+                    <group>
+                        <field name="project_id" invisible="1"/>
+                        <field name="material_ids" 
+                               widget="many2many_tags" 
+                               options="{'no_create': True}"
+                               domain="['|', ('project_id', '=', False), ('project_id', '!=', project_id)]"
+                               placeholder="Click to select materials to link..."/>
+                    </group>
+                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 13px; color: #856404;">
+                        <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                        <strong>Note:</strong> This list shows all materials that are not currently linked to this project. Materials you remove from the project will appear here.
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_link_materials" 
+                            type="object" 
+                            string="Link Selected Materials" 
+                            class="btn-primary"
+                            icon="fa-link"/>
+                    <button string="Cancel" 
+                            class="btn-secondary" 
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <record id="action_material_link_wizard" model="ir.actions.act_window">
+        <field name="name">Link Materials to Project</field>
+        <field name="res_model">product_module.material.link.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_project_id': active_id}</field>
+    </record>
+</odoo>

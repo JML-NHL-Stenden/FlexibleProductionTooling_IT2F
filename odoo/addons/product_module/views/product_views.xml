@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <list string="Jobs">
                 <field name="name"/>
-                <field name="product_count" string="Total Products"/>
+                <field name="product_count" string="Total Variants"/>
             </list>
         </field>
     </record>
@@ -19,7 +19,7 @@
             <form string="Job">
                 <sheet>
                     <!-- Two Column Layout -->
-                    <div style="display: flex; width: 100%; height: calc(100vh - 200px); gap: 24px;">
+                    <div style="display: flex; width: 100%; gap: 24px; margin-bottom: 24px;">
 
                         <!-- LEFT COLUMN - Job Information -->
                         <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
@@ -101,7 +101,7 @@
         <field name="name">product.module.product.list</field>
         <field name="model">product_module.product</field>
         <field name="arch" type="xml">
-            <list string="Products">
+            <list string="Variants">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="product_code"/>
@@ -213,7 +213,7 @@
                                     <list editable="bottom">
                                         <field name="sequence" widget="handle"/>
                                         <field name="title" string="Process Title"/>
-                                        <field name="process_step" string="Process Steps"/>
+                                        <field name="process_trigger" string="Start Trigger"/>
                                     </list>
                                 </field>
                             </div>
@@ -391,7 +391,7 @@
                         </page>
 
                         <!-- TAB 3: Product List -->
-                        <page string="Product List" name="product_list">
+                        <page string="Variant" name="variant">
                             <div class="alert alert-success" role="alert">
                                 <i class="fa fa-list"/>
                                 <strong>Product Catalog</strong> - Manage all your products. Assign them to jobs to organize and group similar products together.
@@ -481,13 +481,16 @@
                                 <strong>Materials</strong> - Manage product materials and track which products use them.
                             </div>
 
-                            <div style="margin-bottom: 16px;">
+                            <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
                                 <button name="action_create_material" type="object" class="btn btn-warning" style="background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Material
                                 </button>
+                                <button name="action_refresh_materials" type="object" class="btn btn-info" style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
+                                    <i class="fa fa-refresh" style="margin-right: 8px;"/> Refresh List
+                                </button>
                             </div>
 
-                            <field name="material_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="material_ids" context="{'default_page_id': id}" widget="kanban" id="materials_kanban_field">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="material_type"/>
@@ -532,6 +535,32 @@
                                     </templates>
                                 </kanban>
                             </field>
+                            <script>
+                                <![CDATA[
+                                    // Auto-refresh materials kanban when Materials tab is opened
+                                    (function() {
+                                        function refreshMaterialsKanban() {
+                                            var kanbanField = document.getElementById('materials_kanban_field');
+                                            if (kanbanField) {
+                                                var kanbanView = kanbanField.closest('.o_kanban_view');
+                                                if (kanbanView && kanbanView.__controller__ && kanbanView.__controller__.reload) {
+                                                    kanbanView.__controller__.reload();
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Listen for tab clicks
+                                        setTimeout(function() {
+                                            var materialsTab = document.querySelector('a[data-name="materials"]');
+                                            if (materialsTab) {
+                                                materialsTab.addEventListener('click', function() {
+                                                    setTimeout(refreshMaterialsKanban, 200);
+                                                });
+                                            }
+                                        }, 1000);
+                                    })();
+                                ]]>
+                            </script>
                         </page>
                     </notebook>
                 </sheet>

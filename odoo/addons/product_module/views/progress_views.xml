@@ -23,7 +23,7 @@
         <field name="name">product.module.progress.form</field>
         <field name="model">product_module.progress</field>
         <field name="arch" type="xml">
-            <form string="Unit Tracking">
+            <form string="Unit Tracking" create="1" edit="1">
                 <sheet style="max-width: 900px; margin: 0 auto;">
                     <!-- Red Header for Unit Name -->
                     <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border-radius: 12px; padding: 20px; margin-bottom: 24px; color: white;">
@@ -47,16 +47,16 @@
                         </div>
                     </div>
 
-                    <!-- Tracked Product Section -->
+                    <!-- Tracked Product Section (Optional) -->
                     <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
                         <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
-                            Tracked Product:
+                            Tracked Product (Optional):
                         </h3>
-                        
+
                         <!-- Product Selection -->
                         <div invisible="product_id" style="background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px;">
                             <i class="fa fa-plus-circle" style="font-size: 32px; color: #6c757d; margin-bottom: 12px; display: block;"/>
-                            <p style="color: #6c757d; margin-bottom: 16px; font-size: 14px;">Select a product to track its assembly progress</p>
+                            <p style="color: #6c757d; margin-bottom: 16px; font-size: 14px;">Optionally select a product to track its assembly progress</p>
                             <field name="product_id" string=""
                                    context="{'default_page_id': page_id}"
                                    options="{'no_create': False}"
@@ -68,7 +68,7 @@
                             <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
                                 <div style="width: 64px; height: 64px; border-radius: 8px; overflow: hidden; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px solid #d6d8db;">
                                     <field name="product_image" widget="image" options="{'size': [64, 64]}"/>
-                                </div>
+                            </div>
                                 <div style="flex: 1;">
                                     <h4 style="color: #2c3e50; margin: 0 0 4px 0; font-weight: 600; font-size: 16px;">
                                         <field name="product_name" readonly="1" style="background: transparent; border: none; font-weight: 600;"/>
@@ -78,44 +78,196 @@
                                      </p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <!-- Assembly Progress Table -->
-                            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px;">
-                                <table style="width: 100%; border-collapse: separate; border-spacing: 8px 4px;">
-                                    <tr>
-                                        <td style="font-weight: 600; color: #495057; padding: 4px 0;">Assembly Progress</td>
-                                        <td style="color: #28a745; font-weight: 700; font-size: 16px;"><field name="progress_percentage" readonly="1"/>%</td>
-                                    </tr>
-                                    <tr style="background: #e9ecef;">
-                                        <td style="font-weight: 600; color: #495057; padding: 8px;">Total Steps Completed</td>
-                                        <td style="color: #495057; font-weight: 600; padding: 8px;"><field name="completed_steps" readonly="1"/></td>
-                                    </tr>
-                                     <tr style="background: #e9ecef;">
-                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Current Step</td>
-                                         <td style="color: #495057; padding: 8px;"><field name="current_step_number" readonly="1"/></td>
-                                     </tr>
-                                     <tr style="background: #e9ecef;">
-                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Process Title</td>
-                                         <td style="color: #495057; padding: 8px;"><field name="current_step_title" readonly="1"/></td>
-                                     </tr>
-                                     <tr style="background: #e9ecef;">
-                                         <td style="font-weight: 600; color: #495057; padding: 8px;">Process Steps</td>
-                                         <td style="color: #495057; padding: 8px;"><field name="current_step_description" readonly="1"/></td>
-                                     </tr>
-                                    <tr style="background: #e9ecef;">
-                                        <td style="font-weight: 600; color: #495057; padding: 8px;">Total Steps</td>
-                                        <td style="color: #495057; font-weight: 600; padding: 8px;"><field name="total_steps" readonly="1"/></td>
-                                    </tr>
-                                </table>
-                            </div>
-
-                            <!-- View Product Details Button -->
-                            <div style="margin-top: 16px; text-align: center;">
-                                <button name="action_open_product" type="object" class="btn btn-info" style="border-radius: 8px; padding: 8px 20px;">
-                                    <i class="fa fa-external-link" style="margin-right: 8px;"/> View Product Details
+                    <!-- Arkite API Configuration Section -->
+                    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3 style="color: #2c3e50; margin: 0; font-weight: 600;">
+                                <i class="fa fa-project-diagram" style="color: #667eea; margin-right: 8px;"/> Arkite API Configuration
+                        </h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button name="action_test_arkite_connection" 
+                                        type="object" 
+                                        class="btn btn-primary"
+                                        style="border-radius: 6px; padding: 6px 12px; font-weight: 600;">
+                                    <i class="fa fa-plug" style="margin-right: 6px;"/> Test Connection &amp; Load Projects
                                 </button>
+                                <button name="action_refresh_arkite_projects" 
+                                        type="object" 
+                                        class="btn btn-info"
+                                        invisible="not arkite_api_base or not arkite_api_key or not arkite_unit_id"
+                                        style="border-radius: 6px; padding: 6px 12px;">
+                                    <i class="fa fa-refresh" style="margin-right: 6px;"/> Refresh Projects
+                            </button>
                             </div>
                         </div>
+                        <div class="alert alert-info" role="alert" style="margin-bottom: 16px; font-size: 13px;">
+                            <p><strong>Instructions:</strong> Fill in the Arkite API credentials above, then click "Test Connection &amp; Load Projects" to verify the connection and retrieve the list of available projects from this workstation.</p>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="arkite_unit_id" placeholder="e.g., 44056308002450"/>
+                                <field name="arkite_api_base" placeholder="https://192.168.178.93/api/v1"/>
+                            </group>
+                            <group>
+                                <field name="arkite_api_key" password="True" placeholder="Enter your API key"/>
+                                <field name="arkite_template_name" placeholder="e.g., FPT-Template"/>
+                            </group>
+                        </group>
+                        
+                        <!-- Project Selection (shown after test connection) -->
+                        <div invisible="not arkite_api_base or not arkite_api_key or not arkite_unit_id" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <h4 style="color: #495057; margin: 0; font-weight: 600;">
+                                    <i class="fa fa-list" style="margin-right: 8px;"/> Available Projects
+                                </h4>
+                                <button name="action_refresh_arkite_projects" 
+                                        type="object" 
+                                        class="btn btn-sm btn-info"
+                                        style="border-radius: 4px; padding: 4px 8px; font-size: 12px;">
+                                    <i class="fa fa-refresh" style="margin-right: 4px;"/> Refresh List
+                            </button>
+                            </div>
+                            <p style="color: #6c757d; font-size: 13px; margin-bottom: 12px;">
+                                Click "Test Connection &amp; Load Projects" to load projects from this workstation. Select a project to track its progress.
+                            </p>
+                            
+                            <!-- Projects list - inline display -->
+                            <field name="arkite_project_id" invisible="1"/>
+                            <field name="arkite_projects_list_id" invisible="1"/>
+                            
+                            <!-- Show projects list - HTML display (always visible, content handled by HTML field) -->
+                            <div style="background: #f8f9fa; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <field name="arkite_projects_list_id" invisible="1"/>
+                                <field name="arkite_projects_html" nolabel="1" readonly="1" widget="html" id="arkite_projects_html_field"/>
+                                <script type="text/javascript"><![CDATA[
+                                    // Simple approach: Listen for button clicks and update HTML field directly
+                                    (function() {
+                                        function refreshProjectsHTML() {
+                                            var fieldEl = document.getElementById('arkite_projects_html_field');
+                                            if (!fieldEl) return;
+                                            
+                                            var form = fieldEl.closest('.o_form_view');
+                                            if (!form || !form.__controller__) return;
+                                            
+                                            var recordId = form.__controller__.handle;
+                                            if (!recordId) return;
+                                            
+                                            require(['web.rpc'], function(rpc) {
+                                                rpc.query({
+                                                    model: 'product_module.progress',
+                                                    method: 'action_refresh_projects_html',
+                                                    args: [[recordId]]
+                                                }).then(function(result) {
+                                                    if (result && result.html) {
+                                                        // Find the actual content container in Odoo's HTML widget
+                                                        var widgetContainer = fieldEl.closest('.o_field_widget');
+                                                        if (widgetContainer) {
+                                                            // Try multiple selectors to find the content div
+                                                            var contentDiv = widgetContainer.querySelector('div.o_field_html') ||
+                                                                             widgetContainer.querySelector('div[style*="max-height"]') ||
+                                                                             widgetContainer.querySelector('div:not(.o_input)');
+                                                            
+                                                            if (contentDiv) {
+                                                                contentDiv.innerHTML = result.html;
+                                                            } else {
+                                                                // Create content div if it doesn't exist
+                                                                widgetContainer.innerHTML = '<div class="o_field_html">' + result.html + '</div>';
+                                                            }
+                                                        }
+                                                    }
+                                                }).catch(function(error) {
+                                                    console.error('Error refreshing projects:', error);
+                                                });
+                                            });
+                                        }
+                                        
+                                        // Attach listeners after DOM is ready
+                                        setTimeout(function() {
+                                            function attachListener(buttonName) {
+                                                var btn = document.querySelector('button[name="' + buttonName + '"]');
+                                                if (btn && !btn.dataset.refreshListener) {
+                                                    btn.dataset.refreshListener = 'true';
+                                                    btn.addEventListener('click', function() {
+                                                        setTimeout(refreshProjectsHTML, 2500);
+                                                    });
+                                                }
+                                            }
+                                            
+                                            attachListener('action_test_arkite_connection');
+                                            attachListener('action_refresh_arkite_projects');
+                                        }, 1000);
+                                    })();
+                                ]]></script>
+                            </div>
+                            
+                            <!-- Empty state when no projects loaded -->
+                            <div invisible="arkite_projects_list_id and arkite_projects_list_id.project_ids" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 16px; text-align: center; margin-bottom: 12px;">
+                                <i class="fa fa-info-circle" style="color: #856404; margin-right: 8px;"/>
+                                <span style="color: #856404;">No projects loaded yet. Click "Test Connection &amp; Load Projects" to fetch projects from the workstation.</span>
+                            </div>
+                            
+                            <!-- Show loaded project info if available -->
+                            <div invisible="not arkite_loaded_project_name" style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-top: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa fa-check-circle" style="color: #155724;"/>
+                                    <strong style="color: #155724;">Currently Loaded:</strong>
+                                    <span style="color: #155724;"><field name="arkite_loaded_project_name" readonly="1" nolabel="1"/></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assembly Progress Table -->
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                            <i class="fa fa-tasks" style="color: #28a745; margin-right: 8px;"/> Assembly Progress
+                        </h3>
+                        <table style="width: 100%; border-collapse: separate; border-spacing: 8px 4px;">
+                            <tr>
+                                <td style="font-weight: 600; color: #495057; padding: 4px 0;">Progress</td>
+                                <td style="color: #28a745; font-weight: 700; font-size: 16px;"><field name="progress_percentage" readonly="1"/>%</td>
+                            </tr>
+                            <!-- Show Arkite project info if available -->
+                            <tr invisible="not arkite_loaded_project_name" style="background: #d1ecf1;">
+                                <td style="font-weight: 600; color: #0c5460; padding: 8px;">Active Project</td>
+                                <td style="color: #0c5460; padding: 8px;"><field name="arkite_loaded_project_name" readonly="1" nolabel="1"/></td>
+                            </tr>
+                            <tr invisible="not arkite_active_step_info" style="background: #d1ecf1;">
+                                <td style="font-weight: 600; color: #0c5460; padding: 8px;">Active Step</td>
+                                <td style="color: #0c5460; padding: 8px;"><field name="arkite_active_step_info" readonly="1" nolabel="1"/></td>
+                            </tr>
+                            <!-- Product-based tracking (fallback) -->
+                            <tr style="background: #e9ecef;" invisible="arkite_loaded_project_name">
+                                <td style="font-weight: 600; color: #495057; padding: 8px;">Total Steps Completed</td>
+                                <td style="color: #495057; font-weight: 600; padding: 8px;"><field name="completed_steps" readonly="1"/></td>
+                            </tr>
+                            <tr style="background: #e9ecef;" invisible="arkite_loaded_project_name">
+                                <td style="font-weight: 600; color: #495057; padding: 8px;">Current Step</td>
+                                <td style="color: #495057; padding: 8px;"><field name="current_step_number" readonly="1"/></td>
+                            </tr>
+                            <tr style="background: #e9ecef;" invisible="arkite_loaded_project_name">
+                                <td style="font-weight: 600; color: #495057; padding: 8px;">Process Title</td>
+                                <td style="color: #495057; padding: 8px;"><field name="current_step_title" readonly="1"/></td>
+                            </tr>
+                            <tr style="background: #e9ecef;" invisible="arkite_loaded_project_name">
+                                <td style="font-weight: 600; color: #495057; padding: 8px;">Process Steps</td>
+                                <td style="color: #495057; padding: 8px;"><field name="current_step_description" readonly="1"/></td>
+                            </tr>
+                            <tr style="background: #e9ecef;" invisible="arkite_loaded_project_name">
+                                <td style="font-weight: 600; color: #495057; padding: 8px;">Total Steps</td>
+                                <td style="color: #495057; font-weight: 600; padding: 8px;"><field name="total_steps" readonly="1"/></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- View Product Details Button -->
+                    <div style="margin-top: 16px; text-align: center;">
+                        <button name="action_open_product" type="object" class="btn btn-info" style="border-radius: 8px; padding: 8px 20px;">
+                                <i class="fa fa-external-link" style="margin-right: 8px;"/> View Product Details
+                            </button>
                     </div>
                 </sheet>
             </form>
