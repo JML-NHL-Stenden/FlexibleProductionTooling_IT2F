@@ -813,3 +813,118 @@
     background-color: #0056b3 !important;
     border-color: #004085 !important;
 }
+
+/* ============================================
+   Process Steps Hierarchical Display
+   ============================================ */
+
+/* Visual hierarchy for process steps based on hierarchy_level */
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-1 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="1"] .pm-step-name-field {
+    padding-left: 30px !important;
+    border-left: 3px solid #007bff !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-2 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="2"] .pm-step-name-field {
+    padding-left: 60px !important;
+    border-left: 3px solid #28a745 !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-3 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="3"] .pm-step-name-field {
+    padding-left: 90px !important;
+    border-left: 3px solid #ffc107 !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-4 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="4"] .pm-step-name-field {
+    padding-left: 120px !important;
+    border-left: 3px solid #fd7e14 !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-5 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="5"] .pm-step-name-field {
+    padding-left: 150px !important;
+    border-left: 3px solid #e83e8c !important;
+    position: relative;
+}
+
+/* Highlight COMPOSITE parent steps - using decoration classes */
+.pm-step-hierarchy-list tbody tr.decoration-success {
+    background-color: #f0f8ff !important;
+}
+
+.pm-step-hierarchy-list tbody tr.decoration-success:hover {
+    background-color: #e0f0ff !important;
+}
+
+/* ============================================
+   Process Steps Hierarchical Display
+   ============================================ */
+
+/* Base indentation for hierarchical steps */
+.pm-step-hierarchy {
+    position: relative;
+}
+
+.pm-step-hierarchy-level-1 {
+    padding-left: 30px !important;
+    border-left: 3px solid #007bff;
+}
+
+.pm-step-hierarchy-level-2 {
+    padding-left: 60px !important;
+    border-left: 3px solid #28a745;
+}
+
+.pm-step-hierarchy-level-3 {
+    padding-left: 90px !important;
+    border-left: 3px solid #ffc107;
+}
+
+.pm-step-hierarchy-level-4 {
+    padding-left: 120px !important;
+    border-left: 3px solid #fd7e14;
+}
+
+.pm-step-hierarchy-level-5 {
+    padding-left: 150px !important;
+    border-left: 3px solid #e83e8c;
+}
+
+/* Visual indicator for child steps */
+.pm-step-child::before {
+    content: "└─ ";
+    color: #6c757d;
+    font-weight: normal;
+    margin-right: 4px;
+}
+
+/* Highlight COMPOSITE parent steps */
+.pm-step-composite {
+    font-weight: 600;
+    background-color: #f0f8ff !important;
+}
+
+.pm-step-composite:hover {
+    background-color: #e0f0ff !important;
+}
+
+/* Tree connector lines */
+.pm-step-tree-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, 
+        transparent 0%, 
+        #dee2e6 10%, 
+        #dee2e6 90%, 
+        transparent 100%);
+}

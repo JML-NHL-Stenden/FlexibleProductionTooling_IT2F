@@ -1881,7 +1881,7 @@ class ProductModuleProject(models.Model):
     
     @api.onchange('arkite_project_id')
     def _onchange_arkite_project_id(self):
-        """Load Arkite project name when ID is set"""
+        """Load Arkite project name when ID is set and auto-load processes"""
         if self.arkite_project_id:
             try:
                 creds = self._get_arkite_credentials()
@@ -1897,6 +1897,13 @@ class ProductModuleProject(models.Model):
                     if response.ok:
                         project = response.json()
                         self.arkite_project_name = project.get("Name") or ""
+                        
+                        # Auto-load processes if not already loaded
+                        if self.arkite_linked and not self.arkite_process_ids:
+                            try:
+                                self.action_load_process_list()
+                            except Exception:
+                                pass  # Don't show error, just skip auto-load
                         # Optionally auto-load the project
                         # self.action_load_arkite_project()
                 except Exception:

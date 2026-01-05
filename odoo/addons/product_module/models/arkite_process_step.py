@@ -47,7 +47,34 @@ class ArkiteProcessStep(models.TransientModel):
     parent_step_record = fields.Many2one('product_module.arkite.process.step', 
                                          string='Parent Step',
                                          ondelete='cascade',
-                                         help='Parent step record (for tree structure)')
+                                         help='Parent step record (for tree structure). Only COMPOSITE steps can be parents.')
+    hierarchy_level = fields.Integer(string='Hierarchy Level', compute='_compute_hierarchy_level', store=False, help='Depth level in hierarchy (0 = root)')
+    hierarchy_path = fields.Char(string='Hierarchy Path', compute='_compute_hierarchy_path', store=False, help='Full path showing parent chain (e.g., "Parent > Child")')
+    
+    @api.depends('parent_step_record', 'parent_step_record.hierarchy_level')
+    def _compute_hierarchy_level(self):
+        """Calculate hierarchy level based on parent"""
+        for record in self:
+            if not record.parent_step_record:
+                record.hierarchy_level = 0
+            else:
+                # Parent's level + 1, but cap at 5 to prevent deep recursion issues
+                parent_level = record.parent_step_record.hierarchy_level if record.parent_step_record.hierarchy_level is not False else 0
+                record.hierarchy_level = min(parent_level + 1, 5)
+    
+    @api.depends('parent_step_record', 'parent_step_record.step_name', 'parent_step_record.hierarchy_path')
+    def _compute_hierarchy_path(self):
+        """Compute full hierarchy path for display"""
+        for record in self:
+            if not record.parent_step_record:
+                record.hierarchy_path = ""
+            else:
+                parent_path = record.parent_step_record.hierarchy_path
+                parent_name = record.parent_step_record.step_name or "Unknown"
+                if parent_path:
+                    record.hierarchy_path = f"{parent_path} > {parent_name}"
+                else:
+                    record.hierarchy_path = parent_name
     
     @api.model
     def _compute_parent_from_step_id(self, parent_step_id_str, project_id, process_id):
@@ -352,6 +379,44 @@ class ArkiteProcessStep(models.TransientModel):
                     else:
                         step_data["ForAllVariants"] = False
                         step_data["VariantIds"] = [v.variant_id for v in record.variant_ids]
+                    updated = True
+                
+                # Update parent step if changed
+                if 'parent_step_record' in vals:
+                    # Validate that parent is a COMPOSITE step
+                    if record.parent_step_record:
+                        if record.parent_step_record.step_type != 'COMPOSITE':
+                            raise UserError(_("Only COMPOSITE steps can be parent steps. Please select a COMPOSITE step as the parent."))
+                        
+                        # Prevent circular reference (step cannot be its own parent or ancestor)
+                        if record.parent_step_record.id == record.id:
+                            raise UserError(_("A step cannot be its own parent."))
+                        
+                        # Check for circular references (parent cannot be a descendant of this step)
+                        ancestor = record.parent_step_record
+                        while ancestor.parent_step_record:
+                            if ancestor.parent_step_record.id == record.id:
+                                raise UserError(_("Circular reference detected. A step cannot be an ancestor of its parent."))
+                            ancestor = ancestor.parent_step_record
+                        
+                        # Update parent_step_id to match the parent record's step_id
+                        parent_step_id = record.parent_step_record.step_id
+                        if parent_step_id and str(parent_step_id) != "0":
+                            step_data["ParentStepId"] = str(parent_step_id)
+                            record.parent_step_id = str(parent_step_id)
+                            _logger.info("[ARKITE] Updating ParentStepId to: %s", parent_step_id)
+                        else:
+                            # Remove ParentStepId if parent doesn't have a valid step_id
+                            if "ParentStepId" in step_data:
+                                del step_data["ParentStepId"]
+                            record.parent_step_id = ""
+                            _logger.info("[ARKITE] Removing ParentStepId (parent has no step_id)")
+                    else:
+                        # No parent - remove ParentStepId
+                        if "ParentStepId" in step_data:
+                            del step_data["ParentStepId"]
+                        record.parent_step_id = ""
+                        _logger.info("[ARKITE] Removing ParentStepId (no parent selected)")
                     updated = True
                 
                 # Update step if anything changed

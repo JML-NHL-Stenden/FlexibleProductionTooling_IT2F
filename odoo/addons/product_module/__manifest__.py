@@ -23,6 +23,7 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/instruction_form_wizard_views.xml',
+        'views/arkite_unit_views.xml',  # Load before project_views.xml to ensure action_arkite_unit exists
         'views/project_views.xml',
         'views/product_views.xml',
         'views/variant_views.xml',
@@ -32,7 +33,6 @@
         'views/arkite_project_wizard_view.xml',
         'views/arkite_job_step_wizard_view.xml',
         'views/arkite_project_selection_views.xml',
-        'views/arkite_unit_views.xml',
         'data/arkite_security_data.xml',
         'views/test_menu_views.xml',
     ],

@@ -59,7 +59,7 @@
                                     <div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                             <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Unit:</div>
-                                            <button name="%(action_arkite_unit)d" 
+                                            <button name="action_arkite_unit" 
                                                     type="action" 
                                                     class="btn btn-sm btn-secondary"
                                                     string="Manage Units"
@@ -212,6 +212,7 @@
                                         string="Load Processes" 
                                         type="object" 
                                         class="btn-primary"
+                                        id="pm-auto-load-processes-btn"
                                         invisible="not arkite_linked"
                                         icon="fa-refresh"
                                         help="Load available processes from Arkite"/>
@@ -224,13 +225,6 @@
                             <!-- Process Selection -->
                             <group col="1">
                                 <group string="Process Selection" col="1">
-                                    <button name="action_load_process_list" 
-                                            string="Load Process List" 
-                                            type="object" 
-                                            class="btn-secondary"
-                                            invisible="not arkite_linked"
-                                            style="margin-bottom: 8px;"/>
-                                    
                                     <!-- Selected Process Display (Clear Visual Indicator) -->
                                     <div invisible="not arkite_linked or not selected_process_id_char" 
                                          style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
@@ -288,35 +282,45 @@
                                     <div invisible="not selected_process_id_char" 
                                          style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                                         <div style="font-size: 13px; color: #0056b3; font-weight: 600; margin-bottom: 8px;">
-                                            <i class="fa fa-list-ol" style="margin-right: 6px;"/> 
+                                            <i class="fa fa-sitemap" style="margin-right: 6px;"/> 
                                             Steps for: <field name="selected_arkite_process_name" readonly="1" 
                                                               style="display: inline; border: none; background: transparent; font-weight: 700;"/>
                                         </div>
                                         <div style="font-size: 11px; color: #495057;">
-                                            <strong>Tip:</strong> Drag the handle (☰) to reorder steps. Click "Add a line" to create new steps. Click on variant tags to add/remove variants.
-                                        </div>
-                                    </div>
-                                    
+                                            <strong>Tip:</strong> Steps are displayed in a hierarchical tree structure. Drag the handle (☰) to reorder steps. COMPOSITE steps can contain child steps. Click "Add a line" to create new steps.
+                                </div>
+                            </div>
+                            
                                     <field name="arkite_process_step_ids" 
                                            nolabel="1" 
                                            invisible="not selected_process_id_char"
                                            context="{'default_project_id': id, 'default_process_id': selected_process_id_char}">
-                                        <list editable="bottom" 
+                                        <list string="Process Steps" 
+                                              editable="bottom" 
                                               default_order="sequence" 
                                               create="1" 
                                               delete="1"
-                                              decoration-muted="parent_step_id">
-                                            <field name="sequence" widget="handle"/>
+                                              decoration-success="step_type == 'COMPOSITE'"
+                                              decoration-muted="parent_step_record">
+                                        <field name="sequence" widget="handle"/>
                                             <field name="step_name" required="1"/>
+                                            <field name="hierarchy_path" 
+                                                   string="Path"
+                                                   readonly="1"
+                                                   help="Shows the full hierarchy path (e.g., 'Parent > Child')"/>
                                             <field name="step_type" required="1"/>
+                                            <field name="parent_step_record" 
+                                                   string="Parent"
+                                                   options="{'no_create': True, 'no_open': True}"/>
                                             <field name="for_all_variants" widget="boolean_toggle"/>
                                             <field name="variant_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                                            <field name="hierarchy_level" column_invisible="1"/>
                                             <field name="parent_step_id" column_invisible="1"/>
                                             <field name="step_id" column_invisible="1"/>
                                             <field name="process_id" column_invisible="1"/>
                                             <field name="index" column_invisible="1"/>
-                                        </list>
-                                    </field>
+                                    </list>
+                                </field>
                                     
                                     <!-- Empty state when no process selected -->
                                     <div invisible="selected_process_id_char" 
@@ -324,7 +328,7 @@
                                         <i class="fa fa-hand-pointer" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
                                         <h4 style="color: #6c757d; margin-bottom: 8px;">No Process Selected</h4>
                                         <p style="font-size: 14px; margin-bottom: 0;">Click "Select" on a process above to automatically view its steps.</p>
-                                    </div>
+                            </div>
                                 </group>
                             </group>
                             <script>
@@ -417,6 +421,34 @@
                                     })();
                                 ]]>
                             </script>
+                            
+                            <!-- Auto-load processes when form opens -->
+                            <script>
+                                <![CDATA[
+                                    (function() {
+                                        setTimeout(function() {
+                                            var loadBtn = document.getElementById('pm-auto-load-processes-btn');
+                                            if (loadBtn) {
+                                                var form = loadBtn.closest('form');
+                                                if (form) {
+                                                    var arkiteLinkedField = form.querySelector('field[name="arkite_linked"]');
+                                                    var processListField = form.querySelector('field[name="arkite_process_ids"]');
+                                                    
+                                                    if (arkiteLinkedField && processListField) {
+                                                        var isLinked = arkiteLinkedField.value === 'True' || arkiteLinkedField.value === true;
+                                                        var hasProcesses = processListField.querySelectorAll('tbody tr').length > 0;
+                                                        
+                                                        if (isLinked && !hasProcesses) {
+                                                            loadBtn.click();
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }, 1000);
+                                    })();
+                                ]]>
+                            </script>
+                            
                             
                         </div>
                         
