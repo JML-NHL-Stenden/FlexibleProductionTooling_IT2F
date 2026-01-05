@@ -59,20 +59,29 @@
                                     <div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                             <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Unit:</div>
-                                            <button name="%(product_module.action_arkite_unit)d" 
-                                                    type="action" 
-                                                    class="btn btn-sm btn-secondary"
-                                                    string="Manage Units"
-                                                    style="white-space: nowrap; padding: 4px 12px; font-size: 12px;"
-                                                    help="Open Arkite Units management to create or edit units"/>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button name="%(product_module.action_arkite_unit)d" 
+                                                        type="action" 
+                                                        class="btn btn-sm btn-secondary"
+                                                        string="Manage Units"
+                                                        style="white-space: nowrap; padding: 4px 12px; font-size: 12px;"
+                                                        help="Open Arkite Units management to create or edit units"/>
+                                                <button name="action_create_unit_from_tracking" 
+                                                        type="object" 
+                                                        class="btn btn-sm btn-info"
+                                                        string="Create from Unit Tracking"
+                                                        style="white-space: nowrap; padding: 4px 12px; font-size: 12px;"
+                                                        help="Create an Arkite Unit from a Unit Tracking entry"/>
+                                            </div>
                                         </div>
                                         <field name="arkite_unit_id" 
                                                options="{'no_create': True, 'no_create_edit': True}"
+                                               domain="[('active', '=', True)]"
                                                context="{'default_active': True}"
                                                placeholder="Select an Arkite unit..."/>
                                         <div style="margin-top: 12px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">
                                             <i class="fa fa-info-circle" style="margin-right: 6px;"/>
-                                            <strong>Note:</strong> Assign an Arkite unit to use its API credentials. If no unit is assigned, the system will use environment variables (if configured). Click "Manage Units" to create or edit units.
+                                            <strong>Note:</strong> Assign an Arkite unit to use its API credentials. If you created units in "Unit Tracking", click "Create from Unit Tracking" to make them available here. Otherwise, click "Manage Units" to create units directly.
                                         </div>
                                     </div>
                                     

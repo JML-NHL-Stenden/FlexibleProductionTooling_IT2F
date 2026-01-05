@@ -12,6 +12,7 @@
                 <field name="total_steps" string="Total Steps"/>
                 <field name="completed_steps" string="Completed"/>
                 <field name="progress_percentage" string="Progress %" widget="progressbar"/>
+                <button name="action_create_arkite_unit" type="object" string="Create Arkite Unit" class="btn-info" icon="fa-plus" help="Create an Arkite Unit from this tracking unit for use in Projects"/>
                 <button name="action_mark_complete" type="object" string="Complete Step" class="btn-success" confirm="Mark this step as complete?"/>
                 <button name="action_reset_progress" type="object" string="Reset" class="btn-warning" confirm="Reset progress to zero?"/>
             </list>

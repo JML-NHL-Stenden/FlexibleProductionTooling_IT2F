@@ -437,6 +437,52 @@ class ProductModuleProgress(models.Model):
             _logger.error("Error testing connection: %s", e)
             raise UserError(_('Error testing connection: %s') % str(e))
     
+    def action_create_arkite_unit(self):
+        """Create an Arkite Unit record from this Progress unit for use in Projects"""
+        self.ensure_one()
+        
+        if not self.arkite_unit_id or not self.arkite_api_base or not self.arkite_api_key:
+            raise UserError(_('This unit is missing Arkite configuration. Please configure Arkite Unit ID, API Base URL, and API Key first.'))
+        
+        # Check if Arkite Unit already exists with this unit_id
+        existing = self.env['product_module.arkite.unit'].search([
+            ('unit_id', '=', self.arkite_unit_id)
+        ], limit=1)
+        
+        if existing:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Unit Already Exists'),
+                    'message': _('An Arkite Unit with ID "%s" already exists: "%s". You can use it in Projects.') % (self.arkite_unit_id, existing.name),
+                    'type': 'info',
+                    'sticky': False,
+                }
+            }
+        
+        # Create new Arkite Unit
+        arkite_unit = self.env['product_module.arkite.unit'].create({
+            'name': self.name,
+            'unit_id': self.arkite_unit_id,
+            'api_base': self.arkite_api_base,
+            'api_key': self.arkite_api_key,
+            'template_name': self.arkite_template_name or '',
+            'active': True,
+            'description': f'Created from Unit Tracking: {self.name}',
+        })
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Arkite Unit Created'),
+                'message': _('Arkite Unit "%s" has been created. You can now select it in Projects.') % arkite_unit.name,
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+    
     def action_refresh_arkite_projects(self):
         """Refresh the list of projects from Arkite"""
         self.ensure_one()

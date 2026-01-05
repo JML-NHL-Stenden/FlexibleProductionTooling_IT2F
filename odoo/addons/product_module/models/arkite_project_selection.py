@@ -216,14 +216,18 @@ class ArkiteProjectSelection(models.TransientModel):
                         # Continue with next project
                         continue
             
+            # Commit the changes to ensure they're visible
+            self.env.cr.commit()
+            
+            # Reload the form to show the loaded projects
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Projects Loaded'),
-                    'message': _('Found %d project(s) in Arkite. %d loaded successfully. Select one from the list below.') % (len(projects), created_count),
-                    'type': 'success',
-                }
+                'type': 'ir.actions.act_window',
+                'res_model': 'product_module.arkite.project.selection',
+                'res_id': self.id,
+                'view_mode': 'form',
+                'view_id': self.env.ref('product_module.view_arkite_project_selection').id,
+                'target': 'new',
+                'context': self.env.context,
             }
         except requests.exceptions.ConnectionError as e:
             _logger.error("Connection error to Arkite API: %s", e, exc_info=True)

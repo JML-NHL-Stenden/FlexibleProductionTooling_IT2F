@@ -434,6 +434,24 @@ class ProductModuleProject(models.Model):
             'unit_id': unit_id,
         }
     
+    def action_create_unit_from_tracking(self):
+        """Open a wizard to select a Unit Tracking entry and create an Arkite Unit from it"""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Create Arkite Unit from Unit Tracking'),
+            'res_model': 'product_module.progress',
+            'view_mode': 'list',
+            'view_id': self.env.ref('product_module.view_progress_list').id,
+            'target': 'new',
+            'domain': [('arkite_unit_id', '!=', False), ('arkite_api_base', '!=', False), ('arkite_api_key', '!=', False)],
+            'context': {
+                'create': False,
+                'select_multi': False,
+                'default_action': 'create_arkite_unit',
+            }
+        }
+    
     def action_create_arkite_project(self):
         """Create a new Arkite project and link it to this Odoo project"""
         self.ensure_one()
