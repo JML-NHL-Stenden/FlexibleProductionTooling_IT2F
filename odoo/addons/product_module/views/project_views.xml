@@ -59,7 +59,7 @@
                                     <div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                             <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Unit:</div>
-                                            <button name="action_arkite_unit" 
+                                            <button name="%(product_module.action_arkite_unit)d" 
                                                     type="action" 
                                                     class="btn btn-sm btn-secondary"
                                                     string="Manage Units"
@@ -703,5 +703,12 @@
         <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_project_list"/>
     </record>
+    
+    <!-- Menu item for Projects (moved from product_views.xml to avoid load order issues) -->
+    <menuitem id="menu_projects"
+              name="Projects"
+              parent="menu_product_module_root"
+              action="action_project"
+              sequence="15"/>
 </odoo>
 

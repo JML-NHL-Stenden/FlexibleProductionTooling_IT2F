@@ -608,11 +608,6 @@
               action="action_product_assemble_page"
               sequence="10"/>
 
-    <menuitem id="menu_projects"
-              name="Projects"
-              parent="menu_product_module_root"
-              action="action_project"
-              sequence="15"/>
 
     <menuitem id="menu_product_types"
               name="Jobs"

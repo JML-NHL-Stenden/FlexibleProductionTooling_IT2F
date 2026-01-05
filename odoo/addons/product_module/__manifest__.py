@@ -23,9 +23,9 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/instruction_form_wizard_views.xml',
-        'views/arkite_unit_views.xml',  # Load before project_views.xml to ensure action_arkite_unit exists
-        'views/project_views.xml',
-        'views/product_views.xml',
+        'views/product_views.xml',  # Load first to define menu_product_module_root (but menu items referencing actions from other files should be in those files)
+        'views/arkite_unit_views.xml',  # Load after product_views.xml (needs menu_product_module_root), defines action_arkite_unit
+        'views/project_views.xml',  # Load after arkite_unit_views.xml (needs action_arkite_unit), defines action_project
         'views/variant_views.xml',
         'views/material_views.xml',
         'views/material_link_wizard_views.xml',
