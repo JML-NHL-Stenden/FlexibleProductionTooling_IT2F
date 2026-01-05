@@ -86,3 +86,8 @@ node_modules/
 # --------------------------------------
 .DS_Store
 Thumbs.db
+
+# --------------------------------------
+# Documentation / Guides (keep local, don't push to GitHub)
+# --------------------------------------
+Guides/
