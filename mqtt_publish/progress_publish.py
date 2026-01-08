@@ -152,9 +152,6 @@ def fetch_steps_payload():
                 parent_id = step.get("ParentStepId")
                 if parent_id and parent_id in numbered_step_sequence:
                     sequence = numbered_step_sequence[parent_id]
-                
-                if detection_status == True:
-                    is_completed = True
 
                 unit_steps.append({
                     "id": step["Id"],
@@ -164,10 +161,8 @@ def fetch_steps_payload():
                     "unitId": unit_id,
                     "detectionId": detection_id,
                     "sequence": sequence,
+                    "step_type": step.get("StepType"),
                     "detection_status": detection_status,
-                    "isProjectLoaded": is_project_loaded,
-                    "is_completed": is_completed,
-                    "assembly_progress_status": None
                 })
 
             detection_steps.extend(unit_steps)
@@ -199,7 +194,7 @@ def publish_loop(client):
             print(">>> Published updated steps to factory/all_steps")
         except Exception as e:
             print(">>> ERROR in fetch/publish loop:", e)
-        time.sleep(3)  
+        time.sleep(1)  
 
 def main():
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)

@@ -24,7 +24,7 @@ class ProductModuleInstructionStep(models.Model):
     instruction_id = fields.Many2one(
         'product_module.instruction',
         string='Process',
-        required=True,
+        # required=True,
         ondelete='cascade',
         help='Process this step belongs to'
     )
@@ -34,14 +34,16 @@ class ProductModuleInstructionStep(models.Model):
         'product_module.project',
         string='Project',
         related='instruction_id.project_id',
-        store=False,
+        store=True,
         readonly=True,
         help='Project this step belongs to (via instruction)'
     )
     arkite_step_id = fields.Char(
         string='Arkite Step ID',
         readonly=True,
-        help='Step ID from Arkite platform (auto-filled when synced)'
+        help='Step ID from Arkite platform (auto-filled when synced)',
+        index=True,
+        unique=True,
     )
     name = fields.Char(
         string='Step Name',
@@ -90,6 +92,9 @@ class ProductModuleInstructionStep(models.Model):
         string='Comment',
         help='Comment/notes for this step'
     )
+    detection_status = fields.Boolean(
+        default=False
+    )
     is_completed = fields.Boolean(
         default=False
     )
@@ -126,6 +131,12 @@ class ProductModuleInstructionStep(models.Model):
         ('Conditional', 'Conditional'),
     ], string='Step Control Flow', default='None',
        help='Control flow type for this step')
+
+    _sql_constraints = [
+        ('arkite_step_id_unique',
+        'unique(arkite_step_id)',
+        'Arkite Step ID must be unique'),
+    ]
     
     @api.model
     def create(self, vals):

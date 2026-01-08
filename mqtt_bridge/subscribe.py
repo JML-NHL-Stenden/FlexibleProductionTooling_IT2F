@@ -18,7 +18,7 @@ log = logging.getLogger("mqtt-all-steps-upsert")
 # =========================
 # PostgreSQL CONFIG
 # =========================
-max_retries = 15
+max_retries = 5
 for attempt in range(1, max_retries + 1):
     try:
         db_conn = psycopg2.connect(
@@ -68,8 +68,6 @@ def on_message(_cli, _userdata, msg):
     except Exception:
         payload = "<binary>"
 
-    log.info("[MQTT] Received payload on %s", msg.topic)
-
     # avoid processing duplicate payload
     h = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     if h == last_payload_hash:
@@ -90,6 +88,7 @@ def on_message(_cli, _userdata, msg):
         project_name = project_steps[0]["projectName"]
 
         # UPSERT project
+        log.info("!Project id: %s,", project_id)
         try:
             db_cur.execute("""
                 INSERT INTO public.product_module_project (arkite_project_id, name)
@@ -99,29 +98,46 @@ def on_message(_cli, _userdata, msg):
                 RETURNING id;
             """, (project_id, project_name))
             project_db_id = db_cur.fetchone()[0]
+            db_conn.commit()
         except Exception as e:
+            db_conn.rollback()
             log.error("[DB] Error upserting project %s: %s", project_name, e)
             continue
 
         # UPSERT steps
         for step in project_steps:
+            log.info("--step id: %s", step["id"])
+            is_completed_now = (
+                step.get("detection_status", False)
+                and step.get("isProjectLoaded", False)
+            )
+                
             try:
                 db_cur.execute("""
                     INSERT INTO public.product_module_instruction_step
-                    (arkite_step_id, name, project_id, is_completed)
-                    VALUES (%s, %s, %s, %s)
+                    (arkite_step_id, name, step_type, project_id, sequence, detection_status, is_completed)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (arkite_step_id) DO UPDATE
                     SET
                         name = EXCLUDED.name,
+                        step_type = EXCLUDED.step_type,
                         project_id = EXCLUDED.project_id,
-                        is_completed = EXCLUDED.is_completed;
+                        sequence = EXCLUDED.sequence,
+                        detection_status = EXCLUDED.detection_status,
+                        is_completed = public.product_module_instruction_step.is_completed
+                                    OR EXCLUDED.detection_status;
                 """, (
                     step["id"],
                     step["name"],
+                    step["step_type"],
                     project_db_id,
-                    step.get("is_completed", False)
+                    step["sequence"],
+                    step.get("detection_status", False),
+                    step.get("detection_status", False)  # initially same as detection_status
                 ))
+                db_conn.commit()
             except Exception as e:
+                db_conn.rollback()
                 log.error("[DB] Error upserting step %s: %s", step["name"], e)
                 continue
 
@@ -145,7 +161,7 @@ def main():
     log.info("=== MQTT → All Steps Upsert ===")
     setup_mqtt()
     while True:
-        time.sleep(3)  # idle loop every 3 seconds
+        time.sleep(5)  # idle loop every 3 seconds
 
 if __name__ == "__main__":
     main()

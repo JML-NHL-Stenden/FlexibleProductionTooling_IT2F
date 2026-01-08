@@ -30,7 +30,8 @@ class ProductModuleProject(models.Model):
     )
     arkite_project_id = fields.Char(
         string='Arkite Project ID',
-        help='ID of the linked Arkite project'
+        help='ID of the linked Arkite project',
+        index=True
     )
     arkite_project_name = fields.Char(
         string='Arkite Project Name',
@@ -67,6 +68,12 @@ class ProductModuleProject(models.Model):
         string='Selected Process',
         help='Currently selected process to view/edit its steps'
     )
+
+    _sql_constraints = [
+        ('arkite_project_id_unique',
+        'unique(arkite_project_id)',
+        'Arkite Project ID must be unique'),
+    ]
     
     @api.onchange('selected_instruction_id')
     def _onchange_selected_instruction_id(self):
