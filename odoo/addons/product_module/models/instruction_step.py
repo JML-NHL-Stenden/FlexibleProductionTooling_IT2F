@@ -90,6 +90,9 @@ class ProductModuleInstructionStep(models.Model):
         string='Comment',
         help='Comment/notes for this step'
     )
+    is_completed = fields.Boolean(
+        default=False
+    )
     detection_id = fields.Char(
         string='Detection ID',
         help='Detection ID (required for detection-based steps like TOOL_PLACING, OBJECT_PLACING, etc.)'

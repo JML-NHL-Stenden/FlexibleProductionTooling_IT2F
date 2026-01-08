@@ -166,15 +166,11 @@ def fetch_steps_payload():
                     "sequence": sequence,
                     "detection_status": detection_status,
                     "isProjectLoaded": is_project_loaded,
-                    "is_completed": is_completed
+                    "is_completed": is_completed,
+                    "assembly_progress_status": None
                 })
 
             detection_steps.extend(unit_steps)
-
-    for det_step in detection_steps:
-        print("*ID:", {det_step["detectionId"]})
-        print("--- status:", {det_step["detection_status"]})
-        print("--- is completed?:", {det_step["is_completed"]})
 
     print(f">>> Detection steps fetched: {len(detection_steps)}")
     return detection_steps
