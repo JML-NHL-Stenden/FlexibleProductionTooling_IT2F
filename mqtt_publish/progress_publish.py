@@ -162,6 +162,7 @@ def fetch_steps_payload():
                     "detectionId": detection_id,
                     "sequence": sequence,
                     "step_type": step.get("StepType"),
+                    "isProjectLoaded": is_project_loaded,
                     "detection_status": detection_status,
                 })
 

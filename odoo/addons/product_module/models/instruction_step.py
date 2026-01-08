@@ -98,6 +98,9 @@ class ProductModuleInstructionStep(models.Model):
     is_completed = fields.Boolean(
         default=False
     )
+    is_project_loaded = fields.Boolean(
+        default=False
+    )
     detection_id = fields.Char(
         string='Detection ID',
         help='Detection ID (required for detection-based steps like TOOL_PLACING, OBJECT_PLACING, etc.)'

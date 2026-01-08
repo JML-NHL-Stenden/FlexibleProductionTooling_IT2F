@@ -5,7 +5,7 @@ import hashlib
 import logging
 import psycopg2
 import paho.mqtt.client as mqtt
-
+import threading
 # =========================
 # Logging
 # =========================
@@ -49,6 +49,56 @@ MQTT_TOPIC = "factory/all_steps"
 last_payload_hash = None
 client = None
 
+def track_project_time(project_db_id):
+    log.info("[TIMER] Started timer for project %s", project_db_id)
+
+    try:
+        while True:
+            db_cur.execute("""
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN is_completed THEN 1 ELSE 0 END) AS completed
+                FROM public.product_module_instruction_step
+                WHERE project_id = %s;
+            """, (project_db_id,))
+            total, completed = db_cur.fetchone()
+
+            if completed == 0:
+                status = 'not_started'
+            elif completed < total:
+                status = 'in_progress'
+            else:
+                status = 'done'
+
+            # Update status
+            db_cur.execute("""
+                UPDATE public.product_module_project
+                SET status = %s
+                WHERE id = %s;
+            """, (status, project_db_id))
+
+            if status == 'done':
+                db_conn.commit()
+                log.info("[TIMER] Project %s DONE — stopping timer", project_db_id)
+                break
+
+            # Increment time ONLY while in progress
+            if status == 'in_progress':
+                db_cur.execute("""
+                    UPDATE public.product_module_project
+                    SET active_completion_time = active_completion_time + 1
+                    WHERE id = %s;
+                """, (project_db_id,))
+
+            db_conn.commit()
+            time.sleep(1)
+
+    finally:
+        with active_project_timers_lock:
+            active_project_timers.discard(project_db_id)
+
+active_project_timers = set()
+active_project_timers_lock = threading.Lock()
 # =========================
 # MQTT CALLBACKS
 # =========================
@@ -91,8 +141,8 @@ def on_message(_cli, _userdata, msg):
         log.info("!Project id: %s,", project_id)
         try:
             db_cur.execute("""
-                INSERT INTO public.product_module_project (arkite_project_id, name)
-                VALUES (%s, %s)
+                INSERT INTO public.product_module_project (arkite_project_id, name, status, active_completion_time)
+                VALUES (%s, %s, 'not_started', 0)
                 ON CONFLICT (arkite_project_id) DO UPDATE
                 SET name = EXCLUDED.name
                 RETURNING id;
@@ -115,8 +165,8 @@ def on_message(_cli, _userdata, msg):
             try:
                 db_cur.execute("""
                     INSERT INTO public.product_module_instruction_step
-                    (arkite_step_id, name, step_type, project_id, sequence, detection_status, is_completed)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    (arkite_step_id, name, step_type, project_id, sequence, detection_status, is_project_loaded, is_completed)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (arkite_step_id) DO UPDATE
                     SET
                         name = EXCLUDED.name,
@@ -124,8 +174,9 @@ def on_message(_cli, _userdata, msg):
                         project_id = EXCLUDED.project_id,
                         sequence = EXCLUDED.sequence,
                         detection_status = EXCLUDED.detection_status,
+                        is_project_loaded = EXCLUDED.is_project_loaded,
                         is_completed = public.product_module_instruction_step.is_completed
-                                    OR EXCLUDED.detection_status;
+                                    OR (EXCLUDED.detection_status AND EXCLUDED.is_project_loaded);
                 """, (
                     step["id"],
                     step["name"],
@@ -133,9 +184,20 @@ def on_message(_cli, _userdata, msg):
                     project_db_id,
                     step["sequence"],
                     step.get("detection_status", False),
-                    step.get("detection_status", False)  # initially same as detection_status
+                    step.get("isProjectLoaded", False),
+                    step.get("detection_status", False) and step.get("isProjectLoaded", False)
                 ))
                 db_conn.commit()
+
+                if is_completed_now:
+                    with active_project_timers_lock:
+                        if project_db_id not in active_project_timers:
+                            active_project_timers.add(project_db_id)
+                            threading.Thread(
+                                target=track_project_time,
+                                args=(project_db_id,),
+                                daemon=True
+                            ).start()
             except Exception as e:
                 db_conn.rollback()
                 log.error("[DB] Error upserting step %s: %s", step["name"], e)

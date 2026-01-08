@@ -21,7 +21,21 @@ class ProductModuleProject(models.Model):
     # Related jobs (Many2many relationship)
     job_ids = fields.Many2many('product_module.type', string='Jobs')
     job_count = fields.Integer(string='Total Jobs', compute='_compute_job_count')
-    
+
+    active_completion_time = fields.Integer(
+        string='Completion Time',
+        default=0
+    )
+    status = fields.Selection(
+        [
+            ('not_started', 'Not Started'),
+            ('in_progress', 'In Progress'),
+            ('done', 'Done'),
+        ],
+        string="Status",
+        default='not_started',
+        required=True,
+    )
     # Arkite Integration
     arkite_unit_id = fields.Many2one(
         'product_module.arkite.unit',
@@ -38,6 +52,7 @@ class ProductModuleProject(models.Model):
         readonly=True,
         help='Name of the linked Arkite project (auto-filled when linked)'
     )
+
     arkite_linked = fields.Boolean(
         string='Linked to Arkite',
         compute='_compute_arkite_linked',
@@ -57,6 +72,8 @@ class ProductModuleProject(models.Model):
         string='Processes',
         help='Assembly processes for this project'
     )
+
+    
     instruction_count = fields.Integer(
         string='Process Count',
         compute='_compute_instruction_count',
