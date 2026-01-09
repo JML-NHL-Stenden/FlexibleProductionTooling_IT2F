@@ -807,8 +807,22 @@ class ProductModuleProject(models.Model):
         })
 
         # Clear transient data loaded from Arkite (local only).
-        # NOTE: unlink() on steps is safe; we previously removed Arkite DELETE calls from step unlink().
-        (variant_recs | process_recs | process_step_recs | job_recs | job_step_recs | detection_recs | material_recs).unlink()
+        # NOTE: you can't union recordsets from different models, so unlink separately.
+        # Also, unlink() on steps is safe; we previously removed Arkite DELETE calls from step unlink().
+        if variant_recs:
+            variant_recs.unlink()
+        if process_recs:
+            process_recs.unlink()
+        if process_step_recs:
+            process_step_recs.unlink()
+        if job_recs:
+            job_recs.unlink()
+        if job_step_recs:
+            job_step_recs.unlink()
+        if detection_recs:
+            detection_recs.unlink()
+        if material_recs:
+            material_recs.unlink()
 
         return self._action_refresh_current_form()
     
