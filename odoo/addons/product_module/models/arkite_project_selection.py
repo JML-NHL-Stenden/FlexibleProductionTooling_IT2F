@@ -522,15 +522,19 @@ class ArkiteProjectSelection(models.TransientModel):
                     odoo_project.write({
                         'arkite_project_id': self.arkite_project_id,
                         'arkite_project_name': self.arkite_project_name or '',
+                        # Linking != loading; require explicit load/sync after linking
+                        'arkite_project_loaded': False,
                     })
+                    # Close the wizard and go back to the Project form.
                     return {
-                        'type': 'ir.actions.client',
-                        'tag': 'display_notification',
-                        'params': {
-                            'title': _('Success'),
-                            'message': _('Arkite project linked successfully. Project ID: %s') % self.arkite_project_id,
-                            'type': 'success',
-                        }
+                        'type': 'ir.actions.act_window',
+                        'name': _('Project'),
+                        'res_model': 'product_module.project',
+                        'res_id': odoo_project.id,
+                        'view_mode': 'form',
+                        'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+                        'target': 'current',
+                        'context': dict(self.env.context),
                     }
             except Exception as e:
                 _logger.error("Error linking project: %s", e)
@@ -554,16 +558,20 @@ class ArkiteProjectSelection(models.TransientModel):
         odoo_project.write({
             'arkite_project_id': self.arkite_project_id,
             'arkite_project_name': self.arkite_project_name or '',
+            # Linking != loading; require explicit load/sync after linking
+            'arkite_project_loaded': False,
         })
-        
+
+        # Close the wizard and go back to the Project form.
         return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _('Success'),
-                'message': _('Arkite project linked successfully. Project ID: %s') % self.arkite_project_id,
-                'type': 'success',
-            }
+            'type': 'ir.actions.act_window',
+            'name': _('Project'),
+            'res_model': 'product_module.project',
+            'res_id': odoo_project.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+            'target': 'current',
+            'context': dict(self.env.context),
         }
     
     @api.depends('template_arkite_project_name', 'arkite_project_name', 'selection_type')
