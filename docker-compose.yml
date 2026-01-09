@@ -14,7 +14,10 @@ services:
       - odoo-net
 
   odoo:
-    image: odoo:${ODOO_VERSION}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flexible-production-tooling-odoo:${ODOO_VERSION}
     container_name: flexible-production-tooling-odoo-1
     depends_on:
       - db
@@ -82,7 +85,6 @@ services:
       IDLE_INTERVAL_SEC: ${IDLE_INTERVAL_SEC}
     networks:
       - odoo-net
-
 
   mqtt-publish:
     build: ./mqtt_publish
