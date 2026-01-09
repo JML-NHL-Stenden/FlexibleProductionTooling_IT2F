@@ -6,6 +6,8 @@ import logging
 import psycopg2
 import paho.mqtt.client as mqtt
 import threading
+import re
+
 # =========================
 # Logging
 # =========================
@@ -39,6 +41,17 @@ else:
 
 db_cur = db_conn.cursor()
 
+
+def clean_instruction_title(title: str) -> str:
+    if not title:
+        return title
+
+    # remove <~...~> and <[...]> blocks
+    title = re.sub(r"<~.*?~>", "", title)
+    title = re.sub(r"<\[.*?\]>", "", title)
+
+    return title.strip()
+
 # =========================
 # MQTT CONFIG
 # =========================
@@ -52,48 +65,56 @@ client = None
 def track_project_time(project_db_id):
     log.info("[TIMER] Started timer for project %s", project_db_id)
 
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST", "db"),
+        port=int(os.getenv("DB_PORT", 5432)),
+        user=os.getenv("DB_USER", "odoo"),
+        password=os.getenv("DB_PASS", "odoo"),
+        database=os.getenv("DB_NAME", "odoo"),
+    )
+    cur = conn.cursor()
+
     try:
         while True:
-            db_cur.execute("""
+            cur.execute("""
                 SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN is_completed THEN 1 ELSE 0 END) AS completed
-                FROM public.product_module_instruction_step
+                FROM public.product_module_instruction
                 WHERE project_id = %s;
             """, (project_db_id,))
-            total, completed = db_cur.fetchone()
+            total, completed = cur.fetchone()
 
-            if completed == 0:
+            if total == 0:
                 status = 'not_started'
             elif completed < total:
                 status = 'in_progress'
             else:
                 status = 'done'
 
-            # Update status
-            db_cur.execute("""
+            cur.execute("""
                 UPDATE public.product_module_project
                 SET status = %s
                 WHERE id = %s;
             """, (status, project_db_id))
 
             if status == 'done':
-                db_conn.commit()
+                conn.commit()
                 log.info("[TIMER] Project %s DONE — stopping timer", project_db_id)
                 break
 
-            # Increment time ONLY while in progress
             if status == 'in_progress':
-                db_cur.execute("""
+                cur.execute("""
                     UPDATE public.product_module_project
                     SET active_completion_time = active_completion_time + 1
                     WHERE id = %s;
                 """, (project_db_id,))
 
-            db_conn.commit()
+            conn.commit()
             time.sleep(1)
 
     finally:
+        conn.close()
         with active_project_timers_lock:
             active_project_timers.discard(project_db_id)
 
@@ -156,6 +177,7 @@ def on_message(_cli, _userdata, msg):
 
         # UPSERT steps
         for step in project_steps:
+            clean_title = clean_instruction_title(step["name"])
             log.info("--step id: %s", step["id"])
             is_completed_now = (
                 step.get("detection_status", False)
@@ -188,21 +210,43 @@ def on_message(_cli, _userdata, msg):
                     step.get("detection_status", False) and step.get("isProjectLoaded", False)
                 ))
                 db_conn.commit()
-
-                if is_completed_now:
-                    with active_project_timers_lock:
-                        if project_db_id not in active_project_timers:
-                            active_project_timers.add(project_db_id)
-                            threading.Thread(
-                                target=track_project_time,
-                                args=(project_db_id,),
-                                daemon=True
-                            ).start()
             except Exception as e:
                 db_conn.rollback()
                 log.error("[DB] Error upserting step %s: %s", step["name"], e)
                 continue
 
+            try:
+                db_cur.execute("""
+                    INSERT INTO public.product_module_instruction
+                    (step_id, title, sequence, project_id, is_completed)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (step_id) DO UPDATE
+                    SET
+                        title = EXCLUDED.title,
+                        sequence = EXCLUDED.sequence,
+                        project_id = EXCLUDED.project_id,
+                        is_completed = public.product_module_instruction.is_completed
+                            OR EXCLUDED.is_completed;
+                """, (
+                    step["id"],
+                    clean_title,
+                    step["sequence"],
+                    project_db_id,
+                    is_completed_now
+                ))
+                db_conn.commit()
+            except Exception as e:
+                db_conn.rollback()
+                log.error("[DB] Error upserting instruction %s: %s", step["name"], e)
+
+        with active_project_timers_lock:
+            if project_db_id not in active_project_timers:
+                active_project_timers.add(project_db_id)
+                threading.Thread(
+                    target=track_project_time,
+                    args=(project_db_id,),
+                    daemon=True
+                ).start()
     log.info("[DB] Processed %d projects from payload.", len(projects))
 
 # =========================
@@ -223,7 +267,7 @@ def main():
     log.info("=== MQTT → All Steps Upsert ===")
     setup_mqtt()
     while True:
-        time.sleep(5)  # idle loop every 3 seconds
+        time.sleep(3)  # idle loop every 3 seconds
 
 if __name__ == "__main__":
     main()

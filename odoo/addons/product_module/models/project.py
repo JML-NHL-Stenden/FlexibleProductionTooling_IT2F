@@ -33,6 +33,7 @@ class ProductModuleProject(models.Model):
             ('done', 'Done'),
         ],
         string="Status",
+        store=True,
         default='not_started',
         required=True,
     )
@@ -114,7 +115,30 @@ class ProductModuleProject(models.Model):
         store=False,
         help='Steps for the currently selected process. Select a process first to view/edit its steps.'
     )
+
+    @api.depends('instruction_ids.is_completed')
+    def _compute_status_and_time(self):
+        for project in self:
+            steps = project.instruction_ids
+            if not steps:
+                project.status = 'not_started'
+                continue
+
+            completed = steps.filtered('is_completed')
+
+            if not completed:
+                project.status = 'not_started'
+            elif len(completed) < len(steps):
+                project.status = 'in_progress'
+            else:
+                project.status = 'done'
     
+    @api.model
+    def cron_increment_active_time(self):
+        projects = self.search([('status', '=', 'in_progress')])
+        for project in projects:
+            project.active_completion_time += 1
+        
     @api.depends('selected_instruction_id', 'selected_instruction_id.process_step_ids')
     def _compute_selected_instruction_steps(self):
         """Compute steps from selected instruction"""

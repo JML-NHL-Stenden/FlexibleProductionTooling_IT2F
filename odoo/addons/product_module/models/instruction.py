@@ -18,6 +18,13 @@ class ProductModuleInstruction(models.Model):
         ondelete='cascade'
     )
     
+    step_id = fields.Char(
+        string='Arkite Step ID',
+        readonly=True,
+        help='Step ID from Arkite platform (auto-filled when synced)',
+        index=True,
+        unique=True,
+    )
     variant_id = fields.Many2one(
         'product_module.variant',
         string='Variant',
@@ -29,7 +36,10 @@ class ProductModuleInstruction(models.Model):
         ondelete='cascade',
         help='Project this process belongs to'
     )
-    sequence = fields.Integer(string='Step #', default=10, help='Order of process steps')
+    is_completed = fields.Boolean(
+        default=False
+    )
+    sequence = fields.Integer(string='Step #', default=0, help='Order of process steps')
     title = fields.Char(string='Process Title', required=True, size=250)
     arkite_process_id = fields.Char(
         string='Arkite Process ID',
@@ -77,6 +87,12 @@ class ProductModuleInstruction(models.Model):
     ], string='Process Start Trigger', 
        help='When this process should start automatically. "Project Loaded" starts when project is loaded on unit.')
     image = fields.Binary(string='Illustration', attachment=True)
+
+    _sql_constraints = [
+        ('step_id_unique',
+        'unique(step_id)',
+        'Step ID must be unique'),
+    ]
     
     @api.depends('process_step_ids')
     def _compute_process_step_count(self):

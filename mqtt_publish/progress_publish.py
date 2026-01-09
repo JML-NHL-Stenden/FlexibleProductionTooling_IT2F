@@ -147,8 +147,6 @@ def fetch_steps_payload():
                     current_state = unit_state_by_name.get(detection_name)
                     detection_status = detect_state_to_bool(current_state)
 
-
-                sequence = None
                 parent_id = step.get("ParentStepId")
                 if parent_id and parent_id in numbered_step_sequence:
                     sequence = numbered_step_sequence[parent_id]
@@ -160,7 +158,7 @@ def fetch_steps_payload():
                     "projectName" : proj["Name"],
                     "unitId": unit_id,
                     "detectionId": detection_id,
-                    "sequence": sequence,
+                    "sequence": extract_step_number(step.get("Name")),
                     "step_type": step.get("StepType"),
                     "isProjectLoaded": is_project_loaded,
                     "detection_status": detection_status,

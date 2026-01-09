@@ -35,6 +35,11 @@
                                             <i class="fa fa-briefcase"/> <field name="job_count"/> Total Jobs
                                         </span>
                                     </div>
+                                    <div style="display:flex; gap:12px;">
+                                        <field name="status" widget="statusbar"
+                                            statusbar_visible="not_started,in_progress,done"/>
+                                        <field name="active_completion_time" readonly="1"/>
+                                    </div>
                                 </div>
                             </div>
 
@@ -233,6 +238,15 @@
                             
                             <!-- Process Selection -->
                             <group col="1">
+                                <group string="Instruction Steps">
+                                    <field name="instruction_ids" nolabel="1">
+                                        <list delete="false">
+                                            <field name="sequence"/>
+                                            <field name="title"/>
+                                            <field name="is_completed" widget="boolean_toggle"/>
+                                        </list>
+                                    </field>
+                                </group>
                                 <group string="Process Selection" col="1">
                                     <!-- Selected Process Display (Clear Visual Indicator) -->
                                     <div invisible="not arkite_linked or not selected_process_id_char" 
