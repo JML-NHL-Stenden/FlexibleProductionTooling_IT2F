@@ -775,6 +775,42 @@ class ProductModuleProject(models.Model):
                 'active_model': 'product_module.project',
             }
         }
+
+    def action_unlink_arkite_project(self):
+        """De-link the Arkite project and clear synced transient data so another project can be linked."""
+        self.ensure_one()
+
+        # Capture current transient records before clearing the link (so we can cleanup safely).
+        variant_recs = self.arkite_variant_ids
+        process_recs = self.arkite_process_ids
+        process_step_recs = self.arkite_process_step_ids
+        job_recs = self.arkite_job_ids
+        job_step_recs = self.arkite_job_step_ids
+        detection_recs = self.arkite_detection_ids
+        material_recs = self.arkite_material_ids
+
+        # Clear link + selection state + staged flags.
+        self.with_context(skip_arkite_hierarchy_autosync=True).write({
+            'arkite_project_id': False,
+            'arkite_project_name': False,
+            'arkite_project_loaded': False,
+            'selected_arkite_process_id': False,
+            'selected_process_id_char': False,
+            'selected_arkite_job_id': False,
+            'selected_job_id_char': False,
+            'arkite_hierarchy_dirty': False,
+            # Step flags (provided by project_arkite_step_flags.py)
+            'arkite_job_steps_loaded': False,
+            'arkite_process_steps_loaded': False,
+            'arkite_job_steps_dirty': False,
+            'arkite_process_steps_dirty': False,
+        })
+
+        # Clear transient data loaded from Arkite (local only).
+        # NOTE: unlink() on steps is safe; we previously removed Arkite DELETE calls from step unlink().
+        (variant_recs | process_recs | process_step_recs | job_recs | job_step_recs | detection_recs | material_recs).unlink()
+
+        return self._action_refresh_current_form()
     
     def action_load_arkite_project(self):
         """Load Arkite project by ID and auto-load steps, variants, processes, detections"""

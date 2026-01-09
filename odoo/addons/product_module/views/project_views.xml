@@ -413,6 +413,15 @@
                                                 id="sync_from_arkite_btn">
                                             <i class="fa fa-sync" style="margin-right: 8px;"/> Sync from Arkite
                                         </button>
+
+                                        <button name="action_unlink_arkite_project"
+                                                type="object"
+                                                class="btn btn-outline-danger"
+                                                invisible="not arkite_linked"
+                                                confirm="This will de-link the Arkite project and clear locally loaded Arkite data (variants/processes/steps/detections/materials) from this Odoo project. Continue?"
+                                                style="border-radius: 8px; font-weight: 700; padding: 10px 20px;">
+                                            <i class="fa fa-unlink" style="margin-right: 8px;"/> De-link Arkite Project
+                                        </button>
                                         <!-- Removed legacy inline JS (can break modals / cause unexpected reloads in Odoo 18). -->
                                         
                                     </div>
