@@ -1,6 +1,6 @@
 {
     'name': 'Product Module',
-    'version': '1.1',
+    'version': '1.2',
     'summary': 'Product registration with QR codes and assembly instructions',
     'description': '''
         Product Assembly Management Module
@@ -17,7 +17,7 @@
     'author': 'II- F Information Technology (NHL Stenden)',
     'category': 'Productivity',
     'license': 'LGPL-3',
-    'depends': ['base'],
+    'depends': ['base', 'web', 'web_hierarchy'],
     'data': [
         'security/ir.model.access.csv',
         'data/page_data.xml',
@@ -26,12 +26,14 @@
         'views/product_views.xml',  # Load first to define menu_product_module_root (but menu items referencing actions from other files should be in those files)
         'views/arkite_unit_views.xml',  # Load after product_views.xml (needs menu_product_module_root), defines action_arkite_unit
         'views/project_views.xml',  # Load after arkite_unit_views.xml (needs action_arkite_unit), defines action_project
+        'views/arkite_step_server_actions.xml',
         'views/variant_views.xml',
         'views/material_views.xml',
         'views/material_link_wizard_views.xml',
         'views/progress_views.xml',
         'views/arkite_project_wizard_view.xml',
         'views/arkite_job_step_wizard_view.xml',
+        'views/arkite_process_create_wizard_view.xml',
         'views/arkite_project_selection_views.xml',
         'data/arkite_security_data.xml',
         'views/test_menu_views.xml',
@@ -39,6 +41,7 @@
     'assets': {
         'web.assets_backend': [
             'product_module/static/src/css/product_module.css',
+            # 'product_module/static/src/js/hierarchy_simple.js',  # Disabled: was causing blank page
         ],
     },
     'images': ['static/description/icon.png'],

@@ -10,6 +10,63 @@ class ProductModuleProgress(models.Model):
     _name = 'product_module.progress'
     _description = 'Unit Progress Tracking'
     _order = 'name'
+    
+    @api.model
+    def create(self, vals):
+        """Auto-create Arkite Unit when Progress unit is created with all required fields"""
+        record = super().create(vals)
+        # Auto-create Arkite Unit if all required fields are present
+        if record.arkite_unit_id and record.arkite_api_base and record.arkite_api_key:
+            try:
+                record._auto_create_arkite_unit()
+            except Exception as e:
+                _logger.warning("Failed to auto-create Arkite Unit: %s", e)
+        return record
+    
+    def write(self, vals):
+        """Auto-create or update Arkite Unit when Progress unit is updated with all required fields"""
+        result = super().write(vals)
+        # Check if any required fields were updated
+        if any(field in vals for field in ['arkite_unit_id', 'arkite_api_base', 'arkite_api_key', 'name', 'arkite_template_name']):
+            for record in self:
+                if record.arkite_unit_id and record.arkite_api_base and record.arkite_api_key:
+                    try:
+                        record._auto_create_arkite_unit()
+                    except Exception as e:
+                        _logger.warning("Failed to auto-create/update Arkite Unit: %s", e)
+        return result
+    
+    def _auto_create_arkite_unit(self):
+        """Internal method to automatically create or update Arkite Unit"""
+        self.ensure_one()
+        if not self.arkite_unit_id or not self.arkite_api_base or not self.arkite_api_key:
+            return
+        
+        # Check if Arkite Unit already exists with this unit_id
+        existing = self.env['product_module.arkite.unit'].search([
+            ('unit_id', '=', self.arkite_unit_id)
+        ], limit=1)
+        
+        if existing:
+            # Update existing unit with latest info
+            existing.write({
+                'name': self.name,
+                'api_base': self.arkite_api_base,
+                'api_key': self.arkite_api_key,
+                'template_name': self.arkite_template_name or '',
+                'active': True,
+            })
+        else:
+            # Create new Arkite Unit
+            self.env['product_module.arkite.unit'].create({
+                'name': self.name,
+                'unit_id': self.arkite_unit_id,
+                'api_base': self.arkite_api_base,
+                'api_key': self.arkite_api_key,
+                'template_name': self.arkite_template_name or '',
+                'active': True,
+                'description': f'Auto-created from Unit Tracking: {self.name}',
+            })
 
     # Basic fields
     name = fields.Char(string='Unit Name', required=True)
