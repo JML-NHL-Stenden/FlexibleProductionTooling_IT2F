@@ -7,6 +7,7 @@ import logging
 import time
 import json
 from datetime import datetime, timezone
+from ..services.arkite_client import ArkiteClient
 _logger = logging.getLogger(__name__)
 
 
@@ -2685,54 +2686,9 @@ class ProductModuleProject(models.Model):
 
     def _arkite_download_image_bytes(self, api_base, api_key, image_id):
         """Best-effort download of an Arkite image by ID. Returns raw bytes or None."""
-        import base64
-
-        if not image_id:
-            return None
-        image_id = str(image_id).strip()
-        if not image_id or image_id == "0":
-            return None
-
-        candidates = [
-            # Per Arkite API docs: this returns the actual image bytes (e.g., image/png, image/svg+xml)
-            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/show/",
-            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/",
-            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}",
-            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/content",
-            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/download",
-        ]
-
-        for url in candidates:
-            try:
-                resp = requests.get(url, params={"apiKey": api_key}, verify=False, timeout=20)
-            except Exception:
-                continue
-            if not resp.ok:
-                continue
-
-            ctype = (resp.headers.get("Content-Type") or "").lower()
-
-            # If Arkite returns a JSON envelope, try to extract base64 payload.
-            if "application/json" in ctype:
-                try:
-                    data = resp.json()
-                except Exception:
-                    data = None
-                if isinstance(data, dict):
-                    for key in ("Data", "data", "Content", "content", "Bytes", "bytes", "Base64", "base64"):
-                        raw = data.get(key)
-                        if raw:
-                            try:
-                                return base64.b64decode(raw)
-                            except Exception:
-                                pass
-                continue
-
-            # Otherwise assume it's raw image bytes.
-            if resp.content:
-                return resp.content
-
-        return None
+        self.ensure_one()
+        client = ArkiteClient(api_base=api_base, api_key=api_key, verify_ssl=False, timeout_sec=20)
+        return client.download_image_bytes(str(self.arkite_project_id), str(image_id))
 
     def action_fetch_material_images_from_arkite(self):
         """Fetch material images from Arkite (by image_id) into the Materials Used list."""
