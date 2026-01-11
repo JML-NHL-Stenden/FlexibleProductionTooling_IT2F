@@ -58,14 +58,6 @@
                   decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
                   decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
                   decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
-                <header>
-                    <button name="action_back_to_diagram"
-                            type="object"
-                            string="Back to Diagram"
-                            icon="fa-sitemap"
-                            class="btn btn-secondary"
-                            context="{'defer_arkite_sync': True}"/>
-                </header>
                 <!-- Drag is enabled; use the handle (indent/outdent still available for changing hierarchy level) -->
                 <button name="action_indent" type="object" icon="fa-indent" string="" class="btn btn-sm btn-secondary" title="Indent (make child of previous)"/>
                 <button name="action_outdent" type="object" icon="fa-outdent" string="" class="btn btn-sm btn-secondary" title="Outdent (move up one level)"/>
@@ -79,23 +71,6 @@
                 <field name="process_id" column_invisible="1"/>
                 <field name="group_parent_id" column_invisible="1"/>
                 <field name="hierarchy_css_class" column_invisible="1"/>
-            </list>
-        </field>
-    </record>
-
-    <!-- Process Steps Reorder List View (drag-only, safe persistence) -->
-    <record id="view_arkite_process_step_tree_reorder" model="ir.ui.view">
-        <field name="name">product_module.arkite.process.step.tree.reorder</field>
-        <field name="model">product_module.arkite.process.step</field>
-        <field name="arch" type="xml">
-            <!-- Drag handle resequencing auto-saves on drop via /web/dataset/resequence -->
-            <list string="Reorder child steps" create="0" delete="0" default_order="sequence,id">
-                <field name="sequence" widget="handle" string="" width="24px"/>
-                <field name="hierarchical_level_html" string="Level" readonly="1" width="90px" widget="html" options="{'sanitize': False}"/>
-                <field name="step_name" string="Step Name" readonly="1"/>
-                <field name="step_type" string="Type" readonly="1"/>
-                <field name="parent_id" column_invisible="1"/>
-                <field name="process_id" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -165,14 +140,6 @@
                   decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
                   decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
                   decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
-                <header>
-                    <button name="action_back_to_diagram"
-                            type="object"
-                            string="Back to Diagram"
-                            icon="fa-sitemap"
-                            class="btn btn-secondary"
-                            context="{'defer_arkite_sync': True}"/>
-                </header>
                 <!-- Drag is enabled; use the handle (indent/outdent still available for changing hierarchy level) -->
                 <button name="action_indent" type="object" icon="fa-indent" string="" class="btn btn-sm btn-secondary" title="Indent (make child of previous)"/>
                 <button name="action_outdent" type="object" icon="fa-outdent" string="" class="btn btn-sm btn-secondary" title="Outdent (move up one level)"/>
@@ -188,20 +155,7 @@
         </field>
     </record>
 
-    <!-- Job Steps Reorder List View (drag-only, safe persistence) -->
-    <record id="view_arkite_job_step_tree_reorder" model="ir.ui.view">
-        <field name="name">product_module.arkite.job.step.tree.reorder</field>
-        <field name="model">product_module.arkite.job.step</field>
-        <field name="arch" type="xml">
-            <list string="Reorder child steps" create="0" delete="0" default_order="sequence,id">
-                <field name="sequence" widget="handle" string="" width="24px"/>
-                <field name="hierarchical_level_html" string="Level" readonly="1" width="90px" widget="html" options="{'sanitize': False}"/>
-                <field name="step_name" string="Step Name" readonly="1"/>
-                <field name="step_type" string="Type" readonly="1"/>
-                <field name="parent_id" column_invisible="1"/>
-            </list>
-        </field>
-    </record>
+    
 
     <!-- Job Steps Search View (for grouped hierarchy browsing) -->
     <record id="view_arkite_job_step_search" model="ir.ui.view">
@@ -1165,8 +1119,9 @@
                             </div>
                         </page>
                         
-                        <!-- Arkite Materials Tab -->
-                        <page string="Arkite Materials" name="arkite_materials" invisible="not arkite_project_loaded">
+                        <!-- Arkite Materials Tab (Debug) -->
+                        <!-- Keep for admins/debug only to avoid duplicate material UIs for end users. -->
+                        <page string="Arkite Materials (Debug)" name="arkite_materials" invisible="not arkite_project_loaded" groups="base.group_system">
                             <div style="padding: 16px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                                     <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
