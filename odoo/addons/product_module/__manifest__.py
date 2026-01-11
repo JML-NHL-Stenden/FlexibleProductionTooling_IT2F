@@ -43,6 +43,18 @@
             'product_module/static/src/css/product_module.css',
             # 'product_module/static/src/js/hierarchy_simple.js',  # Disabled: was causing blank page
         ],
+        'web.assets_backend_lazy': [
+            (
+                'after',
+                'web_hierarchy/static/src/hierarchy_card.xml',
+                'product_module/static/src/xml/hierarchy_inline_reorder.xml',
+            ),
+            (
+                'after',
+                'web_hierarchy/static/src/hierarchy_card.js',
+                'product_module/static/src/js/hierarchy_inline_reorder.js',
+            ),
+        ],
     },
     'images': ['static/description/icon.png'],
     'installable': True,

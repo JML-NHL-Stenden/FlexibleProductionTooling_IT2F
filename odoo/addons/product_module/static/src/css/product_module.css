@@ -10,6 +10,35 @@
    Hierarchy Diagram (web_hierarchy) - Friendly Cards
    ============================================ */
 
+.o_hierarchy_view .pm-inline-reorder-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Fix: in flex rows, text truncation needs min-width:0; keep arrow buttons stable */
+.o_hierarchy_view .pm-inline-reorder-name {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.o_hierarchy_view .pm-inline-reorder-actions {
+    display: inline-flex;
+    gap: 4px;
+    flex: 0 0 auto;
+    align-items: center;
+}
+
+/* Prevent any overflow from visually “escaping” the card/panel area */
+.o_hierarchy_view .pm-inline-reorder-panel {
+    overflow: hidden;
+}
+
 .o_hierarchy_view .pm-hnode {
     background: #ffffff;
     border: 1px solid #e9ecef;
