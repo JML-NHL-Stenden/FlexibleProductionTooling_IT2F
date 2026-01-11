@@ -1060,7 +1060,6 @@ class ProductModuleProject(models.Model):
             'type': 'ir.actions.act_window',
             'name': _('Arkite Job Steps (Diagram)'),
             'res_model': 'product_module.arkite.job.step',
-            # Diagram-first; keep only Form as a secondary tab (no List).
             'view_mode': 'hierarchy,form',
             'views': [
                 (self.env.ref('product_module.view_arkite_job_step_hierarchy').id, 'hierarchy'),
@@ -1069,6 +1068,7 @@ class ProductModuleProject(models.Model):
             'search_view_id': self.env.ref('product_module.view_arkite_job_step_search').id,
             'domain': [('project_id', '=', self.id)],
             'context': ctx,
+            # Open as a modal on top of the Project form.
             'target': 'new',
         }
 
@@ -2546,6 +2546,238 @@ class ProductModuleProject(models.Model):
                 'sticky': True if error_messages else False,
             }
         }
+
+    def action_sync_materials_from_arkite(self):
+        """Load/sync materials from Arkite into this project's Materials Used (material_ids)."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_('Please create or link an Arkite project first.'))
+
+        # Get credentials
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception as e:
+            _logger.error("[ARKITE SYNC] Credential error (materials): %s", e, exc_info=True)
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration. Error: %s') % str(e))
+
+        created_count = 0
+        updated_count = 0
+
+        try:
+            url = f"{api_base}/projects/{self.arkite_project_id}/materials/"
+            params = {"apiKey": api_key}
+            response = requests.get(url, params=params, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(_('Failed to fetch materials: HTTP %s') % response.status_code)
+
+            arkite_materials = response.json()
+            if not isinstance(arkite_materials, list):
+                raise UserError(_('Unexpected response format from Arkite API (materials).'))
+
+            arkite_material_ids = {str(m.get("Id", "")) for m in arkite_materials if m.get("Id")}
+            existing_by_arkite_id = {
+                (m.arkite_material_id or ""): m
+                for m in self.material_ids.filtered(lambda m: m.project_id == self and m.arkite_material_id)
+            }
+
+            def _map_type(arkite_type, fallback="StandardMaterial"):
+                if arkite_type == "PickingBinMaterial":
+                    return "PickingBinMaterial"
+                if arkite_type == "StandardMaterial":
+                    return "StandardMaterial"
+                if arkite_type == "Material" or not arkite_type:
+                    return "StandardMaterial"
+                return fallback
+
+            # Create missing materials by Arkite ID
+            for material_data in arkite_materials:
+                arkite_id = str(material_data.get("Id", "") or "")
+                if not arkite_id or arkite_id in existing_by_arkite_id:
+                    continue
+
+                picking_bin_ids = material_data.get("PickingBinIds", [])
+                picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                arkite_type = material_data.get("Type", "")
+                odoo_type = _map_type(arkite_type)
+
+                self.env['product_module.material'].create({
+                    'project_id': self.id,
+                    'page_id': self.page_id.id if self.page_id else False,
+                    'name': material_data.get("Name", "Unnamed"),
+                    'material_type': odoo_type,
+                    'description': material_data.get("Description", ""),
+                    'image_id': str(material_data.get("ImageId", "")) if material_data.get("ImageId") and material_data.get("ImageId") != "0" else "",
+                    'picking_bin_ids_text': picking_bin_str,
+                    'arkite_material_id': arkite_id,
+                })
+                created_count += 1
+
+            # Update existing + link by name where possible
+            for material in self.material_ids.filtered(lambda m: m.project_id == self):
+                if material.arkite_material_id and material.arkite_material_id in arkite_material_ids:
+                    match = next((m for m in arkite_materials if str(m.get("Id", "")) == material.arkite_material_id), None)
+                    if not match:
+                        continue
+                    picking_bin_ids = match.get("PickingBinIds", [])
+                    picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                    arkite_type = match.get("Type", "")
+                    odoo_type = _map_type(arkite_type, fallback=material.material_type)
+                    material.write({
+                        'name': match.get("Name", material.name),
+                        'material_type': odoo_type,
+                        'description': match.get("Description", material.description or ""),
+                        'image_id': str(match.get("ImageId", "")) if match.get("ImageId") else material.image_id,
+                        'picking_bin_ids_text': picking_bin_str,
+                    })
+                    updated_count += 1
+                elif not material.arkite_material_id:
+                    # Try match by name
+                    match = next((m for m in arkite_materials if (m.get("Name", "") and m.get("Name", "") == material.name)), None)
+                    if not match:
+                        continue
+                    picking_bin_ids = match.get("PickingBinIds", [])
+                    picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                    arkite_type = match.get("Type", "")
+                    odoo_type = _map_type(arkite_type, fallback=material.material_type)
+                    material.write({
+                        'arkite_material_id': str(match.get("Id", "")),
+                        'material_type': odoo_type,
+                        'description': match.get("Description", material.description or ""),
+                        'image_id': str(match.get("ImageId", "")) if match.get("ImageId") else material.image_id,
+                        'picking_bin_ids_text': picking_bin_str,
+                    })
+                    updated_count += 1
+
+            self.invalidate_recordset(['material_ids'])
+
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("[ARKITE SYNC] Error syncing materials: %s", e, exc_info=True)
+            raise UserError(_('Error loading materials: %s') % str(e))
+
+        # Optionally fetch images right after sync so the user sees them immediately.
+        # This is best-effort; failures don't block material sync.
+        try:
+            import base64
+            for mat in self.material_ids.filtered(lambda m: m.image_id and not m.image):
+                img_bytes = self._arkite_download_image_bytes(api_base, api_key, mat.image_id)
+                if img_bytes:
+                    mat.image = base64.b64encode(img_bytes)
+        except Exception as e:
+            _logger.info("[ARKITE IMAGE] Skipped fetching some material images after sync: %s", e)
+
+        msg = _('Materials synced from Arkite: %s new, %s updated.') % (created_count, updated_count)
+        # Refresh the current form so the Materials Used one2many updates immediately.
+        # (The backend cache is invalidated above, but the client still needs a refresh.)
+        action = self._action_refresh_current_form()
+        action.update({
+            'display_notification': {
+                'title': _('Materials Loaded'),
+                'message': msg,
+                'type': 'success' if (created_count or updated_count) else 'info',
+                'sticky': False,
+            }
+        })
+        return action
+
+    def _arkite_download_image_bytes(self, api_base, api_key, image_id):
+        """Best-effort download of an Arkite image by ID. Returns raw bytes or None."""
+        import base64
+
+        if not image_id:
+            return None
+        image_id = str(image_id).strip()
+        if not image_id or image_id == "0":
+            return None
+
+        candidates = [
+            # Per Arkite API docs: this returns the actual image bytes (e.g., image/png, image/svg+xml)
+            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/show/",
+            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/",
+            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}",
+            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/content",
+            f"{api_base}/projects/{self.arkite_project_id}/images/{image_id}/download",
+        ]
+
+        for url in candidates:
+            try:
+                resp = requests.get(url, params={"apiKey": api_key}, verify=False, timeout=20)
+            except Exception:
+                continue
+            if not resp.ok:
+                continue
+
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+
+            # If Arkite returns a JSON envelope, try to extract base64 payload.
+            if "application/json" in ctype:
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = None
+                if isinstance(data, dict):
+                    for key in ("Data", "data", "Content", "content", "Bytes", "bytes", "Base64", "base64"):
+                        raw = data.get(key)
+                        if raw:
+                            try:
+                                return base64.b64decode(raw)
+                            except Exception:
+                                pass
+                continue
+
+            # Otherwise assume it's raw image bytes.
+            if resp.content:
+                return resp.content
+
+        return None
+
+    def action_fetch_material_images_from_arkite(self):
+        """Fetch material images from Arkite (by image_id) into the Materials Used list."""
+        import base64
+
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_('Please create or link an Arkite project first.'))
+
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception as e:
+            _logger.error("[ARKITE IMAGE] Credential error: %s", e, exc_info=True)
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
+
+        fetched = 0
+        skipped = 0
+        failed = 0
+
+        # Only fill missing images by default (avoid overwriting any uploaded ones)
+        materials = self.material_ids.filtered(lambda m: m.image_id)
+        for mat in materials:
+            if mat.image:
+                skipped += 1
+                continue
+            img_bytes = self._arkite_download_image_bytes(api_base, api_key, mat.image_id)
+            if not img_bytes:
+                failed += 1
+                continue
+            mat.image = base64.b64encode(img_bytes)
+            fetched += 1
+
+        msg = _("Fetched %s image(s). Skipped %s (already had image). Failed %s.") % (fetched, skipped, failed)
+        action = self._action_refresh_current_form()
+        action.update({
+            'display_notification': {
+                'title': _('Images Updated'),
+                'message': msg,
+                'type': 'success' if fetched else ('warning' if failed else 'info'),
+                'sticky': False,
+            }
+        })
+        return action
     
     def action_link_existing_materials(self):
         """Open a wizard to select and link existing materials to this project"""

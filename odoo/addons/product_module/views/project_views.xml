@@ -58,9 +58,15 @@
                   decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
                   decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
                   decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
-                <!-- Drag is disabled; use the arrow/indent buttons -->
-                <button name="action_move_up" type="object" icon="fa-arrow-up" string="" class="btn btn-sm btn-secondary" title="Move up"/>
-                <button name="action_move_down" type="object" icon="fa-arrow-down" string="" class="btn btn-sm btn-secondary" title="Move down"/>
+                <header>
+                    <button name="action_back_to_diagram"
+                            type="object"
+                            string="Back to Diagram"
+                            icon="fa-sitemap"
+                            class="btn btn-secondary"
+                            context="{'defer_arkite_sync': True}"/>
+                </header>
+                <!-- Drag is enabled; use the handle (indent/outdent still available for changing hierarchy level) -->
                 <button name="action_indent" type="object" icon="fa-indent" string="" class="btn btn-sm btn-secondary" title="Indent (make child of previous)"/>
                 <button name="action_outdent" type="object" icon="fa-outdent" string="" class="btn btn-sm btn-secondary" title="Outdent (move up one level)"/>
                 <field name="sequence" widget="handle" string="" width="24px"/>
@@ -73,6 +79,23 @@
                 <field name="process_id" column_invisible="1"/>
                 <field name="group_parent_id" column_invisible="1"/>
                 <field name="hierarchy_css_class" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Process Steps Reorder List View (drag-only, safe persistence) -->
+    <record id="view_arkite_process_step_tree_reorder" model="ir.ui.view">
+        <field name="name">product_module.arkite.process.step.tree.reorder</field>
+        <field name="model">product_module.arkite.process.step</field>
+        <field name="arch" type="xml">
+            <!-- Drag handle resequencing auto-saves on drop via /web/dataset/resequence -->
+            <list string="Reorder child steps" create="0" delete="0" default_order="sequence,id">
+                <field name="sequence" widget="handle" string="" width="24px"/>
+                <field name="hierarchical_level_html" string="Level" readonly="1" width="90px" widget="html" options="{'sanitize': False}"/>
+                <field name="step_name" string="Step Name" readonly="1"/>
+                <field name="step_type" string="Type" readonly="1"/>
+                <field name="parent_id" column_invisible="1"/>
+                <field name="process_id" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -142,9 +165,15 @@
                   decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
                   decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
                   decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
-                <!-- Drag is disabled; use the arrow/indent buttons -->
-                <button name="action_move_up" type="object" icon="fa-arrow-up" string="" class="btn btn-sm btn-secondary" title="Move up"/>
-                <button name="action_move_down" type="object" icon="fa-arrow-down" string="" class="btn btn-sm btn-secondary" title="Move down"/>
+                <header>
+                    <button name="action_back_to_diagram"
+                            type="object"
+                            string="Back to Diagram"
+                            icon="fa-sitemap"
+                            class="btn btn-secondary"
+                            context="{'defer_arkite_sync': True}"/>
+                </header>
+                <!-- Drag is enabled; use the handle (indent/outdent still available for changing hierarchy level) -->
                 <button name="action_indent" type="object" icon="fa-indent" string="" class="btn btn-sm btn-secondary" title="Indent (make child of previous)"/>
                 <button name="action_outdent" type="object" icon="fa-outdent" string="" class="btn btn-sm btn-secondary" title="Outdent (move up one level)"/>
                 <field name="sequence" widget="handle" string="" width="24px"/>
@@ -155,6 +184,21 @@
                 <field name="parent_id" string="Parent" options="{'no_create': True}" domain="[('project_id', '=', project_id)]"/>
                 <field name="group_parent_id" column_invisible="1"/>
                 <field name="hierarchy_css_class" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Job Steps Reorder List View (drag-only, safe persistence) -->
+    <record id="view_arkite_job_step_tree_reorder" model="ir.ui.view">
+        <field name="name">product_module.arkite.job.step.tree.reorder</field>
+        <field name="model">product_module.arkite.job.step</field>
+        <field name="arch" type="xml">
+            <list string="Reorder child steps" create="0" delete="0" default_order="sequence,id">
+                <field name="sequence" widget="handle" string="" width="24px"/>
+                <field name="hierarchical_level_html" string="Level" readonly="1" width="90px" widget="html" options="{'sanitize': False}"/>
+                <field name="step_name" string="Step Name" readonly="1"/>
+                <field name="step_type" string="Type" readonly="1"/>
+                <field name="parent_id" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -190,10 +234,12 @@
                 <!-- Fields used by custom diagram reorder logic -->
                 <field name="step_type" invisible="1"/>
                 <field name="child_ids" invisible="1"/>
+                <!-- Needed by inline reorder panel to fetch children with correct domain -->
+                <field name="project_id" invisible="1"/>
                 <templates>
                     <t t-name="hierarchy-box">
                         <div class="pm-hnode">
-                            <div class="pm-hnode__title">
+                            <div class="pm-hnode__title" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                 <span class="pm-hnode__name"><field name="step_name"/></span>
                             </div>
                             <div class="pm-hnode__meta">
@@ -221,10 +267,12 @@
                 <field name="sequence" invisible="1"/>
                 <field name="step_type" invisible="1"/>
                 <field name="child_ids" invisible="1"/>
+                <field name="project_id" invisible="1"/>
+                <field name="process_id" invisible="1"/>
                 <templates>
                     <t t-name="hierarchy-box">
                         <div class="pm-hnode">
-                            <div class="pm-hnode__title">
+                            <div class="pm-hnode__title" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                 <span class="pm-hnode__name"><field name="step_name"/></span>
                             </div>
                             <div class="pm-hnode__meta">
@@ -980,6 +1028,20 @@
                                                 string="Browse Images"
                                                 icon="fa-image"
                                                 help="Show available Arkite image IDs"/>
+                                        <button name="action_fetch_material_images_from_arkite"
+                                                type="object"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                string="Fetch Images"
+                                                icon="fa-download"
+                                                invisible="not arkite_linked"
+                                                help="Download Arkite images for materials that have an Image ID but no image loaded in Odoo"/>
+                                        <button name="action_sync_materials_from_arkite"
+                                                type="object"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                string="Load from Arkite"
+                                                icon="fa-cloud-download"
+                                                invisible="not arkite_linked"
+                                                help="Load/sync materials from the linked Arkite project into this Materials Used list"/>
                                     <button name="action_help_load_picking_bins" 
                                             type="object" 
                                             class="btn btn-sm btn-success"
