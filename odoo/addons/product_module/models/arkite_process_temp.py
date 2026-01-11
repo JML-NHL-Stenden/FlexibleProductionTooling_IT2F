@@ -32,7 +32,7 @@ class ArkiteProcessTemp(models.TransientModel):
             
             # Invalidate cache to force recomputation
             self.project_id.invalidate_recordset(['selected_arkite_process_name', 'arkite_process_ids', 'arkite_process_step_ids'])
-
+            
             # Automatically load steps for the selected process, then reload the form so the UI updates.
             self.project_id.action_load_process_steps()
             # Don't navigate/refresh the whole page.

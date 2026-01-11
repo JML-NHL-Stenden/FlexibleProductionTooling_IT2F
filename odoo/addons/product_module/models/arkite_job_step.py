@@ -292,6 +292,105 @@ class ArkiteJobStep(models.TransientModel):
         all_records.invalidate_recordset(['hierarchical_level', 'hierarchy_css_class', 'hierarchical_level_html', 'parent_step_name', 'parent_step_display'])
         self._resequence_project_tree()
         return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+    # ------------------------------------------------------------
+    # Diagram convenience: left/right sibling reorder (no JS needed)
+    # ------------------------------------------------------------
+
+    def pm_move_left(self):
+        """Move this step left among siblings (same parent)."""
+        self = self._ensure_db_record()
+        self.ensure_one()
+        siblings = self._sorted_siblings()
+        try:
+            idx = siblings.ids.index(self.id)
+        except ValueError:
+            return False
+        if idx <= 0:
+            return False
+        target = siblings[idx - 1]
+        new_seq = max(1, (target.sequence or 10) - 1)
+        self.with_context(defer_arkite_sync=True).write({'sequence': new_seq})
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Order saved'),
+                'message': _('Step reordered.'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
+    def pm_move_right(self):
+        """Move this step right among siblings (same parent)."""
+        self = self._ensure_db_record()
+        self.ensure_one()
+        siblings = self._sorted_siblings()
+        try:
+            idx = siblings.ids.index(self.id)
+        except ValueError:
+            return False
+        if idx < 0 or idx >= len(siblings) - 1:
+            return False
+        target = siblings[idx + 1]
+        new_seq = (target.sequence or 10) + 1
+        self.with_context(defer_arkite_sync=True).write({'sequence': new_seq})
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Order saved'),
+                'message': _('Step reordered.'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
+    def action_open_sibling_reorder(self):
+        """Stable alternative to diagram reordering: open the manage list view for this sibling group."""
+        self = self._ensure_db_record()
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Reorder child steps'),
+            'res_model': 'product_module.arkite.job.step',
+            'view_mode': 'list',
+            'views': [
+                (self.env.ref('product_module.view_arkite_job_step_tree_reorder').id, 'list'),
+            ],
+            'target': 'new',
+            'domain': [
+                ('project_id', '=', self.project_id.id),
+                ('parent_id', '=', self.parent_id.id if self.parent_id else False),
+            ],
+            'context': dict(
+                self.env.context,
+                defer_arkite_sync=True,
+                pm_list_resequence=True,
+                pm_project_id=self.project_id.id,
+                dialog_size='large',
+            ),
+        }
+
+    @api.model
+    def action_back_to_diagram(self):
+        """Used from the reorder list header. Re-opens the diagram as a main-page action."""
+        project_id = self.env.context.get('pm_project_id')
+        if not project_id:
+            return {'type': 'ir.actions.act_window_close'}
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Arkite Job Steps (Diagram)'),
+            'res_model': 'product_module.arkite.job.step',
+            'view_mode': 'hierarchy',
+            'views': [(self.env.ref('product_module.view_arkite_job_step_hierarchy').id, 'hierarchy')],
+            'target': 'new',
+            'domain': [
+                ('project_id', '=', project_id),
+            ],
+            'context': dict(self.env.context, defer_arkite_sync=True),
+        }
     
     @api.depends('parent_id', 'parent_id.hierarchy_level')
     def _compute_hierarchy_level(self):
@@ -856,23 +955,24 @@ class ArkiteJobStep(models.TransientModel):
                     [project_ids],
                 )
                 self.env['product_module.project'].browse(project_ids).invalidate_recordset(['arkite_hierarchy_dirty'])
-            # Normalize sibling sequences so diagram drag order persists and doesn't revert due to ties.
-            groups = set()
-            for rec in self:
-                groups.add((rec.project_id.id, rec.parent_id.id if rec.parent_id else None))
-            for project_id, parent_rec_id in groups:
-                siblings = self.env['product_module.arkite.job.step'].search([
-                    ('project_id', '=', project_id),
-                    ('parent_id', '=', parent_rec_id or False),
-                ], order='sequence,id')
-                seq = 10
-                for s in siblings:
-                    self.env.cr.execute(
-                        "UPDATE product_module_arkite_job_step SET sequence=%s WHERE id=%s",
-                        [seq, s.id],
-                    )
-                    seq += 10
-            self.invalidate_recordset(['sequence'])
+            # Normalize sibling sequences ONLY for diagram reorder (not list resequence).
+            if self.env.context.get('pm_diagram_reorder') and not self.env.context.get('pm_list_resequence'):
+                groups = set()
+                for rec in self:
+                    groups.add((rec.project_id.id, rec.parent_id.id if rec.parent_id else None))
+                for project_id, parent_rec_id in groups:
+                    siblings = self.env['product_module.arkite.job.step'].search([
+                        ('project_id', '=', project_id),
+                        ('parent_id', '=', parent_rec_id or False),
+                    ], order='sequence,id')
+                    seq = 10
+                    for s in siblings:
+                        self.env.cr.execute(
+                            "UPDATE product_module_arkite_job_step SET sequence=%s WHERE id=%s",
+                            [seq, s.id],
+                        )
+                        seq += 10
+                self.invalidate_recordset(['sequence'])
         
         # Invalidate computed fields AFTER write to trigger recomputation on next read
         # This avoids serialization errors from concurrent updates during write

@@ -178,6 +178,118 @@ class ArkiteProcessStep(models.TransientModel):
         all_records.invalidate_recordset(['hierarchical_level', 'hierarchy_css_class', 'hierarchical_level_html', 'parent_step_name', 'parent_step_display'])
         self._resequence_process_tree()
         return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+    # ------------------------------------------------------------
+    # Diagram convenience: left/right sibling reorder (no JS needed)
+    # ------------------------------------------------------------
+
+    def pm_move_left(self):
+        """Move this step left among siblings (same parent)."""
+        self = self._ensure_db_record()
+        self.ensure_one()
+        siblings = self._renumber_siblings()
+        try:
+            idx = siblings.ids.index(self.id)
+        except ValueError:
+            return False
+        if idx <= 0:
+            return False
+        target = siblings[idx - 1]
+        new_seq = max(1, (target.sequence or 10) - 1)
+        self.with_context(defer_arkite_sync=True).write({'sequence': new_seq})
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Order saved'),
+                'message': _('Step reordered.'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
+    def pm_move_right(self):
+        """Move this step right among siblings (same parent)."""
+        self = self._ensure_db_record()
+        self.ensure_one()
+        siblings = self._renumber_siblings()
+        try:
+            idx = siblings.ids.index(self.id)
+        except ValueError:
+            return False
+        if idx < 0 or idx >= len(siblings) - 1:
+            return False
+        target = siblings[idx + 1]
+        new_seq = (target.sequence or 10) + 1
+        self.with_context(defer_arkite_sync=True).write({'sequence': new_seq})
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Order saved'),
+                'message': _('Step reordered.'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
+    def action_open_sibling_reorder(self):
+        """Stable alternative to diagram reordering: open the manage list view for this sibling group."""
+        self = self._ensure_db_record()
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Reorder child steps'),
+            'res_model': 'product_module.arkite.process.step',
+            'view_mode': 'list',
+            'views': [
+                (self.env.ref('product_module.view_arkite_process_step_tree_reorder').id, 'list'),
+            ],
+            # Open as a modal (similar UX to the diagram). Use "Back to Diagram" to return.
+            'target': 'new',
+            'domain': [
+                ('project_id', '=', self.project_id.id),
+                ('process_id', '=', self.process_id),
+                ('parent_id', '=', self.parent_id.id if self.parent_id else False),
+            ],
+            'context': dict(
+                self.env.context,
+                defer_arkite_sync=True,
+                # Mark that subsequent /web/dataset/resequence writes come from the list reorder UI.
+                # We must NOT run our "normalize siblings" logic during that operation or it cancels
+                # the intended reorder (because dataset/resequence writes one record at a time).
+                pm_list_resequence=True,
+                pm_project_id=self.project_id.id,
+                pm_process_id=self.process_id,
+                dialog_size='large',
+            ),
+        }
+
+    @api.model
+    def action_back_to_diagram(self):
+        """Used from the reorder list header. Re-opens the diagram as a main-page action.
+
+        This avoids Odoo's dialog-stacking limitation (opening one dialog from another destroys
+        the previous dialog, so the X close can't return to it).
+        """
+        project_id = self.env.context.get('pm_project_id')
+        process_id = self.env.context.get('pm_process_id')
+        if not project_id or not process_id:
+            # Fallback: just close the current dialog
+            return {'type': 'ir.actions.act_window_close'}
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Arkite Process Steps (Diagram)'),
+            'res_model': 'product_module.arkite.process.step',
+            'view_mode': 'hierarchy',
+            'views': [(self.env.ref('product_module.view_arkite_process_step_hierarchy').id, 'hierarchy')],
+            'target': 'new',
+            'domain': [
+                ('project_id', '=', project_id),
+                ('process_id', '=', process_id),
+            ],
+            'context': dict(self.env.context, defer_arkite_sync=True),
+        }
     
     wizard_id = fields.Many2one('product_module.arkite.job.step.wizard', string='Wizard', ondelete='cascade')
     job_id = fields.Many2one('product_module.type', string='Job', ondelete='cascade')
@@ -826,9 +938,14 @@ class ArkiteProcessStep(models.TransientModel):
 
         result = super().write(vals)
 
-        # If order/parent changed, normalize sibling sequences so drag order doesn't "snap back"
-        # when multiple siblings share the same sequence.
-        if 'sequence' in vals or 'parent_id' in vals:
+        # If order/parent changed from the DIAGRAM drag (not list resequence), normalize sibling sequences
+        # so ordering doesn't "snap back" when multiple siblings share the same sequence.
+        #
+        # IMPORTANT: do NOT run this when /web/dataset/resequence is writing one record at a time
+        # (pm_list_resequence), as that would undo the intended ordering.
+        if (('sequence' in vals or 'parent_id' in vals)
+                and self.env.context.get('pm_diagram_reorder')
+                and not self.env.context.get('pm_list_resequence')):
             groups = set()
             for rec in self:
                 groups.add((rec.project_id.id, rec.process_id or '', rec.parent_id.id if rec.parent_id else None))
