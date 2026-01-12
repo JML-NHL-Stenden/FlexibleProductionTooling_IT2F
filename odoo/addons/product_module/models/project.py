@@ -25,6 +25,21 @@ class ProductModuleProject(models.Model):
             'target': 'current',
             'context': dict(self.env.context),
         }
+
+    def _pm_action_refresh_project_form(self):
+        """Refresh project form while preserving modal vs full-page context."""
+        self.ensure_one()
+        target = 'new' if self.env.context.get('pm_project_modal') else 'current'
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Project'),
+            'res_model': 'product_module.project',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+            'target': target,
+            'context': dict(self.env.context),
+        }
     _name = 'product_module.project'
     _description = 'Product Project'
     _order = 'sequence, name, id'
@@ -2699,18 +2714,17 @@ class ProductModuleProject(models.Model):
             _logger.info("[ARKITE IMAGE] Skipped fetching some material images after sync: %s", e)
 
         msg = _('Materials synced from Arkite: %s new, %s updated.') % (created_count, updated_count)
-        # Refresh the current form so the Materials Used one2many updates immediately.
-        # (The backend cache is invalidated above, but the client still needs a refresh.)
-        action = self._action_refresh_current_form()
-        action.update({
-            'display_notification': {
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
                 'title': _('Materials Loaded'),
                 'message': msg,
                 'type': 'success' if (created_count or updated_count) else 'info',
                 'sticky': False,
+                'next': self._pm_action_refresh_project_form(),
             }
-        })
-        return action
+        }
 
     def _arkite_download_image_bytes(self, api_base, api_key, image_id):
         """Best-effort download of an Arkite image by ID. Returns raw bytes or None."""

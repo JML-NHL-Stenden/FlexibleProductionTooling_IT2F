@@ -296,7 +296,7 @@
                                 </button>
                             </div>
 
-                            <field name="project_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="project_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="job_count"/>
@@ -357,7 +357,7 @@
                                 </button>
                             </div>
 
-                            <field name="product_type_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="product_type_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="product_count"/>
@@ -492,7 +492,7 @@
                                 </button>
                             </div>
 
-                            <field name="material_ids" context="{'default_page_id': id}" widget="kanban" id="materials_kanban_field">
+                            <field name="material_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban" id="materials_kanban_field">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="material_type"/>
