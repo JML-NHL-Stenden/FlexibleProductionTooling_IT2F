@@ -25,16 +25,6 @@ class ProductModuleProject(models.Model):
             'target': 'current',
             'context': dict(self.env.context),
         }
-
-    def _pm_action_refresh_project_form(self):
-        """Refresh project form while preserving modal vs full-page context."""
-        self.ensure_one()
-        # If we are inside a modal (opened from Product -> Projects kanban), do NOT open another modal.
-        # Just reload the current controller (keeps the same modal open).
-        if self.env.context.get('pm_project_modal'):
-            return {'type': 'ir.actions.client', 'tag': 'soft_reload'}
-        # Otherwise, refresh the current form in place.
-        return self._action_refresh_current_form()
     _name = 'product_module.project'
     _description = 'Product Project'
     _order = 'sequence, name, id'
@@ -852,7 +842,16 @@ class ProductModuleProject(models.Model):
                 'message': _('Arkite project link removed and locally loaded Arkite data cleared.'),
                 'type': 'success',
                 'sticky': False,
-                'next': self._pm_action_refresh_project_form(),
+                'next': {
+                    'type': 'ir.actions.act_window',
+                    'name': _('Project'),
+                    'res_model': 'product_module.project',
+                    'res_id': self.id,
+                    'view_mode': 'form',
+                    'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+                    'target': 'new',
+                    'context': dict(self.env.context),
+                },
             }
         }
 
@@ -2700,29 +2699,19 @@ class ProductModuleProject(models.Model):
             _logger.info("[ARKITE IMAGE] Skipped fetching some material images after sync: %s", e)
 
         msg = _('Materials synced from Arkite: %s new, %s updated.') % (created_count, updated_count)
-        # In modal contexts, chaining display_notification -> next can close the dialog.
-        # Prefer returning a SINGLE action with a display_notification payload.
-        if self.env.context.get('pm_project_modal'):
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Materials Loaded'),
-                    'message': msg,
-                    'type': 'success' if (created_count or updated_count) else 'info',
-                    'sticky': False,
-                }
-            }
-        action = self._action_refresh_current_form()
-        action.update({
-            'display_notification': {
+        # Do NOT return an act_window refresh here.
+        # It forces modal forms to navigate into a full-page form.
+        # The UI reload is handled by a small JS hook after the button executes.
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
                 'title': _('Materials Loaded'),
                 'message': msg,
                 'type': 'success' if (created_count or updated_count) else 'info',
                 'sticky': False,
             }
-        })
-        return action
+        }
 
     def _arkite_download_image_bytes(self, api_base, api_key, image_id):
         """Best-effort download of an Arkite image by ID. Returns raw bytes or None."""
@@ -2764,17 +2753,18 @@ class ProductModuleProject(models.Model):
             fetched += 1
 
         msg = _("Fetched %s image(s). Skipped %s (already had image). Failed %s.") % (fetched, skipped, failed)
-        action = self._action_refresh_current_form()
-        action.update({
-            'display_notification': {
+        # Do NOT return an act_window refresh here for the same reason as materials sync.
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
                 'title': _('Images Updated'),
                 'message': msg,
                 'type': 'success' if fetched else ('warning' if failed else 'info'),
                 'sticky': False,
             }
-        })
-        return action
-    
+        }
+
     def action_link_existing_materials(self):
         """Open a wizard to select and link existing materials to this project"""
         self.ensure_one()

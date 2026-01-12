@@ -54,6 +54,8 @@
                 'web_hierarchy/static/src/hierarchy_card.js',
                 'product_module/static/src/js/hierarchy_inline_reorder.js',
             ),
+            # Reload Project form after specific buttons (modal-safe)
+            'product_module/static/src/js/x2many_dialog_reload_after_buttons.js',
         ],
     },
     'images': ['static/description/icon.png'],
