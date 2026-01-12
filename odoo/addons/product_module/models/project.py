@@ -825,8 +825,8 @@ class ProductModuleProject(models.Model):
         if material_recs:
             material_recs.unlink()
 
-        # Do not navigate/reopen the project form (can kick the user out into a full-page form).
-        # Stay on the current view and just notify.
+        # Notify + refresh the current controller without navigating to a full-page form.
+        # (Odoo's display_notification action supports returning a `next` action.)
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
@@ -835,6 +835,7 @@ class ProductModuleProject(models.Model):
                 'message': _('Arkite project link removed and locally loaded Arkite data cleared.'),
                 'type': 'success',
                 'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
             }
         }
     
