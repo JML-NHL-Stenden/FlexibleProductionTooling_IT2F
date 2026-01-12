@@ -789,6 +789,9 @@ class ProductModuleProject(models.Model):
         job_step_recs = self.arkite_job_step_ids
         detection_recs = self.arkite_detection_ids
         material_recs = self.arkite_material_ids
+        # Materials Used (non-transient). IMPORTANT: do NOT unlink() these, because material.unlink()
+        # deletes in Arkite. Instead, detach them from this project so they disappear from the form.
+        used_material_recs = self.material_ids
 
         # Clear link + selection state + staged flags.
         self.with_context(skip_arkite_hierarchy_autosync=True).write({
@@ -825,8 +828,12 @@ class ProductModuleProject(models.Model):
         if material_recs:
             material_recs.unlink()
 
-        # Notify + refresh the current controller without navigating to a full-page form.
-        # (Odoo's display_notification action supports returning a `next` action.)
+        # Detach "Materials Used" from this project (without deleting them).
+        if used_material_recs:
+            used_material_recs.write({'project_id': False})
+
+        # Notify + reopen this record as a modal so we don't accidentally close the current modal stack
+        # (soft_reload can restore the underlying controller and close dialogs).
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
@@ -835,10 +842,19 @@ class ProductModuleProject(models.Model):
                 'message': _('Arkite project link removed and locally loaded Arkite data cleared.'),
                 'type': 'success',
                 'sticky': False,
-                'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'},
+                'next': {
+                    'type': 'ir.actions.act_window',
+                    'name': _('Project'),
+                    'res_model': 'product_module.project',
+                    'res_id': self.id,
+                    'view_mode': 'form',
+                    'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+                    'target': 'new',
+                    'context': dict(self.env.context),
+                },
             }
         }
-    
+
     def action_load_arkite_project(self):
         """Load Arkite project by ID and auto-load steps, variants, processes, detections"""
         self.ensure_one()
