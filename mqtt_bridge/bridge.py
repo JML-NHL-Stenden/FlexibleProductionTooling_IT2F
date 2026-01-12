@@ -22,14 +22,25 @@ log = logging.getLogger("mqtt-arkite-bridge")
 # ARKITE API CONFIG
 # =========================
 
-API_BASE = os.getenv("ARKITE_API_BASE", "https://141.252.198.175/api/v1")
-API_KEY = os.getenv("ARKITE_API_KEY", "Xpz2f7dRi")
+API_BASE = os.getenv("ARKITE_API_BASE")
+API_KEY = os.getenv("ARKITE_API_KEY")
 
 # Template project in Arkite you want to duplicate
-TEMPLATE_PROJECT_NAME = os.getenv("ARKITE_TEMPLATE_NAME", "FPT-Template")
+TEMPLATE_PROJECT_NAME = os.getenv("ARKITE_TEMPLATE_NAME")
 
 # Workstation / unit ID (from Arkite UI)
-UNIT_ID = int(os.getenv("ARKITE_UNIT_ID", "97640866481035"))
+UNIT_ID_STR = os.getenv("ARKITE_UNIT_ID")
+UNIT_ID = int(UNIT_ID_STR) if UNIT_ID_STR else None
+
+# Validate required environment variables
+if not API_BASE:
+    raise ValueError("ARKITE_API_BASE environment variable is required")
+if not API_KEY:
+    raise ValueError("ARKITE_API_KEY environment variable is required")
+if not TEMPLATE_PROJECT_NAME:
+    raise ValueError("ARKITE_TEMPLATE_NAME environment variable is required")
+if not UNIT_ID:
+    raise ValueError("ARKITE_UNIT_ID environment variable is required")
 
 # Disable SSL warnings for self-signed Arkite cert
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

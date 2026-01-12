@@ -6,11 +6,11 @@
         <field name="arch" type="xml">
             <form string="Import Instructions">
                 <sheet>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: white;">
-                        <h3 style="color: white; margin: 0 0 8px 0; font-weight: 600;">
-                            <i class="fa fa-upload" style="margin-right: 8px;"/> Import Assembly Instructions
+                    <div class="pm-header-purple" style="border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <h3 class="pm-section-title-white" style="margin: 0 0 8px 0;">
+                            <i class="fa fa-upload pm-icon-spacing"/> Import Assembly Instructions
                         </h3>
-                        <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">
+                        <p class="pm-header-subtitle" style="margin: 0; font-size: 14px;">
                             Upload a CSV file with your assembly instructions
                         </p>
                     </div>
@@ -28,11 +28,11 @@
 
                     <div class="alert alert-info" role="alert">
                         <strong><i class="fa fa-info-circle"/> CSV Format:</strong>
-                        <p style="margin: 8px 0 0 0;">
+                        <p class="pm-margin-top-12" style="margin: 8px 0 0 0;">
                             Your CSV file should have these columns:<br/>
                             <code>Product Name, Product Code, Step #, Title, Description</code>
                         </p>
-                        <p style="margin: 8px 0 0 0; font-size: 12px;">
+                        <p class="pm-info-text" style="margin: 8px 0 0 0;">
                             <strong>Example:</strong><br/>
                             <code>Widget A, WA-001, 10, Unbox, Remove all items from the packaging</code><br/>
                             <code>Widget A, WA-001, 20, Attach Base, Screw the base with 4 screws</code>

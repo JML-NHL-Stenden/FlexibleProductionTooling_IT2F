@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Inline reorder panel inside web_hierarchy cards (NOT in view arch) -->
+    <t t-inherit="web_hierarchy.HierarchyCard" t-inherit-mode="extension">
+        <!-- Add a small icon next to the existing "arrow up" container -->
+        <xpath expr="//div[contains(@class,'o_hierarchy_node_button_container')]" position="inside">
+            <button t-if="props.node.childResIds.length &gt; 1"
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary ms-2 pm-inline-reorder-btn"
+                    title="Reorder child steps"
+                    t-on-click="pmToggleReorder">
+                <i class="fa fa-exchange" title="Reorder child steps"/>
+            </button>
+        </xpath>
+
+        <!-- Inline panel inside the card content (below hierarchy-box rendering) -->
+        <xpath expr="//div[contains(@class,'o_hierarchy_node_content')]" position="inside">
+            <div t-if="pm &amp;&amp; pm.reorderOpen" class="pm-inline-reorder-panel mt-2 border rounded p-2 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Reorder child steps</strong>
+                    <button type="button" class="btn btn-sm btn-secondary" t-on-click="pmToggleReorder">
+                        Done
+                    </button>
+                </div>
+
+                <t t-if="pm &amp;&amp; pm.childrenLoading">
+                    <div class="text-muted">Loading…</div>
+                </t>
+                <t t-else="">
+                    <t t-if="!pm || !pm.children || !pm.children.length">
+                        <div class="text-muted">No children</div>
+                    </t>
+                    <t t-else="">
+                        <div class="pm-inline-reorder-list d-grid gap-1">
+                            <t t-foreach="pm.children" t-as="c" t-key="c.id">
+                                <div class="pm-inline-reorder-row">
+                                    <span class="pm-inline-reorder-name" t-esc="c.step_name"/>
+                                    <span class="pm-inline-reorder-actions">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Move up"
+                                                t-att-data-id="c.id"
+                                                t-on-click="pmMoveChildUp">
+                                            <i class="fa fa-arrow-up" title="Move up"/>
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Move down"
+                                                t-att-data-id="c.id"
+                                                t-on-click="pmMoveChildDown">
+                                            <i class="fa fa-arrow-down" title="Move down"/>
+                                        </button>
+                                    </span>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </xpath>
+    </t>
+</templates>
+

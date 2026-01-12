@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <list string="Jobs">
                 <field name="name"/>
-                <field name="product_count" string="Total Products"/>
+                <field name="product_count" string="Total Variants"/>
             </list>
         </field>
     </record>
@@ -19,7 +19,7 @@
             <form string="Job">
                 <sheet>
                     <!-- Two Column Layout -->
-                    <div style="display: flex; width: 100%; height: calc(100vh - 200px); gap: 24px;">
+                    <div style="display: flex; width: 100%; gap: 24px; margin-bottom: 24px;">
 
                         <!-- LEFT COLUMN - Job Information -->
                         <div style="display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
@@ -101,7 +101,7 @@
         <field name="name">product.module.product.list</field>
         <field name="model">product_module.product</field>
         <field name="arch" type="xml">
-            <list string="Products">
+            <list string="Variants">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="product_code"/>
@@ -213,7 +213,7 @@
                                     <list editable="bottom">
                                         <field name="sequence" widget="handle"/>
                                         <field name="title" string="Process Title"/>
-                                        <field name="process_step" string="Process Steps"/>
+                                        <field name="process_trigger" string="Start Trigger"/>
                                     </list>
                                 </field>
                             </div>
@@ -296,14 +296,28 @@
                                 </button>
                             </div>
 
-                            <field name="project_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="project_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="job_count"/>
                                     <field name="description"/>
                                     <templates>
                                         <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 120px;">
+                                            <div class="oe_kanban_card oe_kanban_global_click" style="position:relative; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 120px;">
+                                                <t t-if="record.name.raw_value">
+                                                    <a type="object"
+                                                       name="action_start_project"
+                                                       data-no-open="1"
+                                                       role="button"
+                                                       class="oe_kanban_action oe_kanban_action_button pm-arkite-start-wrap"
+                                                       title="Run in Arkite"
+                                                       aria-label="Start project">
+                                                        <span class="btn btn-primary btn-sm pm-arkite-start-btn">
+                                                            <i class="fa fa-play pm-arkite-start-btn__icon"/>
+                                                        </span>
+                                                        <span class="pm-arkite-start-label">Start Project</span>
+                                                    </a>
+                                                </t>
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <!-- Project Info -->
                                                     <div style="flex: 1;">
@@ -343,7 +357,7 @@
                                 </button>
                             </div>
 
-                            <field name="product_type_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="product_type_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="product_count"/>
@@ -391,7 +405,7 @@
                         </page>
 
                         <!-- TAB 3: Product List -->
-                        <page string="Product List" name="product_list">
+                        <page string="Variant" name="variant">
                             <div class="alert alert-success" role="alert">
                                 <i class="fa fa-list"/>
                                 <strong>Product Catalog</strong> - Manage all your products. Assign them to jobs to organize and group similar products together.
@@ -416,18 +430,6 @@
                                             <div class="oe_kanban_card oe_kanban_global_click"
                                                  style="position:relative; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
 
-                                                <t t-if="record.product_code.raw_value">
-                                                    <button type="object"
-                                                            name="action_start_project"
-                                                            class="btn btn-success btn-sm oe_kanban_action oe_kanban_action_button"
-                                                            title="Run in Arkite"
-                                                            style="position:absolute; bottom:12px; right:12px;
-                                                                   border-radius:999px; width:36px; height:36px;
-                                                                   padding:0; display:flex; align-items:center; justify-content:center;
-                                                                   box-shadow:0 6px 14px rgba(0,0,0,0.18);">
-                                                        <i class="fa fa-play" style="margin-left:2px;"/>
-                                                    </button>
-                                                </t>
 
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
@@ -481,13 +483,16 @@
                                 <strong>Materials</strong> - Manage product materials and track which products use them.
                             </div>
 
-                            <div style="margin-bottom: 16px;">
+                            <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
                                 <button name="action_create_material" type="object" class="btn btn-warning" style="background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Material
                                 </button>
+                                <button name="action_refresh_materials" type="object" class="btn btn-info" style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block; color: white;">
+                                    <i class="fa fa-refresh" style="margin-right: 8px;"/> Refresh List
+                                </button>
                             </div>
 
-                            <field name="material_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="material_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban" id="materials_kanban_field">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="material_type"/>
@@ -532,6 +537,32 @@
                                     </templates>
                                 </kanban>
                             </field>
+                            <script>
+                                <![CDATA[
+                                    // Auto-refresh materials kanban when Materials tab is opened
+                                    (function() {
+                                        function refreshMaterialsKanban() {
+                                            var kanbanField = document.getElementById('materials_kanban_field');
+                                            if (kanbanField) {
+                                                var kanbanView = kanbanField.closest('.o_kanban_view');
+                                                if (kanbanView && kanbanView.__controller__ && kanbanView.__controller__.reload) {
+                                                    kanbanView.__controller__.reload();
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Listen for tab clicks
+                                        setTimeout(function() {
+                                            var materialsTab = document.querySelector('a[data-name="materials"]');
+                                            if (materialsTab) {
+                                                materialsTab.addEventListener('click', function() {
+                                                    setTimeout(refreshMaterialsKanban, 200);
+                                                });
+                                            }
+                                        }, 1000);
+                                    })();
+                                ]]>
+                            </script>
                         </page>
                     </notebook>
                 </sheet>
@@ -579,11 +610,6 @@
               action="action_product_assemble_page"
               sequence="10"/>
 
-    <menuitem id="menu_projects"
-              name="Projects"
-              parent="menu_product_module_root"
-              action="action_project"
-              sequence="15"/>
 
     <menuitem id="menu_product_types"
               name="Jobs"

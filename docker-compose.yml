@@ -8,13 +8,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${DB_PORT_HOST}:5432"
     volumes:
       - odoo-db-data:/var/lib/postgresql/data
     networks:
       - odoo-net
 
   odoo:
-    image: odoo:${ODOO_VERSION}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flexible-production-tooling-odoo:${ODOO_VERSION}
     container_name: flexible-production-tooling-odoo-1
     depends_on:
       - db
@@ -27,6 +32,10 @@ services:
       HOST: ${DB_HOST}
       USER: ${DB_USER}
       PASSWORD: ${DB_PASS}
+      # Arkite API configuration for wizard
+      ARKITE_API_BASE: ${ARKITE_API_BASE}
+      ARKITE_API_KEY: ${ARKITE_API_KEY}
+      ARKITE_UNIT_ID: ${ARKITE_UNIT_ID}
     networks:
       - odoo-net
 
@@ -65,20 +74,19 @@ services:
       MQTT_PORT: ${MQTT_PORT}
 
       # Topic that carries the Arkite QR payload
-      MQTT_TOPIC_QR: arkite/trigger/QR
+      MQTT_TOPIC_QR: ${MQTT_TOPIC_QR}
 
       # Arkite API config
-      ARKITE_API_BASE: "https://192.168.178.99/api/v1"
-      ARKITE_API_KEY: "Xpz2f7dRi"
-      ARKITE_UNIT_ID: "97640866481035"
-      ARKITE_TEMPLATE_NAME: "FPT-Template"
+      ARKITE_API_BASE: ${ARKITE_API_BASE}
+      ARKITE_API_KEY: ${ARKITE_API_KEY}
+      ARKITE_UNIT_ID: ${ARKITE_UNIT_ID}
+      ARKITE_TEMPLATE_NAME: ${ARKITE_TEMPLATE_NAME}
 
       # Optional logging / loop tuning
-      LOG_LEVEL: "INFO"
-      IDLE_INTERVAL_SEC: "1"
+      LOG_LEVEL: ${LOG_LEVEL}
+      IDLE_INTERVAL_SEC: ${IDLE_INTERVAL_SEC}
     networks:
       - odoo-net
-
 
   mqtt-publish:
     build: ./mqtt_publish

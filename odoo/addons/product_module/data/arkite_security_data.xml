@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Security access for Arkite Template model -->
+        <record id="access_product_module_arkite_template_user" model="ir.model.access">
+            <field name="name">product_module.arkite.template.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_template"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Project Wizard model -->
+        <record id="access_product_module_arkite_project_wizard_user" model="ir.model.access">
+            <field name="name">product_module.arkite.project.wizard.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_project_wizard"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="0"/>
+        </record>
+
+        <!-- Security access for Arkite Job Step Wizard model (now regular model, not transient) -->
+        <record id="access_product_module_arkite_job_step_wizard_user" model="ir.model.access">
+            <field name="name">product_module.arkite.job.step.wizard.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_job_step_wizard"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Process Step model (TransientModel) -->
+        <record id="access_product_module_arkite_process_step_user" model="ir.model.access">
+            <field name="name">product_module.arkite.process.step.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_process_step"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Variant Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_variant_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.variant.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_variant_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Job Step Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_job_step_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.job.step.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_job_step_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Process Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_process_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.process.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_process_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Process Create Wizard (TransientModel) -->
+        <record id="access_product_module_arkite_process_create_wizard_user" model="ir.model.access">
+            <field name="name">product_module.arkite.process.create.wizard.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_process_create_wizard"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Job Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_job_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.job.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_job_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Job Step model (TransientModel) -->
+        <record id="access_product_module_arkite_job_step_user" model="ir.model.access">
+            <field name="name">product_module.arkite.job.step.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_job_step"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Detection Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_detection_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.detection.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_detection_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Material Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_material_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.material.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_material_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+        
+        <!-- Security access for Material Link Wizard (TransientModel) -->
+        <record id="access_product_module_material_link_wizard_user" model="ir.model.access">
+            <field name="name">product_module.material.link.wizard.user</field>
+            <field name="model_id" ref="product_module.model_product_module_material_link_wizard"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Project Selection model (TransientModel) -->
+        <record id="access_product_module_arkite_project_selection_user" model="ir.model.access">
+            <field name="name">product_module.arkite.project.selection.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_project_selection"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Project Selection Template model (TransientModel) -->
+        <record id="access_product_module_arkite_project_selection_template_user" model="ir.model.access">
+            <field name="name">product_module.arkite.project.selection.template.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_project_selection_template"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Unit Projects model (TransientModel) -->
+        <record id="access_product_module_arkite_unit_projects_user" model="ir.model.access">
+            <field name="name">product_module.arkite.unit.projects.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_unit_projects"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Unit Project model (TransientModel) -->
+        <record id="access_product_module_arkite_unit_project_user" model="ir.model.access">
+            <field name="name">product_module.arkite.unit.project.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_unit_project"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+    </data>
+</odoo>

@@ -1,5 +1,12 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# Husky is optional in this repo (esp. on fresh checkouts / CI).
+# If husky isn't installed, don't block commits.
+if [ -f "$(dirname "$0")/_/husky.sh" ]; then
+  . "$(dirname "$0")/_/husky.sh"
+else
+  echo "husky not installed (.husky/_/husky.sh missing) - skipping pre-commit hook."
+  exit 0
+fi
 
 echo "Running project pre-commit checks..."
 npm run precommit

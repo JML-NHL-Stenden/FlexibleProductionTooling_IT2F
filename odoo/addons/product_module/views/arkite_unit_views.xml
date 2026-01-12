@@ -1,0 +1,110 @@
+<!-- product_module/views/arkite_unit_views.xml -->
+<odoo>
+    <!-- Unit List View -->
+    <record id="view_arkite_unit_tree" model="ir.ui.view">
+        <field name="name">arkite.unit.tree</field>
+        <field name="model">product_module.arkite.unit</field>
+        <field name="arch" type="xml">
+            <list string="Arkite Units" create="1" delete="1">
+                <field name="name"/>
+                <field name="unit_id" string="Unit ID"/>
+                <field name="api_base" string="API Base URL" optional="hide"/>
+                <field name="template_name" string="Template" optional="show"/>
+                <field name="project_count" string="Projects"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    
+    <!-- Unit Form View -->
+    <record id="view_arkite_unit_form" model="ir.ui.view">
+        <field name="name">arkite.unit.form</field>
+        <field name="model">product_module.arkite.unit</field>
+        <field name="arch" type="xml">
+            <form string="Arkite Unit" create="1" edit="1">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_test_connection" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-plug"
+                                string="Test Connection"
+                                invisible="not id"/>
+                        <button name="action_view_projects" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-folder"
+                                string="Projects"
+                                invisible="not id">
+                            <field name="project_count" widget="statinfo" string="Projects"/>
+                        </button>
+                    </div>
+                    
+                    <group>
+                        <group string="Basic Information">
+                            <field name="name"/>
+                            <field name="unit_id" string="Unit ID"/>
+                            <field name="template_name" string="Template Name"/>
+                        </group>
+                        <group string="Status">
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    
+                    <group string="API Configuration">
+                        <field name="api_base" string="API Base URL"/>
+                        <field name="api_key" string="API Key" password="True"/>
+                    </group>
+                    
+                    <group string="Description">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Unit Search View -->
+    <record id="view_arkite_unit_search" model="ir.ui.view">
+        <field name="name">arkite.unit.search</field>
+        <field name="model">product_module.arkite.unit</field>
+        <field name="arch" type="xml">
+            <search string="Arkite Units">
+                <field name="name"/>
+                <field name="unit_id"/>
+                <field name="template_name"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    
+    <!-- Actions -->
+    <record id="action_arkite_unit" model="ir.actions.act_window">
+        <field name="name">Arkite Units</field>
+        <field name="res_model">product_module.arkite.unit</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_arkite_unit_tree"/>
+        <field name="search_view_id" ref="view_arkite_unit_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Arkite Unit
+            </p>
+            <p>
+                Register Arkite units/workstations with their API credentials. 
+                Projects can then be assigned to specific units, and API calls will use that unit's credentials.
+            </p>
+            <p>
+                <strong>Tip:</strong> Click "Create" to add a new unit. You can register multiple units, each with their own API credentials.
+            </p>
+        </field>
+    </record>
+    
+    <!-- Menu Item -->
+    <menuitem id="menu_arkite_units"
+              name="Arkite Units"
+              parent="menu_product_module_root"
+              action="action_arkite_unit"
+              sequence="25"/>
+</odoo>

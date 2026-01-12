@@ -1,0 +1,164 @@
+<!-- product_module/views/arkite_project_selection_views.xml -->
+<odoo>
+    <!-- Template Selection View -->
+    <record id="view_arkite_template_selection" model="ir.ui.view">
+        <field name="name">arkite.template.selection</field>
+        <field name="model">product_module.arkite.project.selection</field>
+        <field name="arch" type="xml">
+            <form string="Select Template">
+                <sheet>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                        <h3 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">
+                            <i class="fa fa-copy" style="margin-right: 12px;"/> Select Template to Duplicate
+                        </h3>
+                        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
+                            Choose a template project to duplicate. You can configure the new project name and settings in the next step.
+                        </p>
+                    </div>
+                    
+                    <button name="action_load_available_projects" 
+                            type="object" 
+                            string="Load Projects from Arkite" 
+                            class="btn-secondary"
+                            style="margin-bottom: 16px;"/>
+                    
+                    <div invisible="not available_template_ids">
+                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px;">Available Projects (Select one to use as template):</div>
+                        <field name="available_template_ids" nolabel="1">
+                            <list>
+                                <field name="project_name" string="Project Name"/>
+                                <field name="project_id" string="Project ID"/>
+                                <button name="action_select_template_project" 
+                                        type="object" 
+                                        string="Select" 
+                                        class="btn-primary"
+                                        icon="fa-check"/>
+                            </list>
+                        </field>
+                    </div>
+                    
+                    <div invisible="available_template_ids" style="text-align: center; padding: 40px; color: #6c757d;">
+                        <i class="fa fa-info-circle" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                        <p>Click "Load Projects from Arkite" to see available projects.</p>
+                    </div>
+                    
+                    <div style="margin-top: 16px; padding: 16px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px;" invisible="not template_arkite_project_id">
+                        <div style="font-weight: 600; color: #2c3e50; margin-bottom: 8px;">Selected Template Project:</div>
+                        <div style="color: #495057; font-size: 14px;">
+                            <div><strong>Project ID:</strong> <field name="template_arkite_project_id" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                            <div><strong>Project Name:</strong> <field name="template_arkite_project_name" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 16px;" invisible="not template_arkite_project_id">
+                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px;">New Project Name:</div>
+                        <field name="new_project_name" 
+                               placeholder="Enter name for the duplicated project (defaults to current Odoo project name)"
+                               required="1"
+                               invisible="not template_arkite_project_id"/>
+                        <div style="margin-top: 8px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-size: 13px; color: #856404;">
+                            <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                            <strong>Note:</strong> If a project with this name already exists in Arkite, you'll be warned and can choose to link to the existing project instead.
+                        </div>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_select_and_duplicate" 
+                            type="object" 
+                            class="btn-primary"
+                            string="Duplicate"
+                            invisible="not template_arkite_project_id"/>
+                    <button name="action_confirm_update_existing" 
+                            type="object" 
+                            class="btn-warning"
+                            string="Update Existing (if name exists)"
+                            invisible="not template_arkite_project_id or not new_project_name"
+                            confirm="This will link to an existing project with the same name if it exists. Continue?"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Project Selection View -->
+    <record id="view_arkite_project_selection" model="ir.ui.view">
+        <field name="name">arkite.project.selection</field>
+        <field name="model">product_module.arkite.project.selection</field>
+        <field name="arch" type="xml">
+            <form string="Select Arkite Project">
+                <sheet>
+                    <div style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                        <h3 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">
+                            <i class="fa fa-link" style="margin-right: 12px;"/> Select Arkite Project to Link
+                        </h3>
+                        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
+                            Choose an existing Arkite project to link to this Odoo project.
+                        </p>
+                    </div>
+                    
+                    <button name="action_load_arkite_projects" 
+                            type="object" 
+                            string="Load Projects from Arkite" 
+                            class="btn-secondary"
+                            style="margin-bottom: 16px;"/>
+                    
+                    <field name="selection_ids" 
+                           nolabel="1"
+                           readonly="1"
+                           invisible="not selection_ids"
+                           context="{'default_selection_type': 'project'}">
+                        <list>
+                            <field name="arkite_project_name" string="Project Name"/>
+                            <field name="arkite_project_id" string="Project ID"/>
+                            <button name="action_select_this_project" 
+                                    type="object" 
+                                    string="Select" 
+                                    class="btn-primary"
+                                    icon="fa-check"/>
+                        </list>
+                    </field>
+                    
+                    <div invisible="selection_ids" style="text-align: center; padding: 40px; color: #6c757d;">
+                        <i class="fa fa-info-circle" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                        <p>Click "Load Projects from Arkite" to see available projects.</p>
+                    </div>
+                    
+                    <div style="margin-top: 16px; padding: 16px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px;" invisible="not arkite_project_id">
+                        <div style="font-weight: 600; color: #2c3e50; margin-bottom: 8px;">Selected Project:</div>
+                        <div style="color: #495057; font-size: 14px;">
+                            <div><strong>Project ID:</strong> <field name="arkite_project_id" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                            <div><strong>Project Name:</strong> <field name="arkite_project_name" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                        </div>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_select_and_link" 
+                            type="object" 
+                            class="btn-primary"
+                            string="Link Project"
+                            invisible="not arkite_project_id"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Actions -->
+    <record id="action_select_template" model="ir.actions.act_window">
+        <field name="name">Select Template</field>
+        <field name="res_model">product_module.arkite.project.selection</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_arkite_template_selection"/>
+        <field name="target">new</field>
+        <field name="context">{'default_selection_type': 'template'}</field>
+    </record>
+    
+    <record id="action_select_project" model="ir.actions.act_window">
+        <field name="name">Select Arkite Project</field>
+        <field name="res_model">product_module.arkite.project.selection</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_arkite_project_selection"/>
+        <field name="target">new</field>
+        <field name="context">{'default_selection_type': 'project'}</field>
+    </record>
+</odoo>

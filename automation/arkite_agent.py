@@ -29,7 +29,6 @@ def get_from_env_or_envfile(key: str, default: str | None = None) -> str | None:
     """
     1) Try Windows environment variable.
     2) Then try .env files in:
-       - automation/.env  (same folder as this script)
        - repo-root/.env   (one level above)
     3) Fall back to default if nothing found.
     """
@@ -38,8 +37,7 @@ def get_from_env_or_envfile(key: str, default: str | None = None) -> str | None:
         return val
 
     env_paths = [
-        Path(__file__).resolve().parent / ".env",          # automation/.env
-        Path(__file__).resolve().parent.parent / ".env",   # repo/.env (optional)
+        Path(__file__).resolve().parent.parent / ".env",   # repo/.env
     ]
 
     for env_path in env_paths:
@@ -60,15 +58,15 @@ def get_from_env_or_envfile(key: str, default: str | None = None) -> str | None:
 # MQTT CONFIG
 # =========================
 
-_raw_host = get_from_env_or_envfile("MQTT_HOST", None)
+_raw_host = get_from_env_or_envfile("AUTOMATION_MQTT_HOST", None) or get_from_env_or_envfile("MQTT_HOST", None)
 if not _raw_host:
     _raw_host = "localhost"  # last-resort default
 
 MQTT_HOST = _raw_host
-MQTT_PORT = int(get_from_env_or_envfile("MQTT_PORT", "1883"))
-MQTT_TOPIC = get_from_env_or_envfile("MQTT_TOPIC_QR", "arkite/trigger/QR")
+MQTT_PORT = int(get_from_env_or_envfile("AUTOMATION_MQTT_PORT", None) or get_from_env_or_envfile("MQTT_PORT", "1883"))
+MQTT_TOPIC = get_from_env_or_envfile("AUTOMATION_MQTT_TOPIC_QR", None) or get_from_env_or_envfile("MQTT_TOPIC_QR", "arkite/trigger/QR")
 
-IDLE_INTERVAL_SEC = float(get_from_env_or_envfile("IDLE_INTERVAL_SEC", "1"))
+IDLE_INTERVAL_SEC = float(get_from_env_or_envfile("AUTOMATION_IDLE_INTERVAL_SEC", None) or get_from_env_or_envfile("IDLE_INTERVAL_SEC", "1"))
 
 last_payload_hash = None
 client = None
@@ -78,8 +76,16 @@ client = None
 # Arkite credentials
 # =========================
 
-ARKITE_USER = get_from_env_or_envfile("ARKITE_USER", "Admin")
-ARKITE_PASS = get_from_env_or_envfile("ARKITE_PASS", "Arkite3600")
+ARKITE_USER = get_from_env_or_envfile("ARKITE_USER")
+ARKITE_PASS = get_from_env_or_envfile("ARKITE_PASS")
+
+# Validate required environment variables
+if not ARKITE_USER:
+    log.error("[CONFIG] ARKITE_USER environment variable is required")
+    raise ValueError("ARKITE_USER environment variable is required")
+if not ARKITE_PASS:
+    log.error("[CONFIG] ARKITE_PASS environment variable is required")
+    raise ValueError("ARKITE_PASS environment variable is required")
 
 
 # =========================

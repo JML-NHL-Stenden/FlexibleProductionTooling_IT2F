@@ -1,4 +1,4 @@
-# mqtt_publish/publisher.py
+# mqtt_publish/publish.py
 import os
 import json
 import time
@@ -31,11 +31,22 @@ PRETTY_JSON = os.getenv("PRETTY_JSON", "false").lower() in ("1", "true", "yes", 
 ODOO_BASE_URL = (os.getenv("ODOO_BASE_URL", "") or "").rstrip("/")
 
 # DB
-DB_HOST = os.getenv("DB_HOST", "db")
-DB_PORT = int(os.getenv("DB_PORT", "5432"))
-DB_NAME = os.getenv("DB_NAME", "odoo")
-DB_USER = os.getenv("DB_USER", "odoo")
-DB_PASS = os.getenv("DB_PASS", "odoo")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT_STR = os.getenv("DB_PORT")
+DB_PORT = int(DB_PORT_STR) if DB_PORT_STR else 5432
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+
+# Validate required database environment variables
+if not DB_HOST:
+    raise ValueError("DB_HOST environment variable is required")
+if not DB_NAME:
+    raise ValueError("DB_NAME environment variable is required")
+if not DB_USER:
+    raise ValueError("DB_USER environment variable is required")
+if not DB_PASS:
+    raise ValueError("DB_PASS environment variable is required")
 
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "5"))  # seconds
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -161,7 +172,7 @@ base AS (
         i.id            AS instr_id,
         i.sequence      AS instr_sequence,
         i.title         AS instr_title,
-        i.description   AS instr_description,
+        i.process_step  AS instr_description,
         CASE
             WHEN %(odoo_base_url)s <> '' AND a.attachment_id IS NOT NULL THEN
                 %(odoo_base_url)s || '/web/image/' || a.attachment_id::text
@@ -197,8 +208,8 @@ prod_details AS (
     GROUP BY b.id, b.name, b.product_code
 )
 SELECT
-    t.id        AS category_id,
-    t.name      AS category_name,
+    t.id        AS job_id,
+    t.name      AS job_name,
     COALESCE(
         json_agg(
             json_build_object(

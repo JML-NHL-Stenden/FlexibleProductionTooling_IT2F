@@ -1,3 +1,199 @@
+/* ============================================
+   Product Module - Main Stylesheet
+   ============================================ */
+
+/* ============================================
+   Tree View Hierarchy Styling for Job Steps
+   ============================================ */
+
+/* ============================================
+   Hierarchy Diagram (web_hierarchy) - Friendly Cards
+   ============================================ */
+
+.o_hierarchy_view .pm-inline-reorder-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Fix: in flex rows, text truncation needs min-width:0; keep arrow buttons stable */
+.o_hierarchy_view .pm-inline-reorder-name {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.o_hierarchy_view .pm-inline-reorder-actions {
+    display: inline-flex;
+    gap: 4px;
+    flex: 0 0 auto;
+    align-items: center;
+}
+
+/* Prevent any overflow from visually “escaping” the card/panel area */
+.o_hierarchy_view .pm-inline-reorder-panel {
+    overflow: hidden;
+}
+
+.o_hierarchy_view .pm-hnode {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 12px 10px 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    min-width: 240px;
+}
+
+.o_hierarchy_view .pm-hnode__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.o_hierarchy_view .pm-hnode__name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1f2d3d;
+    line-height: 1.2;
+}
+
+.o_hierarchy_view .pm-hnode__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.o_hierarchy_view .pm-hnode__actions {
+    display: none;
+    margin-bottom: 8px;
+}
+
+.o_hierarchy_view .pm-hnode:hover .pm-hnode__actions {
+    display: block;
+}
+
+.o_hierarchy_view .pm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.o_hierarchy_view .pm-chip--level {
+    background: #e7f3ff;
+    color: #0b5ed7;
+    border-color: #b6d4fe;
+}
+
+.o_hierarchy_view .pm-chip--type {
+    background: #fff3cd;
+    color: #996404;
+    border-color: #ffecb5;
+}
+
+.o_hierarchy_view .pm-chip--kids {
+    background: #eaf7ee;
+    color: #146c43;
+    border-color: #c7e8d2;
+}
+
+.o_hierarchy_view .pm-hnode__parent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e9ecef;
+    font-size: 12px;
+    color: #495057;
+}
+
+.o_hierarchy_view .pm-hnode__label {
+    font-weight: 700;
+    color: #6c757d;
+}
+
+.o_hierarchy_view .pm-hnode__value {
+    font-weight: 600;
+    color: #212529;
+}
+
+/* Bigger fold/unfold arrows in grouped list headers */
+.o_list_view .o_group_header .fa-caret-right,
+.o_list_view .o_group_header .fa-caret-down,
+.o_list_view .o_group_header .o_group_name .fa {
+    font-size: 18px !important;
+    line-height: 1 !important;
+}
+
+/* Visual hierarchy for job steps - apply indentation based on hierarchy level */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="1"] td[data-name="step_name"],
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="1"] td:first-child {
+    padding-left: 40px !important;
+    border-left: 4px solid #007bff !important;
+    background-color: #f0f8ff !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="2"] td[data-name="step_name"],
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="2"] td:first-child {
+    padding-left: 60px !important;
+    border-left: 4px solid #28a745 !important;
+    background-color: #f0fff4 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="3"] td[data-name="step_name"],
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="3"] td:first-child {
+    padding-left: 80px !important;
+    border-left: 4px solid #ffc107 !important;
+    background-color: #fffbf0 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="4"] td[data-name="step_name"],
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="4"] td:first-child {
+    padding-left: 100px !important;
+    border-left: 4px solid #dc3545 !important;
+    background-color: #fff5f5 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="5"] td[data-name="step_name"],
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="5"] td:first-child {
+    padding-left: 120px !important;
+    border-left: 4px solid #6f42c1 !important;
+    background-color: #f5f0ff !important;
+}
+
+/* Add visual prefix for child steps */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="1"] td[data-name="step_name"]::before {
+    content: '├─ ';
+    color: #007bff;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="2"] td[data-name="step_name"]::before {
+    content: '│  ├─ ';
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr[data-hierarchy-level="3"] td[data-name="step_name"]::before {
+    content: '│  │  ├─ ';
+    color: #ffc107;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
 /* Rename Discard button to Cancel */
 .o_form_view button.o_form_button_cancel {
     font-size: 0 !important;
@@ -8,3 +204,1631 @@
     font-size: 14px;
 }
 
+/* ============================================
+   Header Styles - Gradient Backgrounds
+   ============================================ */
+
+/* ============================================
+   Kanban - "Run in Arkite" button (Project cards)
+   ============================================ */
+
+/* Ensure the kanban card can position absolute children reliably */
+.oe_kanban_card {
+    position: relative;
+}
+
+/* Floating action (entire block clickable): right side, vertically centered */
+.pm-arkite-start-wrap {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 2;
+    text-decoration: none !important;
+}
+
+/* Make the Odoo button square-ish and centered */
+.pm-arkite-start-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0 !important;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.pm-arkite-start-wrap:hover .pm-arkite-start-btn,
+.pm-arkite-start-wrap:focus .pm-arkite-start-btn {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
+.pm-arkite-start-wrap:active .pm-arkite-start-btn {
+    transform: translateY(0);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.pm-arkite-start-btn__icon {
+    color: #ffffff;
+    font-size: 16px;
+    margin-left: 2px; /* center the play triangle visually */
+}
+
+.pm-arkite-start-wrap:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.55);
+    outline-offset: 2px;
+}
+
+.pm-arkite-start-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #6c757d; /* matches Odoo muted text */
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+    user-select: none;
+}
+
+/* Purple gradient header (Categories, Main Page) */
+.pm-header-purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+/* Green gradient header (Products) */
+.pm-header-green {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+/* Orange gradient header (Instructions) */
+.pm-header-orange {
+    background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: white;
+}
+
+/* ============================================
+   Header Content Layout
+   ============================================ */
+
+.pm-header-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.pm-header-content-spaced {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pm-header-title {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.pm-header-title-large {
+    color: white;
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.pm-header-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 8px 0 0 0;
+    font-size: 16px;
+}
+
+.pm-header-field {
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+}
+
+.pm-header-field-large {
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 32px;
+}
+
+/* ============================================
+   Image Containers
+   ============================================ */
+
+.pm-image-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.pm-image-container-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.pm-image-container-small {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e9ecef;
+    flex-shrink: 0;
+}
+
+.pm-image-container-kanban {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e9ecef;
+}
+
+/* ============================================
+   Badge/Tag Styles
+   ============================================ */
+
+.pm-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pm-badge-dark {
+    background: #6c757d;
+    color: white;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+.pm-badge-light {
+    background: #f8f9fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* ============================================
+   Card/Container Styles
+   ============================================ */
+
+.pm-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+}
+
+.pm-card-no-margin {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Section Headers
+   ============================================ */
+
+.pm-section-title {
+    color: #2c3e50;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.pm-section-title-with-icon {
+    color: #2c3e50;
+    margin: 0 0 16px 0;
+    font-weight: 600;
+}
+
+.pm-section-title-white {
+    color: white;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* ============================================
+   Form Labels
+   ============================================ */
+
+.pm-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.pm-label-inline {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* ============================================
+   Form Fields
+   ============================================ */
+
+.pm-field-full {
+    width: 100%;
+    min-height: 100px;
+}
+
+.pm-field-description {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.pm-field-code {
+    color: white;
+    background: transparent;
+    border: none;
+    width: 120px;
+}
+
+/* ============================================
+   Info Text
+   ============================================ */
+
+.pm-info-text {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+.pm-info-text-small {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+/* ============================================
+   Kanban Card Styles
+   ============================================ */
+
+.pm-kanban-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 8px;
+    width: 300px;
+    min-height: 120px;
+}
+
+.pm-kanban-card-purple {
+    border-left: 4px solid #667eea;
+}
+
+.pm-kanban-card-green {
+    border-left: 4px solid #28a745;
+    min-height: 140px;
+}
+
+.pm-kanban-card-red {
+    border-left: 4px solid #ff6b6b;
+    min-height: 140px;
+}
+
+.pm-kanban-card-content {
+    padding: 16px;
+}
+
+.pm-kanban-card-flex {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pm-kanban-card-flex-start {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.pm-kanban-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.pm-kanban-title-small {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.pm-kanban-text {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.pm-kanban-value {
+    font-size: 14px;
+    color: #495057;
+    background: #e9ecef;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-block;
+    border-left: 3px solid #007bff;
+}
+
+.pm-kanban-badge-container {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.pm-kanban-stats {
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.pm-kanban-stats-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #28a745;
+    margin-bottom: 4px;
+}
+
+.pm-kanban-stats-label {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* ============================================
+   Button Styles
+   ============================================ */
+
+.pm-btn-primary-gradient {
+    background: linear-gradient(45deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    height: 44px;
+    line-height: 44px;
+    padding: 0 24px;
+    display: inline-block;
+}
+
+.pm-btn-warning-gradient {
+    background: linear-gradient(45deg, #ff6b6b 0%, #ee5a24 100%);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    height: 44px;
+    line-height: 44px;
+    padding: 0 24px;
+    display: inline-block;
+    color: white;
+}
+
+.pm-btn-rounded {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 12px 24px;
+}
+
+.pm-btn-full {
+    width: 100%;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* ============================================
+   Stats/Count Display
+   ============================================ */
+
+.pm-stats-container {
+    display: flex;
+    gap: 12px;
+}
+
+.pm-stat-box {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: center;
+}
+
+.pm-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.pm-stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.pm-stat-value-large {
+    font-size: 36px;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 8px;
+}
+
+.pm-stat-label-large {
+    font-size: 16px;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+/* ============================================
+   Progress Display
+   ============================================ */
+
+.pm-progress-container {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    text-align: center;
+}
+
+.pm-progress-stats {
+    display: flex;
+    justify-content: space-between;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.pm-progress-stat {
+    text-align: center;
+}
+
+.pm-progress-stat-label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.pm-progress-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #495057;
+}
+
+.pm-progress-stat-value-success {
+    font-size: 20px;
+    font-weight: 700;
+    color: #28a745;
+}
+
+/* ============================================
+   QR Code Container
+   ============================================ */
+
+.pm-qr-container {
+    text-align: center;
+}
+
+.pm-qr-box {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 2px dashed #dee2e6;
+}
+
+.pm-qr-text {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.pm-qr-field {
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* ============================================
+   Grid Layouts
+   ============================================ */
+
+.pm-grid-2-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.pm-flex-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pm-flex-row-spaced {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.pm-flex-center {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.pm-empty-state {
+    text-align: center;
+    padding: 40px;
+}
+
+.pm-empty-icon {
+    font-size: 48px;
+    color: #ffc107;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.pm-empty-title {
+    color: #856404;
+    margin-bottom: 16px;
+}
+
+.pm-empty-text {
+    color: #856404;
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   Icon Spacing
+   ============================================ */
+
+.pm-icon-spacing {
+    margin-right: 8px;
+}
+
+.pm-icon-spacing-large {
+    margin-right: 12px;
+}
+
+/* ============================================
+   Field Groups
+   ============================================ */
+
+.pm-field-group {
+    margin-bottom: 16px;
+}
+
+.pm-field-group-small {
+    margin-bottom: 8px;
+}
+
+/* ============================================
+   Sheet Styles
+   ============================================ */
+
+.pm-sheet-full {
+    max-width: none;
+    width: 100%;
+}
+
+/* ============================================
+   Alert/Info Boxes
+   ============================================ */
+
+.pm-info-box {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pm-info-box-text {
+    font-size: 14px;
+    color: #495057;
+}
+
+/* ============================================
+   Icon Color Utilities
+   ============================================ */
+
+.pm-icon-blue {
+    color: #007bff;
+}
+
+.pm-icon-green {
+    color: #28a745;
+}
+
+.pm-icon-orange {
+    color: #fd7e14;
+}
+
+.pm-icon-purple {
+    color: #6f42c1;
+}
+
+.pm-icon-red {
+    color: #ff6b6b;
+}
+
+/* ============================================
+   Specific Width/Height Utilities
+   ============================================ */
+
+.pm-width-280 {
+    width: 280px;
+}
+
+.pm-width-320 {
+    width: 320px;
+    min-height: 160px;
+}
+
+.pm-qr-image {
+    max-width: 150px;
+    max-height: 150px;
+}
+
+/* ============================================
+   Additional Utility Classes
+   ============================================ */
+
+.pm-flex-1 {
+    flex: 1;
+}
+
+.pm-flex-1-min-width {
+    flex: 1;
+    min-width: 0;
+}
+
+.pm-margin-top-12 {
+    margin-top: 12px;
+}
+
+.pm-margin-top-20 {
+    margin-top: 20px;
+}
+
+.pm-margin-bottom-16 {
+    margin-bottom: 16px;
+}
+
+.pm-margin-bottom-8 {
+    margin-bottom: 8px;
+}
+
+.pm-margin-bottom-4 {
+    margin-bottom: 4px;
+}
+
+.pm-text-center {
+    text-align: center;
+}
+
+.pm-width-100 {
+    width: 100%;
+}
+
+.pm-field-inline {
+    color: white;
+    background: transparent;
+    border: none;
+    width: 200px;
+}
+
+.pm-kanban-text-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.pm-kanban-text-value {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.pm-kanban-title-inline {
+    font-size: 14px;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.pm-kanban-title-medium {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.pm-field-group-margin {
+    margin-bottom: 12px;
+}
+
+.pm-field-group-margin-large {
+    margin-bottom: 16px;
+}
+
+.pm-header-field-full {
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    width: 100%;
+}
+
+.pm-red-gradient-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+.pm-grid-1-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+/* ============================================
+   Process Selection Styles
+   ============================================ */
+
+/* Selected process row highlighting */
+.o_list_view tbody tr.decoration-success {
+    background-color: #d4edda !important;
+    border-left: 4px solid #28a745 !important;
+}
+
+.o_list_view tbody tr.decoration-success:hover {
+    background-color: #c3e6cb !important;
+}
+
+/* Selected button styling */
+.btn-selected-process {
+    background-color: #28a745 !important;
+    color: white !important;
+    border-color: #28a745 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
+}
+
+.btn-selected-process:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+}
+
+/* Select button styling */
+.btn-select-process {
+    background-color: #007bff !important;
+    color: white !important;
+    border-color: #007bff !important;
+}
+
+.btn-select-process:hover {
+    background-color: #0056b3 !important;
+    border-color: #004085 !important;
+}
+
+/* ============================================
+   Process Steps Hierarchical Display
+   ============================================ */
+
+/* Visual hierarchy for process steps based on hierarchy_level */
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-1 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="1"] .pm-step-name-field {
+    padding-left: 30px !important;
+    border-left: 3px solid #007bff !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-2 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="2"] .pm-step-name-field {
+    padding-left: 60px !important;
+    border-left: 3px solid #28a745 !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-3 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="3"] .pm-step-name-field {
+    padding-left: 90px !important;
+    border-left: 3px solid #ffc107 !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-4 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="4"] .pm-step-name-field {
+    padding-left: 120px !important;
+    border-left: 3px solid #fd7e14 !important;
+    position: relative;
+}
+
+.pm-step-hierarchy-list tbody tr.pm-hierarchy-level-5 .pm-step-name-field,
+.pm-step-hierarchy-list tbody tr[data-hierarchy-level="5"] .pm-step-name-field {
+    padding-left: 150px !important;
+    border-left: 3px solid #e83e8c !important;
+    position: relative;
+}
+
+/* Highlight COMPOSITE parent steps - using decoration classes */
+.pm-step-hierarchy-list tbody tr.decoration-success {
+    background-color: #f0f8ff !important;
+}
+
+.pm-step-hierarchy-list tbody tr.decoration-success:hover {
+    background-color: #e0f0ff !important;
+}
+
+/* ============================================
+   Process Steps Hierarchical Display
+   ============================================ */
+
+/* Base indentation for hierarchical steps */
+.pm-step-hierarchy {
+    position: relative;
+}
+
+.pm-step-hierarchy-level-1 {
+    padding-left: 30px !important;
+    border-left: 3px solid #007bff;
+}
+
+.pm-step-hierarchy-level-2 {
+    padding-left: 60px !important;
+    border-left: 3px solid #28a745;
+}
+
+.pm-step-hierarchy-level-3 {
+    padding-left: 90px !important;
+    border-left: 3px solid #ffc107;
+}
+
+.pm-step-hierarchy-level-4 {
+    padding-left: 120px !important;
+    border-left: 3px solid #fd7e14;
+}
+
+.pm-step-hierarchy-level-5 {
+    padding-left: 150px !important;
+    border-left: 3px solid #e83e8c;
+}
+
+/* Visual indicator for child steps */
+.pm-step-child::before {
+    content: "└─ ";
+    color: #6c757d;
+    font-weight: normal;
+    margin-right: 4px;
+}
+
+/* Highlight COMPOSITE parent steps */
+.pm-step-composite {
+    font-weight: 600;
+    background-color: #f0f8ff !important;
+}
+
+.pm-step-composite:hover {
+    background-color: #e0f0ff !important;
+}
+
+/* Tree connector lines */
+.pm-step-tree-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, 
+        transparent 0%, 
+        #dee2e6 10%, 
+        #dee2e6 90%, 
+        transparent 100%);
+}
+
+/* ============================================
+   Expandable One2Many Widget Styles
+   ============================================ */
+
+/* Expand button cell */
+.o_list_expand_cell {
+    width: 32px;
+    min-width: 32px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0 !important;
+}
+
+.o_list_expand_header {
+    width: 32px;
+    min-width: 32px;
+}
+
+/* Expand button */
+.o_expand_btn {
+    font-size: 14px;
+    color: #495057;
+    transition: transform 0.2s ease, color 0.2s ease;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.o_expand_btn:hover {
+    color: #007bff;
+    background-color: #f8f9fa;
+}
+
+/* Expanded state */
+.o_expand_btn.expanded,
+.o_expand_btn[style*="rotate(90deg)"] {
+    color: #007bff;
+}
+
+/* Expandable row */
+.o_expandable_row {
+    transition: background-color 0.2s ease;
+}
+
+.o_expandable_row:hover {
+    background-color: #f8f9fa;
+}
+
+/* Composite step row */
+.o_composite_step {
+    background-color: #f0f8ff !important;
+    font-weight: 600;
+}
+
+.o_composite_step:hover {
+    background-color: #e0f0ff !important;
+}
+
+/* Child step row */
+.o_child_step {
+    border-left: 3px solid transparent;
+}
+
+.o_child_step.o_level_1 {
+    border-left-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.03);
+}
+
+.o_child_step.o_level_2 {
+    border-left-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.03);
+}
+
+.o_child_step.o_level_3 {
+    border-left-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.03);
+}
+
+.o_child_step.o_level_4 {
+    border-left-color: #fd7e14;
+    background-color: rgba(253, 126, 20, 0.03);
+}
+
+.o_child_step.o_level_5 {
+    border-left-color: #e83e8c;
+    background-color: rgba(232, 62, 140, 0.03);
+}
+
+/* Expanded detail row */
+.o_expandable_detail_row {
+    background-color: transparent !important;
+}
+
+.o_expandable_detail_row:hover {
+    background-color: transparent !important;
+}
+
+.o_expandable_detail_row td {
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Expandable panel */
+.o_expandable_panel {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Panel section */
+.o_panel_section {
+    transition: box-shadow 0.2s ease;
+}
+
+.o_panel_section:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Badge improvements for step types */
+.o_expandable_panel .badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* ============================================
+   Drag and Drop Styles for Job Steps
+   ============================================ */
+
+/* Dragging state */
+.o_list_view tbody tr.o_data_row.dragging {
+    opacity: 0.5;
+    cursor: move !important;
+}
+
+/* Drag over state */
+.o_list_view tbody tr.o_data_row.drag-over {
+    background-color: #e3f2fd !important;
+    border-top: 2px solid #2196F3;
+}
+
+/* Draggable rows */
+.o_list_view tbody tr.o_data_row[draggable="true"] {
+    cursor: move;
+}
+
+.o_list_view tbody tr.o_data_row[draggable="true"]:hover {
+    background-color: #f5f5f5;
+}
+
+/* ============================================
+   Hierarchical Level Colors for Job Steps
+   ============================================ */
+
+/* Root level (1, 2, 3, etc.) - Blue */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-root {
+    background-color: #e3f2fd !important;
+    border-left: 4px solid #2196F3 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-root td[data-name="hierarchical_level"].level-root {
+    background-color: #2196F3 !important;
+    color: white !important;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 1 children (1.1, 1.2, 2.1, etc.) - Green */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-1 {
+    background-color: #e8f5e9 !important;
+    border-left: 4px solid #4caf50 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-1 td[data-name="hierarchical_level"].level-1 {
+    background-color: #4caf50 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 2 children (1.1.1, 1.2.1, etc.) - Yellow */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-2 {
+    background-color: #fffde7 !important;
+    border-left: 4px solid #ffc107 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-2 td[data-name="hierarchical_level"].level-2 {
+    background-color: #ffc107 !important;
+    color: #333 !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 3 children (1.1.1.1, etc.) - Orange */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-3 {
+    background-color: #fff3e0 !important;
+    border-left: 4px solid #ff9800 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-3 td[data-name="hierarchical_level"].level-3 {
+    background-color: #ff9800 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 4 children (1.1.1.1.1, etc.) - Pink */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-4 {
+    background-color: #fce4ec !important;
+    border-left: 4px solid #e91e63 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-4 td[data-name="hierarchical_level"].level-4 {
+    background-color: #e91e63 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 5+ children - Purple */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-5 {
+    background-color: #f3e5f5 !important;
+    border-left: 4px solid #9c27b0 !important;
+}
+
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-5 td[data-name="hierarchical_level"].level-5 {
+    background-color: #9c27b0 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* ============================================
+   Hierarchical Level Colors for Process Steps
+   ============================================ */
+
+/* Root level (1, 2, 3, etc.) - Blue */
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-root {
+    background-color: #e3f2fd !important;
+    border-left: 4px solid #2196F3 !important;
+}
+
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-root td[data-name="hierarchical_level"].level-root {
+    background-color: #2196F3 !important;
+    color: white !important;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 1 children (1.1, 1.2, 2.1, etc.) - Green */
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-1 {
+    background-color: #e8f5e9 !important;
+    border-left: 4px solid #4caf50 !important;
+}
+
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-1 td[data-name="hierarchical_level"].level-1 {
+    background-color: #4caf50 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 2 children (1.1.1, 1.2.1, etc.) - Yellow */
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-2 {
+    background-color: #fffde7 !important;
+    border-left: 4px solid #ffc107 !important;
+}
+
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-2 td[data-name="hierarchical_level"].level-2 {
+    background-color: #ffc107 !important;
+    color: #333 !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 3 children (1.1.1.1, etc.) - Orange */
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-3 {
+    background-color: #fff3e0 !important;
+    border-left: 4px solid #ff9800 !important;
+}
+
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-3 td[data-name="hierarchical_level"].level-3 {
+    background-color: #ff9800 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 4 children (1.1.1.1.1, etc.) - Pink */
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-4 {
+    background-color: #fce4ec !important;
+    border-left: 4px solid #e91e63 !important;
+}
+
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-4 td[data-name="hierarchical_level"].level-4 {
+    background-color: #e91e63 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Level 5+ children - Purple */
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-5 {
+    background-color: #f3e5f5 !important;
+    border-left: 4px solid #9c27b0 !important;
+}
+
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-5 td[data-name="hierarchical_level"].level-5 {
+    background-color: #9c27b0 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* ============================================
+   CSS-based Hierarchy Colors (No JavaScript Required)
+   ============================================ */
+
+/* ============================================
+   CSS-based Hierarchy Colors (No JavaScript Required)
+   ============================================ */
+
+/* Style level cells based on row decoration classes from hierarchy_css_class */
+/* Root level (decoration-info) - Blue - FULL CELL BACKGROUND */
+.o_list_view tbody tr.decoration-info td.hierarchy-level-cell,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-info td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-info td.hierarchy-level-cell {
+    background-color: #2196F3 !important;
+    color: white !important;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 1 (decoration-success) - Green - FULL CELL BACKGROUND */
+.o_list_view tbody tr.decoration-success td.hierarchy-level-cell,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-success td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-success td.hierarchy-level-cell {
+    background-color: #4caf50 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 2 (decoration-warning) - Yellow - FULL CELL BACKGROUND */
+.o_list_view tbody tr.decoration-warning td.hierarchy-level-cell,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-warning td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-warning td.hierarchy-level-cell {
+    background-color: #ffc107 !important;
+    color: #333 !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 3 (decoration-muted) - Orange - FULL CELL BACKGROUND */
+.o_list_view tbody tr.decoration-muted td.hierarchy-level-cell,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-muted td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-muted td.hierarchy-level-cell {
+    background-color: #ff9800 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 4+ (decoration-danger) - Pink/Purple - FULL CELL BACKGROUND */
+.o_list_view tbody tr.decoration-danger td.hierarchy-level-cell,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-danger td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-danger td.hierarchy-level-cell {
+    background-color: #e91e63 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Default styling for level cells - ensure full coverage */
+.o_list_view tbody tr td.hierarchy-level-cell,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr td.hierarchy-level-cell {
+    text-align: center;
+    border-radius: 4px;
+    font-weight: 600;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Make sure inner elements don't override the background - force transparent */
+.o_list_view tbody tr.decoration-info td.hierarchy-level-cell *,
+.o_list_view tbody tr.decoration-success td.hierarchy-level-cell *,
+.o_list_view tbody tr.decoration-warning td.hierarchy-level-cell *,
+.o_list_view tbody tr.decoration-muted td.hierarchy-level-cell *,
+.o_list_view tbody tr.decoration-danger td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-info td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-success td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-warning td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-muted td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.decoration-danger td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-info td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-success td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-warning td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-muted td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.decoration-danger td.hierarchy-level-cell * {
+    background-color: transparent !important;
+    background: transparent !important;
+    color: inherit !important;
+}
+
+/* ============================================
+   Interactive Hierarchy Styling
+   ============================================ */
+
+/* Hierarchy level container */
+.hierarchy-level-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Hierarchy toggle icon styling - larger and more visible */
+.hierarchy-toggle-icon {
+    font-size: 16px !important;
+    font-weight: bold;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    min-width: 20px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.hierarchy-toggle-icon:hover {
+    transform: scale(1.2) !important;
+    opacity: 0.8;
+}
+
+/* Visual hierarchy lines for grouping */
+.o_list_view tbody tr[data-hierarchy-group] {
+    border-left: 3px solid #ddd;
+    margin-left: 10px;
+}
+
+/* Indentation for child rows */
+.o_list_view tbody tr[data-hierarchy-level] {
+    position: relative;
+}
+
+/* Hide child rows by default - only show when parent is expanded */
+/* Use JavaScript to hide children based on hierarchy level */
+/* NOTE: Legacy JS-driven hide/show was removed; keep no-op selectors out of CSS to avoid lint warnings. */
+
+/* Hierarchy level badge - interactive */
+.hierarchy-level-badge {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.hierarchy-level-badge:hover {
+    filter: brightness(1.1);
+}
+
+.hierarchy-level-badge:active {
+    transform: scale(0.95) !important;
+}
+
+/* Add connecting lines for visual hierarchy */
+.o_list_view tbody tr[data-hierarchy-level] {
+    position: relative;
+}
+
+/* Visual hierarchy lines (optional - can be enabled if needed) */
+.o_list_view tbody tr[data-hierarchy-level]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, #ddd, transparent);
+    opacity: 0.3;
+}
+
+/* ============================================
+   Fallback: Direct CSS targeting for cells without decoration classes
+   ============================================ */
+
+/* Target cells directly based on data-name attribute and row context */
+/* This ensures cells get colored even if decoration classes don't apply */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr:not(.decoration-info):not(.decoration-success):not(.decoration-warning):not(.decoration-muted):not(.decoration-danger) td[data-name="hierarchical_level"].hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr:not(.decoration-info):not(.decoration-success):not(.decoration-warning):not(.decoration-muted):not(.decoration-danger) td[data-name="hierarchical_level"].hierarchy-level-cell {
+    /* Apply default styling - will be overridden by decoration classes if they exist */
+    text-align: center;
+    border-radius: 4px;
+    font-weight: 600;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Force recomputation trigger - add a style that makes cells visible to ensure CSS applies */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr td[data-name="hierarchical_level"].hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr td[data-name="hierarchical_level"].hierarchy-level-cell {
+    /* Ensure all level cells have base styling */
+    display: table-cell !important;
+    visibility: visible !important;
+}
+
+/* ============================================
+   Direct CSS targeting for hierarchy classes applied by JavaScript
+   ============================================ */
+
+/* Root level - Blue */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-root td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-root td.hierarchy-level-cell {
+    background-color: #2196F3 !important;
+    color: white !important;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 1 - Green */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-1 td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-1 td.hierarchy-level-cell {
+    background-color: #4caf50 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 2 - Yellow */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-2 td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-2 td.hierarchy-level-cell {
+    background-color: #ffc107 !important;
+    color: #333 !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 3 - Orange */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-3 td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-3 td.hierarchy-level-cell {
+    background-color: #ff9800 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 4 - Pink */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-4 td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-4 td.hierarchy-level-cell {
+    background-color: #e91e63 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Level 5+ - Purple */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-5 td.hierarchy-level-cell,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-5 td.hierarchy-level-cell {
+    background-color: #9c27b0 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px 12px !important;
+    min-width: 60px;
+    width: 80px;
+}
+
+/* Make sure inner elements don't override */
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-root td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-1 td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-2 td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-3 td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-4 td.hierarchy-level-cell *,
+field[name="arkite_job_step_ids"] .o_list_view tbody tr.hierarchy-level-5 td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-root td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-1 td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-2 td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-3 td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-4 td.hierarchy-level-cell *,
+field[name="arkite_process_step_ids"] .o_list_view tbody tr.hierarchy-level-5 td.hierarchy-level-cell * {
+    background-color: transparent !important;
+    background: transparent !important;
+    color: inherit !important;
+}
