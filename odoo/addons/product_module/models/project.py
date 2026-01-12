@@ -825,7 +825,18 @@ class ProductModuleProject(models.Model):
         if material_recs:
             material_recs.unlink()
 
-        return self._action_refresh_current_form()
+        # Do not navigate/reopen the project form (can kick the user out into a full-page form).
+        # Stay on the current view and just notify.
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('De-linked'),
+                'message': _('Arkite project link removed and locally loaded Arkite data cleared.'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
     
     def action_load_arkite_project(self):
         """Load Arkite project by ID and auto-load steps, variants, processes, detections"""

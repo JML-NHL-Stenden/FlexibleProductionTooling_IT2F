@@ -525,21 +525,14 @@ class ArkiteProjectSelection(models.TransientModel):
                         # Linking != loading; require explicit load/sync after linking
                         'arkite_project_loaded': False,
                     })
-                    # Close the wizard and go back to the Project form.
-                    return {
-                        'type': 'ir.actions.act_window',
-                        'name': _('Project'),
-                        'res_model': 'product_module.project',
-                        'res_id': odoo_project.id,
-                        'view_mode': 'form',
-                        'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
-                        'target': 'current',
-                        'context': dict(self.env.context),
-                    }
+                    # Do not navigate/reopen the project form from inside the wizard.
+                    # Just close the modal; the user remains where they were.
+                    return {'type': 'ir.actions.act_window_close'}
             except Exception as e:
                 _logger.error("Error linking project: %s", e)
         
-        return {'type': 'ir.actions.client', 'tag': 'reload'}
+        # If we can't resolve the calling project, just close the modal (no navigation).
+        return {'type': 'ir.actions.act_window_close'}
     
     def action_select_and_link(self):
         """Selected an Arkite project, now link it"""
@@ -562,17 +555,9 @@ class ArkiteProjectSelection(models.TransientModel):
             'arkite_project_loaded': False,
         })
 
-        # Close the wizard and go back to the Project form.
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Project'),
-            'res_model': 'product_module.project',
-            'res_id': odoo_project.id,
-            'view_mode': 'form',
-            'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
-            'target': 'current',
-            'context': dict(self.env.context),
-        }
+        # Do not navigate/reopen the project form from inside the wizard.
+        # Just close the modal; the caller can refresh if needed.
+        return {'type': 'ir.actions.act_window_close'}
     
     @api.depends('template_arkite_project_name', 'arkite_project_name', 'selection_type')
     def _compute_display_name(self):
