@@ -29,17 +29,12 @@ class ProductModuleProject(models.Model):
     def _pm_action_refresh_project_form(self):
         """Refresh project form while preserving modal vs full-page context."""
         self.ensure_one()
-        target = 'new' if self.env.context.get('pm_project_modal') else 'current'
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Project'),
-            'res_model': 'product_module.project',
-            'res_id': self.id,
-            'view_mode': 'form',
-            'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
-            'target': target,
-            'context': dict(self.env.context),
-        }
+        # If we are inside a modal (opened from Product -> Projects kanban), do NOT open another modal.
+        # Just reload the current controller (keeps the same modal open).
+        if self.env.context.get('pm_project_modal'):
+            return {'type': 'ir.actions.client', 'tag': 'soft_reload'}
+        # Otherwise, refresh the current form in place.
+        return self._action_refresh_current_form()
     _name = 'product_module.project'
     _description = 'Product Project'
     _order = 'sequence, name, id'
@@ -857,16 +852,7 @@ class ProductModuleProject(models.Model):
                 'message': _('Arkite project link removed and locally loaded Arkite data cleared.'),
                 'type': 'success',
                 'sticky': False,
-                'next': {
-                    'type': 'ir.actions.act_window',
-                    'name': _('Project'),
-                    'res_model': 'product_module.project',
-                    'res_id': self.id,
-                    'view_mode': 'form',
-                    'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
-                    'target': 'new',
-                    'context': dict(self.env.context),
-                },
+                'next': self._pm_action_refresh_project_form(),
             }
         }
 
