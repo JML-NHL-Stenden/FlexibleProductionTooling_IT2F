@@ -2700,17 +2700,29 @@ class ProductModuleProject(models.Model):
             _logger.info("[ARKITE IMAGE] Skipped fetching some material images after sync: %s", e)
 
         msg = _('Materials synced from Arkite: %s new, %s updated.') % (created_count, updated_count)
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
+        # In modal contexts, chaining display_notification -> next can close the dialog.
+        # Prefer returning a SINGLE action with a display_notification payload.
+        if self.env.context.get('pm_project_modal'):
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'soft_reload',
+                'display_notification': {
+                    'title': _('Materials Loaded'),
+                    'message': msg,
+                    'type': 'success' if (created_count or updated_count) else 'info',
+                    'sticky': False,
+                },
+            }
+        action = self._action_refresh_current_form()
+        action.update({
+            'display_notification': {
                 'title': _('Materials Loaded'),
                 'message': msg,
                 'type': 'success' if (created_count or updated_count) else 'info',
                 'sticky': False,
-                'next': self._pm_action_refresh_project_form(),
             }
-        }
+        })
+        return action
 
     def _arkite_download_image_bytes(self, api_base, api_key, image_id):
         """Best-effort download of an Arkite image by ID. Returns raw bytes or None."""
