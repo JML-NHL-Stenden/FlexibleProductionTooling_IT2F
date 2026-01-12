@@ -1,7 +1,0 @@
-# Cursor ignore patterns
-# This file tells Cursor which files to ignore for indexing and search
-# 
-# Explicitly include .env file (negation pattern to override global ignore)
-!.env
-
-# Add other patterns below if you want to ignore additional files
