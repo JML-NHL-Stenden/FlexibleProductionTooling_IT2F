@@ -2705,13 +2705,13 @@ class ProductModuleProject(models.Model):
         if self.env.context.get('pm_project_modal'):
             return {
                 'type': 'ir.actions.client',
-                'tag': 'soft_reload',
-                'display_notification': {
+                'tag': 'display_notification',
+                'params': {
                     'title': _('Materials Loaded'),
                     'message': msg,
                     'type': 'success' if (created_count or updated_count) else 'info',
                     'sticky': False,
-                },
+                }
             }
         action = self._action_refresh_current_form()
         action.update({
