@@ -13,12 +13,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # CONFIG
 # =========================
 
-WORKSTATION_IP = "192.168.56.1"
+API_BASE = "https://192.168.56.1/api/v1"
 API_KEY = "kdfNPsDrz"
-
-BASE_URL = f"https://{WORKSTATION_IP}/api/v1"
-
-UNIT_ID = "171880875434312"  # SINGLE UNIT
+UNIT_ID = "171880875434312" # SINGLE UNIT
 
 MQTT_HOST = os.getenv("MQTT_HOST")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
@@ -63,7 +60,7 @@ def get(url):
 
 def fetch_loaded_project_id():
     try:
-        data = get(f"{BASE_URL}/units/{UNIT_ID}/loadedProject")
+        data = get(f"{API_BASE}/units/{UNIT_ID}/loadedProject")
         if isinstance(data, dict) and data.get("Id"):
             return str(data["Id"])
     except Exception as e:
@@ -81,8 +78,8 @@ def fetch_steps_payload():
 
     detection_steps = []
 
-    projects = get(f"{BASE_URL}/projects")
-    unit_variables = get(f"{BASE_URL}/units/{UNIT_ID}/variables")
+    projects = get(f"{API_BASE}/projects")
+    unit_variables = get(f"{API_BASE}/units/{UNIT_ID}/variables")
 
     unit_state_by_name = {
         v["Name"]: v.get("CurrentState")
@@ -93,14 +90,14 @@ def fetch_steps_payload():
     for proj in projects:
         project_id = proj["Id"]
 
-        project_detections = get(f"{BASE_URL}/projects/{project_id}/detections")
+        project_detections = get(f"{API_BASE}/projects/{project_id}/detections")
         detection_by_id = {
             d["Id"]: d
             for d in project_detections
             if d.get("Id") and d.get("Name")
         }
 
-        steps = get(f"{BASE_URL}/projects/{project_id}/steps")
+        steps = get(f"{API_BASE}/projects/{project_id}/steps")
 
         is_project_loaded = (
             loaded_project_id is not None
