@@ -85,7 +85,9 @@ def track_project_time(project_db_id):
             """, (project_db_id,))
             total, completed = cur.fetchone()
 
-            if total == 0:
+            log.info("Total %s steps compelted for project %s", total,project_db_id)
+
+            if completed == 0:
                 status = 'not_started'
             elif completed < total:
                 status = 'in_progress'
