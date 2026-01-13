@@ -1,4 +1,4 @@
-from odoo import models, fields, api, _
+﻿from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
 
@@ -34,7 +34,47 @@ class ProductModuleProjectHierarchySave(models.Model):
                 except Exception as e:
                     raise UserError(_("Failed to sync Process Steps to Arkite (Process %s):\n%s") % (pid, str(e)))
 
-    def write(self, vals):
+
+    def action_sync_staged_hierarchy_to_arkite(self):
+        """Explicit UI action: sync staged hierarchy changes to Arkite and show a toast.
+
+        This avoids relying on Project "Save" (write) to trigger a potentially long sync with no UI feedback.
+        """
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+
+        if not getattr(self, 'arkite_hierarchy_dirty', False):
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No changes'),
+                    'message': _('No staged hierarchy changes to sync.'),
+                    'type': 'info',
+                    'sticky': False,
+                },
+            }
+
+        self._arkite_sync_all_staged_hierarchies()
+        # Clear dirty flags directly (avoid calling write() again and triggering other sync logic).
+        self.env.cr.execute(
+            "UPDATE product_module_project "
+            "SET arkite_hierarchy_dirty = FALSE, arkite_job_steps_dirty = FALSE, arkite_process_steps_dirty = FALSE "
+            "WHERE id = %s",
+            [self.id],
+        )
+        self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Saved'),
+                'message': _('Synced staged hierarchy changes to Arkite.'),
+                'type': 'success',
+                'sticky': False,
+            },
+        }\n    def write(self, vals):
         # Standard Project save should also push staged hierarchy changes to Arkite.
         res = super().write(vals)
 
@@ -55,4 +95,5 @@ class ProductModuleProjectHierarchySave(models.Model):
         if self:
             self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
         return res
+
 

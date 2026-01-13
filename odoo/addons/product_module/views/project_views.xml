@@ -1,4 +1,4 @@
-<!-- product_module/views/project_views.xml -->
+﻿<!-- product_module/views/project_views.xml -->
 <odoo>
     <!-- Project List View -->
     <record id="view_project_list" model="ir.ui.view">
@@ -512,12 +512,20 @@
                                             invisible="not selected_process_id_char"
                                             icon="fa-share-alt"
                                             help="Open the diagram view for drag/reparent. Use the List tab for New/Edit/Delete."/>
+                                    <button name="action_sync_staged_hierarchy_to_arkite"
+                                            string="Sync to Arkite"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked or not arkite_hierarchy_dirty"
+                                            icon="fa-cloud-upload"
+                                            help="Sync staged hierarchy changes (job + process steps) to Arkite and show a toast."/>
                                 </div>
                             </div>
                             
                             <!-- Hidden fields for selected process -->
                             <field name="selected_process_id_char" invisible="1"/>
                             <field name="selected_arkite_process_id" invisible="1"/>
+                            <field name="arkite_hierarchy_dirty" invisible="1"/>
                             
                             <!-- Process Selection -->
                             <group col="1">
@@ -572,7 +580,7 @@
                                                     help="Delete this process in Arkite"/>
                                             <button name="action_select_process" 
                                                     type="object" 
-                                                    string="Selected ✓"
+                                                    string="Selected âœ“"
                                                     class="btn btn-sm"
                                                     style="background-color: #28a745; color: white; cursor: default;"
                                                     invisible="process_id != parent.selected_process_id_char"
@@ -937,6 +945,13 @@
                                             invisible="not arkite_linked"
                                             icon="fa-share-alt"
                                             help="Open the diagram view for drag/reparent. Use the List tab for New/Edit/Delete."/>
+                                    <button name="action_sync_staged_hierarchy_to_arkite"
+                                            string="Sync to Arkite"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked or not arkite_hierarchy_dirty"
+                                            icon="fa-cloud-upload"
+                                            help="Sync staged hierarchy changes (job + process steps) to Arkite and show a toast."/>
                                 </div>
                             </div>
                             
@@ -1233,4 +1248,5 @@
               action="action_project"
               sequence="15"/>
 </odoo>
+
 
