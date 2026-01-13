@@ -1,4 +1,4 @@
-# product_module/models/project.py
+﻿# product_module/models/project.py
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import requests
@@ -24,6 +24,59 @@ class ProductModuleProject(models.Model):
             'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
             'target': 'current',
             'context': dict(self.env.context),
+        }
+    def action_sync_staged_hierarchy_to_arkite(self):
+        """Sync staged hierarchy changes (job + process steps) to Arkite and show a toast.
+
+        Kept on the core Project model so the Project form button always validates.
+        """
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+
+        if not getattr(self, 'arkite_hierarchy_dirty', False):
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No changes'),
+                    'message': _('No staged hierarchy changes to sync.'),
+                    'type': 'info',
+                    'sticky': False,
+                },
+            }
+
+        if getattr(self, 'arkite_job_steps_loaded', False) and getattr(self, 'arkite_job_steps_dirty', False):
+            self.env['product_module.arkite.job.step'].with_context(default_project_id=self.id).pm_action_save_all()
+
+        if getattr(self, 'arkite_process_steps_loaded', False) and getattr(self, 'arkite_process_steps_dirty', False):
+            process_ids = self.env['product_module.arkite.process.step'].search([
+                ('project_id', '=', self.id),
+                ('process_id', '!=', False),
+            ]).mapped('process_id')
+            for pid in sorted(set(process_ids)):
+                self.env['product_module.arkite.process.step'].with_context(
+                    default_project_id=self.id,
+                    default_process_id=pid,
+                ).pm_action_save_all()
+
+        self.env.cr.execute(
+            "UPDATE product_module_project "
+            "SET arkite_hierarchy_dirty = FALSE, arkite_job_steps_dirty = FALSE, arkite_process_steps_dirty = FALSE "
+            "WHERE id = %s",
+            [self.id],
+        )
+        self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Saved'),
+                'message': _('Synced staged hierarchy changes to Arkite.'),
+                'type': 'success',
+                'sticky': False,
+            },
         }
     _name = 'product_module.project'
     _description = 'Product Project'
@@ -3326,7 +3379,7 @@ class ProductModuleProject(models.Model):
         result = super().write(vals)
 
         # Existing behavior: materials + (legacy) step reorder sync blocks remain below
-        # (… existing code continues …)
+        # (â€¦ existing code continues â€¦)
 
         # At the very end of saving the Project in the form, if we have staged hierarchy changes,
         # push them to Arkite once and clear the flag.
@@ -3337,3 +3390,4 @@ class ProductModuleProject(models.Model):
                     project.with_context(skip_arkite_hierarchy_autosync=True).write({'arkite_hierarchy_dirty': False})
 
         return result
+
