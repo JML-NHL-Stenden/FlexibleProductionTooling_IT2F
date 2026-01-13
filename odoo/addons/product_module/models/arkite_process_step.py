@@ -1172,7 +1172,7 @@ class ArkiteProcessStep(models.TransientModel):
             'tag': 'display_notification',
             'params': {'title': _('Saved'), 'message': _('Saved Process Steps to Arkite.'), 'type': 'success', 'sticky': False},
         }
-@api.model
+    @api.model
     def pm_action_discard_all(self):
         """Discard staged process-step changes by reloading from Arkite for the project/process in context."""
         project_id = self.env.context.get('default_project_id')
