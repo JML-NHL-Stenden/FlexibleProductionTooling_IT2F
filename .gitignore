@@ -91,3 +91,11 @@ Thumbs.db
 # Documentation / Guides (keep local, don't push to GitHub)
 # --------------------------------------
 Guides/
+
+# --------------------------------------
+# Local scratch / one-off scripts (keep local)
+# --------------------------------------
+temp_project_views.txt
+test_apply_patch.txt
+test_arkite_job_step_api.py
+check_odoo_logs.ps1

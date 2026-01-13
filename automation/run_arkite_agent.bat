@@ -1,3 +1,4 @@
 @echo off
-cd /d "C:\Users\Standard user\Desktop\QCV9\FlexibleProductionTooling_IT2F\automation"
+pushd "%~dp0"
 py -3 arkite_agent.py >> arkite_agent.log 2>&1
+popd

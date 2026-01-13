@@ -78,6 +78,39 @@
             <field name="perm_unlink" eval="1"/>
         </record>
 
+        <!-- Security access for Arkite Process Create Wizard (TransientModel) -->
+        <record id="access_product_module_arkite_process_create_wizard_user" model="ir.model.access">
+            <field name="name">product_module.arkite.process.create.wizard.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_process_create_wizard"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Job Temp model (TransientModel) -->
+        <record id="access_product_module_arkite_job_temp_user" model="ir.model.access">
+            <field name="name">product_module.arkite.job.temp.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_job_temp"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Security access for Arkite Job Step model (TransientModel) -->
+        <record id="access_product_module_arkite_job_step_user" model="ir.model.access">
+            <field name="name">product_module.arkite.job.step.user</field>
+            <field name="model_id" ref="product_module.model_product_module_arkite_job_step"/>
+            <field name="group_id" ref="base.group_user"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
         <!-- Security access for Arkite Detection Temp model (TransientModel) -->
         <record id="access_product_module_arkite_detection_temp_user" model="ir.model.access">
             <field name="name">product_module.arkite.detection.temp.user</field>

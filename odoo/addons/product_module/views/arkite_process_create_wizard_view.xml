@@ -1,0 +1,40 @@
+<!-- product_module/views/arkite_process_create_wizard_view.xml -->
+<odoo>
+    <record id="view_arkite_process_create_wizard_form" model="ir.ui.view">
+        <field name="name">arkite.process.create.wizard.form</field>
+        <field name="model">product_module.arkite.process.create.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Process">
+                <sheet>
+                    <group>
+                        <field name="project_id" invisible="1"/>
+                        <field name="mode"/>
+                    </group>
+
+                    <group invisible="mode != 'create'">
+                        <field name="name" required="1"/>
+                        <field name="comment"/>
+                        <div class="alert alert-info" style="margin-top: 8px; font-size: 11px;">
+                            <strong>Note:</strong> This creates a new blank Arkite process using the server API.
+                        </div>
+                    </group>
+
+                    <group invisible="mode != 'duplicate'">
+                        <field name="template_process_id"
+                               domain="[('project_id', '=', project_id)]"
+                               options="{'no_create': True, 'no_open': True}"/>
+                        <div class="alert alert-warning" style="margin-top: 8px; font-size: 11px;">
+                            <strong>Note:</strong> On this Arkite server, process rename/comment update via API is not implemented.
+                            Duplicated processes will keep Arkite's default copy name (rename in Arkite UI if needed).
+                        </div>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
+

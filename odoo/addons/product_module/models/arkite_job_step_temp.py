@@ -33,10 +33,13 @@ class ArkiteJobStepTemp(models.TransientModel):
         ('PICKING_BIN_TAKING', 'Picking Bin Taking'),
         ('ACTIVITY', 'Activity'),
         ('CHECK_NO_CHANGE_ZONE', 'Check No Change Zone'),
+        ('CHECK_VARIABLE', 'Check Variable'),
         ('VIRTUAL_BUTTON_PRESS', 'Virtual Button Press'),
         ('MATERIAL_GRAB', 'Material Grab'),
         ('COMPOSITE', 'Composite'),
         ('COMPONENT', 'Component'),
+        ('JOB', 'Job'),
+        ('DIALOG', 'Dialog'),
     ], string='Step Type', required=True, default='WORK_INSTRUCTION', help='Type of step to create')
     step_instruction = fields.Text(string='Instruction Text', help='Text instruction (for WORK_INSTRUCTION type)')
     sequence = fields.Integer(string='Sequence', default=10)

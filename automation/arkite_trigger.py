@@ -1,26 +1,50 @@
+import os
 import time
 import json
+from pathlib import Path
+from datetime import datetime, timezone
+
 import keyboard
 import psycopg2
 from psycopg2 import OperationalError
 import paho.mqtt.client as mqtt
-from datetime import datetime, timezone
+
+
+def get_from_env_or_envfile(key: str, default: str | None = None) -> str | None:
+    """Read from OS env first, then repo-root .env (one level above this script)."""
+    val = os.getenv(key)
+    if val is not None:
+        return val
+
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.exists():
+        return default
+
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        if k.strip() == key:
+            return v.strip()
+
+    return default
 
 # =========================
 # PostgreSQL SETTINGS
 # =========================
-DB_HOST = "localhost"
-DB_PORT = 15432      # from docker ps: 0.0.0.0:15432->5432/tcp
-DB_NAME = "odoo"
-DB_USER = "odoo"
-DB_PASSWORD = "odoo"
+DB_HOST = get_from_env_or_envfile("AUTOMATION_DB_HOST", "localhost")
+DB_PORT = int(get_from_env_or_envfile("AUTOMATION_DB_PORT", get_from_env_or_envfile("DB_PORT_HOST", "15432")))
+DB_NAME = get_from_env_or_envfile("AUTOMATION_DB_NAME", get_from_env_or_envfile("DB_NAME", "odoo"))
+DB_USER = get_from_env_or_envfile("AUTOMATION_DB_USER", get_from_env_or_envfile("DB_USER", "odoo"))
+DB_PASSWORD = get_from_env_or_envfile("AUTOMATION_DB_PASS", get_from_env_or_envfile("DB_PASS", "odoo"))
 
 # =========================
 # MQTT SETTINGS
 # =========================
-MQTT_HOST = "localhost"      # Mosquitto mapped as 0.0.0.0:1883->1883/tcp
-MQTT_PORT = 1883
-MQTT_TOPIC = "arkite/trigger/QR"
+MQTT_HOST = get_from_env_or_envfile("AUTOMATION_MQTT_HOST", "localhost")
+MQTT_PORT = int(get_from_env_or_envfile("AUTOMATION_MQTT_PORT", get_from_env_or_envfile("MQTT_PORT", "1883")))
+MQTT_TOPIC = get_from_env_or_envfile("AUTOMATION_MQTT_TOPIC_QR", get_from_env_or_envfile("MQTT_TOPIC_QR", "arkite/trigger/QR"))
 
 RECONNECT_INTERVAL_SEC = 5
 

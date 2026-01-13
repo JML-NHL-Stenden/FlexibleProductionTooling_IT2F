@@ -296,14 +296,28 @@
                                 </button>
                             </div>
 
-                            <field name="project_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="project_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="job_count"/>
                                     <field name="description"/>
                                     <templates>
                                         <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 120px;">
+                                            <div class="oe_kanban_card oe_kanban_global_click" style="position:relative; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 120px;">
+                                                <t t-if="record.name.raw_value">
+                                                    <a type="object"
+                                                       name="action_start_project"
+                                                       data-no-open="1"
+                                                       role="button"
+                                                       class="oe_kanban_action oe_kanban_action_button pm-arkite-start-wrap"
+                                                       title="Run in Arkite"
+                                                       aria-label="Start project">
+                                                        <span class="btn btn-primary btn-sm pm-arkite-start-btn">
+                                                            <i class="fa fa-play pm-arkite-start-btn__icon"/>
+                                                        </span>
+                                                        <span class="pm-arkite-start-label">Start Project</span>
+                                                    </a>
+                                                </t>
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <!-- Project Info -->
                                                     <div style="flex: 1;">
@@ -343,7 +357,7 @@
                                 </button>
                             </div>
 
-                            <field name="product_type_ids" context="{'default_page_id': id}" widget="kanban">
+                            <field name="product_type_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="product_count"/>
@@ -416,18 +430,6 @@
                                             <div class="oe_kanban_card oe_kanban_global_click"
                                                  style="position:relative; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 8px; border-left: 4px solid #28a745; width: 300px; min-height: 140px;">
 
-                                                <t t-if="record.product_code.raw_value">
-                                                    <button type="object"
-                                                            name="action_start_project"
-                                                            class="btn btn-success btn-sm oe_kanban_action oe_kanban_action_button"
-                                                            title="Run in Arkite"
-                                                            style="position:absolute; bottom:12px; right:12px;
-                                                                   border-radius:999px; width:36px; height:36px;
-                                                                   padding:0; display:flex; align-items:center; justify-content:center;
-                                                                   box-shadow:0 6px 14px rgba(0,0,0,0.18);">
-                                                        <i class="fa fa-play" style="margin-left:2px;"/>
-                                                    </button>
-                                                </t>
 
                                                 <div class="oe_kanban_content" style="padding: 16px;">
                                                     <div style="display: flex; align-items: center; gap: 16px;">
@@ -490,7 +492,7 @@
                                 </button>
                             </div>
 
-                            <field name="material_ids" context="{'default_page_id': id}" widget="kanban" id="materials_kanban_field">
+                            <field name="material_ids" context="{'default_page_id': id, 'pm_project_modal': 1}" widget="kanban" id="materials_kanban_field">
                                 <kanban create="false" multi_edit="1">
                                     <field name="name"/>
                                     <field name="material_type"/>

@@ -522,20 +522,17 @@ class ArkiteProjectSelection(models.TransientModel):
                     odoo_project.write({
                         'arkite_project_id': self.arkite_project_id,
                         'arkite_project_name': self.arkite_project_name or '',
+                        # Linking != loading; require explicit load/sync after linking
+                        'arkite_project_loaded': False,
                     })
-                    return {
-                        'type': 'ir.actions.client',
-                        'tag': 'display_notification',
-                        'params': {
-                            'title': _('Success'),
-                            'message': _('Arkite project linked successfully. Project ID: %s') % self.arkite_project_id,
-                            'type': 'success',
-                        }
-                    }
+                    # Do not navigate/reopen the project form from inside the wizard.
+                    # Just close the modal; the user remains where they were.
+                    return {'type': 'ir.actions.act_window_close'}
             except Exception as e:
                 _logger.error("Error linking project: %s", e)
         
-        return {'type': 'ir.actions.client', 'tag': 'reload'}
+        # If we can't resolve the calling project, just close the modal (no navigation).
+        return {'type': 'ir.actions.act_window_close'}
     
     def action_select_and_link(self):
         """Selected an Arkite project, now link it"""
@@ -554,17 +551,13 @@ class ArkiteProjectSelection(models.TransientModel):
         odoo_project.write({
             'arkite_project_id': self.arkite_project_id,
             'arkite_project_name': self.arkite_project_name or '',
+            # Linking != loading; require explicit load/sync after linking
+            'arkite_project_loaded': False,
         })
-        
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _('Success'),
-                'message': _('Arkite project linked successfully. Project ID: %s') % self.arkite_project_id,
-                'type': 'success',
-            }
-        }
+
+        # Do not navigate/reopen the project form from inside the wizard.
+        # Just close the modal; the caller can refresh if needed.
+        return {'type': 'ir.actions.act_window_close'}
     
     @api.depends('template_arkite_project_name', 'arkite_project_name', 'selection_type')
     def _compute_display_name(self):

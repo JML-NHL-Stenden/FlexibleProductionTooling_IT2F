@@ -1,20 +1,89 @@
-# product_module/models/project.py
+﻿# product_module/models/project.py
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import requests
 import os
 import logging
 import time
-
+import json
+from datetime import datetime, timezone
+from ..services.arkite_client import ArkiteClient
 _logger = logging.getLogger(__name__)
 
 
 class ProductModuleProject(models.Model):
+    def _action_refresh_current_form(self):
+        """Refresh the current form without a hard client reload."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Project'),
+            'res_model': 'product_module.project',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+            'target': 'current',
+            'context': dict(self.env.context),
+        }
+    def action_sync_staged_hierarchy_to_arkite(self):
+        """Sync staged hierarchy changes (job + process steps) to Arkite and show a toast.
+
+        Kept on the core Project model so the Project form button always validates.
+        """
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+
+        if not getattr(self, 'arkite_hierarchy_dirty', False):
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No changes'),
+                    'message': _('No staged hierarchy changes to sync.'),
+                    'type': 'info',
+                    'sticky': False,
+                },
+            }
+
+        if getattr(self, 'arkite_job_steps_loaded', False) and getattr(self, 'arkite_job_steps_dirty', False):
+            self.env['product_module.arkite.job.step'].with_context(default_project_id=self.id).pm_action_save_all()
+
+        if getattr(self, 'arkite_process_steps_loaded', False) and getattr(self, 'arkite_process_steps_dirty', False):
+            process_ids = self.env['product_module.arkite.process.step'].search([
+                ('project_id', '=', self.id),
+                ('process_id', '!=', False),
+            ]).mapped('process_id')
+            for pid in sorted(set(process_ids)):
+                self.env['product_module.arkite.process.step'].with_context(
+                    default_project_id=self.id,
+                    default_process_id=pid,
+                ).pm_action_save_all()
+
+        self.env.cr.execute(
+            "UPDATE product_module_project "
+            "SET arkite_hierarchy_dirty = FALSE, arkite_job_steps_dirty = FALSE, arkite_process_steps_dirty = FALSE "
+            "WHERE id = %s",
+            [self.id],
+        )
+        self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Saved'),
+                'message': _('Synced staged hierarchy changes to Arkite.'),
+                'type': 'success',
+                'sticky': False,
+            },
+        }
     _name = 'product_module.project'
     _description = 'Product Project'
-    _order = 'name, id'
+    _order = 'sequence, name, id'
 
     page_id = fields.Many2one('product_module.page', string='Page', ondelete='cascade')
+    sequence = fields.Integer(string='Sequence', default=10)
     name = fields.Char(string='Project Name', required=True, size=50)
     description = fields.Text(string='Description', size=250)
     
@@ -64,6 +133,15 @@ class ProductModuleProject(models.Model):
         default=False,
         readonly=True,
         help='Indicates if the Arkite project has been successfully loaded'
+    )
+
+    # When users reorder/reparent steps in hierarchy/diagram screens we "stage" changes locally and only
+    # sync to Arkite when the user saves the Project form.
+    arkite_hierarchy_dirty = fields.Boolean(
+        string='Staged hierarchy changes',
+        default=False,
+        copy=False,
+        help='If enabled, there are local hierarchy changes (order/parent) not yet pushed to Arkite. Saving the project will sync them.'
     )
     
     # Fields moved from Product: Processes, Materials, QR Code
@@ -202,12 +280,6 @@ class ProductModuleProject(models.Model):
     )
     
     # Arkite Steps, Variants, Processes, and Detections (One2many to transient models)
-    arkite_job_step_ids = fields.One2many(
-        'product_module.arkite.job.step.temp',
-        'project_id',
-        string='Job Steps',
-        help='Arkite job steps for this project'
-    )
     arkite_variant_ids = fields.One2many(
         'product_module.arkite.variant.temp',
         'project_id',
@@ -240,6 +312,33 @@ class ProductModuleProject(models.Model):
         string='Process Steps',
         help='Steps for the selected Arkite process'
     )
+    # Arkite Jobs
+    arkite_job_ids = fields.One2many(
+        'product_module.arkite.job.temp',
+        'project_id',
+        string='Jobs',
+        help='Arkite jobs available in the project (root-level steps with ProcessId=0)'
+    )
+    selected_arkite_job_id = fields.Char(
+        string='Selected Job ID',
+        help='Currently selected Arkite job ID to view/edit its steps'
+    )
+    selected_job_id_char = fields.Char(
+        string='Selected Job ID (Text)',
+        help='Enter job name or ID to select a job'
+    )
+    selected_arkite_job_name = fields.Char(
+        string='Selected Job Name',
+        compute='_compute_selected_job_name',
+        store=False,
+        help='Name of the selected job (computed)'
+    )
+    arkite_job_step_ids = fields.One2many(
+        'product_module.arkite.job.step',
+        'project_id',
+        string='Job Steps',
+        help='Steps for the selected Arkite job'
+    )
     arkite_detection_ids = fields.One2many(
         'product_module.arkite.detection.temp',
         'project_id',
@@ -252,6 +351,59 @@ class ProductModuleProject(models.Model):
         string='Arkite Materials',
         help='Materials from Arkite project'
     )
+    
+    # Hierarchy Test (for drag-and-drop testing) - DISABLED: Model loading order issue
+    # This requires the model to be loaded before the field definition, which is complex
+    # hierarchy_test_ids = fields.One2many(
+    #     'product_module.hierarchy.test',
+    #     'project_id',
+    #     string='Hierarchy Test Items',
+    #     help='Test items for hierarchy drag-and-drop functionality'
+    # )
+    
+    def action_add_test_items(self):
+        """Add some test items for demonstration"""
+        self.ensure_one()
+        
+        # Clear existing test items
+        self.env['product_module.hierarchy.test'].search([('project_id', '=', self.id)]).unlink()
+        
+        # Create test hierarchy
+        root1 = self.env['product_module.hierarchy.test'].create({
+            'project_id': self.id,
+            'name': 'Root Item 1',
+            'sequence': 10,
+        })
+        
+        root2 = self.env['product_module.hierarchy.test'].create({
+            'project_id': self.id,
+            'name': 'Root Item 2',
+            'sequence': 20,
+        })
+        
+        # Add children
+        self.env['product_module.hierarchy.test'].create({
+            'project_id': self.id,
+            'name': 'Child 1.1',
+            'sequence': 10,
+            'parent_id': root1.id,
+        })
+        
+        self.env['product_module.hierarchy.test'].create({
+            'project_id': self.id,
+            'name': 'Child 1.2',
+            'sequence': 20,
+            'parent_id': root1.id,
+        })
+        
+        self.env['product_module.hierarchy.test'].create({
+            'project_id': self.id,
+            'name': 'Child 2.1',
+            'sequence': 10,
+            'parent_id': root2.id,
+        })
+        
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     @api.depends('job_ids')
     def _compute_job_count(self):
@@ -367,6 +519,20 @@ class ProductModuleProject(models.Model):
             else:
                 record.selected_arkite_process_name = ""
     
+    @api.depends('selected_arkite_job_id', 'selected_job_id_char', 'arkite_job_ids', 'arkite_job_ids.name')
+    def _compute_selected_job_name(self):
+        """Compute the name of the selected job"""
+        for record in self:
+            # Use selected_job_id_char if available, otherwise use selected_arkite_job_id
+            job_id = record.selected_job_id_char or record.selected_arkite_job_id
+            if job_id:
+                job = record.arkite_job_ids.filtered(
+                    lambda j: j.job_step_id == job_id
+                )
+                record.selected_arkite_job_name = job.name if job else job_id
+            else:
+                record.selected_arkite_job_name = ""
+    
     @api.onchange('arkite_process_ids')
     def _onchange_arkite_process_ids(self):
         """Update selection options when processes change"""
@@ -423,6 +589,108 @@ class ProductModuleProject(models.Model):
                 record.qr_image_name = f'qr_{code}.png'
             else:
                 record.qr_image_name = 'qr_code.png'
+    # ====================
+    # MQTT / "Run in Arkite"
+    # ====================
+
+    def _get_mqtt_config(self):
+        """
+        Pull config from environment first (works great in Docker),
+        fallback to Odoo system params if you want to configure via UI later.
+        """
+        ICP = self.env['ir.config_parameter'].sudo()
+
+        host = os.getenv("MQTT_HOST") or ICP.get_param("product_module.mqtt_host") or "mqtt"
+        port = os.getenv("MQTT_PORT") or ICP.get_param("product_module.mqtt_port") or "1883"
+        topic = os.getenv("MQTT_TOPIC_QR") or ICP.get_param("product_module.mqtt_topic_qr") or "arkite/trigger/QR"
+
+        try:
+            port = int(port)
+        except Exception:
+            port = 1883
+
+        return host, port, topic
+
+    def _publish_qr_trigger_to_mqtt(self):
+        """
+        Publish the same payload shape your existing Windows Arkite Agent expects:
+        {
+          "timestamp": "...",
+          "count": 1,
+          "items": [{"product_name": "...", "product_code": "...", "qr_text": "..."}],
+          "source": {...}
+        }
+        """
+        self.ensure_one()
+
+        try:
+            import paho.mqtt.client as mqtt
+        except Exception as e:
+            raise UserError(_(
+                "Missing Python dependency for MQTT in Odoo (paho-mqtt).\n"
+                "Install it in your Odoo container, e.g.:\n"
+                "  pip3 install paho-mqtt\n\n"
+                "Original error: %s"
+            ) % (str(e),))
+
+        mqtt_host, mqtt_port, mqtt_topic = self._get_mqtt_config()
+
+        qr_code = (self.arkite_project_id or self.name or "").strip()
+
+        payload = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "count": 1,
+            "items": [
+                {
+                    "product_name": self.name or "",
+                    # keep key names stable for existing agent parsing
+                    "product_code": qr_code,
+                    "qr_text": qr_code,
+                }
+            ],
+            "source": {
+                "origin": "odoo-product-module",
+                "action": "project.action_start_project",
+                "model": self._name,
+                "res_id": self.id,
+            },
+        }
+
+        client = mqtt.Client(client_id=f"odoo-project-start-{self.id}", protocol=mqtt.MQTTv5)
+        try:
+            client.connect(mqtt_host, mqtt_port, keepalive=30)
+            client.publish(mqtt_topic, json.dumps(payload), qos=0, retain=False)
+            client.disconnect()
+        except Exception as e:
+            raise UserError(_(
+                "MQTT publish failed.\n"
+                "Host: %s\nPort: %s\nTopic: %s\n\nError: %s"
+            ) % (mqtt_host, mqtt_port, mqtt_topic, str(e)))
+
+        return payload, mqtt_host, mqtt_port, mqtt_topic
+
+    def action_start_project(self):
+        """Run in Arkite: publish a QR-trigger payload to MQTT."""
+        self.ensure_one()
+
+        qr_code = (self.arkite_project_id or self.name or "").strip()
+        if not qr_code:
+            raise UserError(_('Please set a project name or link to an Arkite project first.'))
+
+        payload, host, port, topic = self._publish_qr_trigger_to_mqtt()
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Run in Arkite'),
+                'message': _(
+                    'Published QR trigger to MQTT.\nHost=%s Port=%s Topic=%s\n\nProject: %s (%s)'
+                ) % (host, port, topic, self.name, qr_code),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
 
     # Input constrains
     @api.constrains('name')
@@ -609,7 +877,85 @@ class ProductModuleProject(models.Model):
                 'active_model': 'product_module.project',
             }
         }
-    
+
+    def action_unlink_arkite_project(self):
+        """De-link the Arkite project and clear synced transient data so another project can be linked."""
+        self.ensure_one()
+
+        # Capture current transient records before clearing the link (so we can cleanup safely).
+        variant_recs = self.arkite_variant_ids
+        process_recs = self.arkite_process_ids
+        process_step_recs = self.arkite_process_step_ids
+        job_recs = self.arkite_job_ids
+        job_step_recs = self.arkite_job_step_ids
+        detection_recs = self.arkite_detection_ids
+        material_recs = self.arkite_material_ids
+        # Materials Used (non-transient). IMPORTANT: do NOT unlink() these, because material.unlink()
+        # deletes in Arkite. Instead, detach them from this project so they disappear from the form.
+        used_material_recs = self.material_ids
+
+        # Clear link + selection state + staged flags.
+        self.with_context(skip_arkite_hierarchy_autosync=True).write({
+            'arkite_project_id': False,
+            'arkite_project_name': False,
+            'arkite_project_loaded': False,
+            'selected_arkite_process_id': False,
+            'selected_process_id_char': False,
+            'selected_arkite_job_id': False,
+            'selected_job_id_char': False,
+            'arkite_hierarchy_dirty': False,
+            # Step flags (provided by project_arkite_step_flags.py)
+            'arkite_job_steps_loaded': False,
+            'arkite_process_steps_loaded': False,
+            'arkite_job_steps_dirty': False,
+            'arkite_process_steps_dirty': False,
+        })
+
+        # Clear transient data loaded from Arkite (local only).
+        # NOTE: you can't union recordsets from different models, so unlink separately.
+        # Also, unlink() on steps is safe; we previously removed Arkite DELETE calls from step unlink().
+        if variant_recs:
+            variant_recs.unlink()
+        if process_recs:
+            process_recs.unlink()
+        if process_step_recs:
+            process_step_recs.unlink()
+        if job_recs:
+            job_recs.unlink()
+        if job_step_recs:
+            job_step_recs.unlink()
+        if detection_recs:
+            detection_recs.unlink()
+        if material_recs:
+            material_recs.unlink()
+
+        # Detach "Materials Used" from this project (without deleting them).
+        if used_material_recs:
+            used_material_recs.write({'project_id': False})
+
+        # Notify + reopen this record as a modal so we don't accidentally close the current modal stack
+        # (soft_reload can restore the underlying controller and close dialogs).
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('De-linked'),
+                'message': _('Arkite project link removed and locally loaded Arkite data cleared.'),
+                'type': 'success',
+                'sticky': False,
+                'next': {
+                    'type': 'ir.actions.act_window',
+                    'name': _('Project'),
+                    'res_model': 'product_module.project',
+                    'res_id': self.id,
+                    'view_mode': 'form',
+                    'views': [(self.env.ref('product_module.view_project_form').id, 'form')],
+                    'target': 'new',
+                    'context': dict(self.env.context),
+                },
+            }
+        }
+
     def action_load_arkite_project(self):
         """Load Arkite project by ID and auto-load steps, variants, processes, detections"""
         self.ensure_one()
@@ -680,59 +1026,13 @@ class ProductModuleProject(models.Model):
             raise UserError(_('Error loading project: %s') % str(e))
     
     def action_load_arkite_steps(self):
-        """Load job steps from Arkite project"""
+        """Load job steps from Arkite project (legacy method - now redirects to load selected job's steps)"""
         self.ensure_one()
         if not self.arkite_project_id:
-            return False
+            raise UserError(_("Please link to an Arkite project first."))
         
-        # Get credentials
-        try:
-            creds = self._get_arkite_credentials()
-            api_base = creds['api_base']
-            api_key = creds['api_key']
-        except Exception:
-            _logger.warning("Could not get credentials for loading steps")
-            return False
-        
-        # Clear existing steps
-        self.arkite_job_step_ids.unlink()
-        
-        try:
-            url = f"{api_base}/projects/{self.arkite_project_id}/steps/"
-            params = {"apiKey": api_key}
-            headers = {"Content-Type": "application/json"}
-            
-            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-            if response.ok:
-                steps = response.json()
-                if isinstance(steps, list):
-                    # Filter for job steps (ProcessId = 0 or null, or Type = "Job")
-                    job_steps = [s for s in steps if s.get("Type") == "Job" or not s.get("ProcessId") or str(s.get("ProcessId")) == "0"]
-                    
-                    for step in job_steps:
-                        self.env['product_module.arkite.job.step.temp'].create({
-                            'project_id': self.id,
-                            'step_id': str(step.get("Id", "")),
-                            'step_name': step.get("Name", "Unnamed"),
-                            'step_type': step.get("StepType", "WORK_INSTRUCTION"),
-                            'step_instruction': step.get("TextInstruction", {}).get("en-US", "") if isinstance(step.get("TextInstruction"), dict) else "",
-                            'sequence': step.get("Index", 0),
-                            'index': step.get("Index", 0),
-                            'parent_step_id': str(step.get("ParentStepId", "")) if step.get("ParentStepId") else "",
-                            'detection_id': str(step.get("DetectionId", "")) if step.get("DetectionId") else "",
-                            'material_id': str(step.get("MaterialId", "")) if step.get("MaterialId") else "",
-                            'button_id': str(step.get("ButtonId", "")) if step.get("ButtonId") else "",
-                        })
-        except requests.exceptions.ConnectionError as e:
-            _logger.error("Connection error loading steps: %s", e, exc_info=True)
-            return False
-        except requests.exceptions.Timeout as e:
-            _logger.error("Timeout error loading steps: %s", e, exc_info=True)
-            return False
-        except Exception as e:
-            _logger.error("Error loading Arkite steps: %s", e, exc_info=True)
-        
-        return False
+        # Load all job steps directly
+        return self.action_load_job_steps()
     
     def action_load_arkite_variants(self):
         """Load variants from Arkite project"""
@@ -825,6 +1125,359 @@ class ProductModuleProject(models.Model):
             _logger.error("Error loading Arkite processes: %s", e, exc_info=True)
         
         return False
+
+    # -------------------------------------------------------------------------
+    # UI helpers: open steps in a dedicated view with native group-by collapse
+    # (avoids custom JS in web.assets_backend which can brick the UI)
+    # -------------------------------------------------------------------------
+
+    def action_open_job_steps_hierarchy(self):
+        """Open Arkite job steps in a dedicated list view grouped by Parent (easy fold/unfold)."""
+        self.ensure_one()
+        # In hierarchy/diagram screens we defer Arkite sync so users can Discard if they don't like changes.
+        ctx = dict(self.env.context, default_project_id=self.id, create=True, edit=True, delete=True, defer_arkite_sync=True, pm_show_save_discard=True)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Arkite Job Steps (Hierarchy)'),
+            'res_model': 'product_module.arkite.job.step',
+            'view_mode': 'list,form',
+            'views': [
+                (self.env.ref('product_module.view_arkite_job_step_tree_manage').id, 'list'),
+                (self.env.ref('product_module.view_arkite_job_step_form').id, 'form'),
+            ],
+            'search_view_id': self.env.ref('product_module.view_arkite_job_step_search').id,
+            'domain': [('project_id', '=', self.id)],
+            # NOTE: do NOT force group_by here; grouped lists disable inline "Add a line".
+            # Users can still fold/unfold by using the Group By > Parent filter.
+            'context': ctx,
+            'target': 'new',
+        }
+
+    def action_open_process_steps_hierarchy(self):
+        """Open Arkite process steps in a dedicated list view grouped by Parent (easy fold/unfold).
+
+        If a process is selected on the project form, filter to that process.
+        """
+        self.ensure_one()
+        domain = [('project_id', '=', self.id)]
+        process_id = getattr(self, 'selected_process_id_char', False)
+        if process_id:
+            domain.append(('process_id', '=', process_id))
+
+        ctx = dict(self.env.context, default_project_id=self.id, create=True, edit=True, delete=True, defer_arkite_sync=True, pm_show_save_discard=True)
+        if process_id:
+            ctx['default_process_id'] = process_id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Arkite Process Steps (Hierarchy)'),
+            'res_model': 'product_module.arkite.process.step',
+            'view_mode': 'list,form',
+            'views': [
+                (self.env.ref('product_module.view_arkite_process_step_tree_manage').id, 'list'),
+                (self.env.ref('product_module.view_arkite_process_step_form').id, 'form'),
+            ],
+            'search_view_id': self.env.ref('product_module.view_arkite_process_step_search').id,
+            'domain': domain,
+            'context': ctx,
+            'target': 'new',
+        }
+
+    def action_open_job_steps_diagram(self):
+        """Open job steps in the native diagram hierarchy view (drag/reparent)."""
+        self.ensure_one()
+        ctx = dict(self.env.context, default_project_id=self.id, create=True, edit=True, delete=True, defer_arkite_sync=True, pm_show_save_discard=True)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Arkite Job Steps (Diagram)'),
+            'res_model': 'product_module.arkite.job.step',
+            'view_mode': 'hierarchy,form',
+            'views': [
+                (self.env.ref('product_module.view_arkite_job_step_hierarchy').id, 'hierarchy'),
+                (self.env.ref('product_module.view_arkite_job_step_form').id, 'form'),
+            ],
+            'search_view_id': self.env.ref('product_module.view_arkite_job_step_search').id,
+            'domain': [('project_id', '=', self.id)],
+            'context': ctx,
+            # Open as a modal on top of the Project form.
+            'target': 'new',
+        }
+
+    def action_open_process_steps_diagram(self):
+        """Open process steps in the native diagram hierarchy view (drag/reparent)."""
+        self.ensure_one()
+        domain = [('project_id', '=', self.id)]
+        process_id = getattr(self, 'selected_process_id_char', False)
+        if process_id:
+            domain.append(('process_id', '=', process_id))
+        ctx = dict(self.env.context, default_project_id=self.id, create=True, edit=True, delete=True, defer_arkite_sync=True, pm_show_save_discard=True)
+        if process_id:
+            ctx['default_process_id'] = process_id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Arkite Process Steps (Diagram)'),
+            'res_model': 'product_module.arkite.process.step',
+            'view_mode': 'hierarchy,form',
+            'views': [
+                (self.env.ref('product_module.view_arkite_process_step_hierarchy').id, 'hierarchy'),
+                (self.env.ref('product_module.view_arkite_process_step_form').id, 'form'),
+            ],
+            'search_view_id': self.env.ref('product_module.view_arkite_process_step_search').id,
+            'domain': domain,
+            'context': ctx,
+            'target': 'new',
+        }
+
+    # -------------------------------------------------------------------------
+    # Quick-create helpers (Project form buttons)
+    # -------------------------------------------------------------------------
+
+    def action_new_job_step(self):
+        """Open a form to create a new Job Step for this project."""
+        self.ensure_one()
+        ctx = dict(self.env.context, default_project_id=self.id)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('New Job Step'),
+            'res_model': 'product_module.arkite.job.step',
+            'view_mode': 'form',
+            'views': [(self.env.ref('product_module.view_arkite_job_step_form').id, 'form')],
+            'target': 'new',
+            'context': ctx,
+        }
+
+    def action_new_process_step(self):
+        """Open a form to create a new Process Step for the selected process."""
+        self.ensure_one()
+        process_id = getattr(self, 'selected_process_id_char', False)
+        if not process_id:
+            raise UserError(_("Please select a process first."))
+        ctx = dict(self.env.context, default_project_id=self.id, default_process_id=process_id)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('New Process Step'),
+            'res_model': 'product_module.arkite.process.step',
+            'view_mode': 'form',
+            'views': [(self.env.ref('product_module.view_arkite_process_step_form').id, 'form')],
+            'target': 'new',
+            'context': ctx,
+        }
+
+    def action_open_create_process_wizard(self):
+        """Open wizard to create a new (blank) Arkite process with Name/Comment."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+        ctx = dict(
+            self.env.context,
+            default_project_id=self.id,
+            default_mode='create',
+            default_name='New Process',
+            default_comment='',
+            from_process_wizard=True,
+        )
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Create Process'),
+            'res_model': 'product_module.arkite.process.create.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': ctx,
+        }
+
+    def action_open_duplicate_process_wizard(self):
+        """Open wizard to duplicate an existing Arkite process (template selection)."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+        ctx = dict(
+            self.env.context,
+            default_project_id=self.id,
+            default_mode='duplicate',
+            from_process_wizard=True,
+        )
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Duplicate Process'),
+            'res_model': 'product_module.arkite.process.create.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': ctx,
+        }
+    
+    def action_create_process(self):
+        """Duplicate an existing Arkite process (server supports duplicate even when POST-create is broken)."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+        
+        # Get credentials
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception:
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
+        
+        try:
+            # Define request basics up-front
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+
+            # NOTE: On your Arkite server, POST /projects/{id}/processes/ returns HTTP 500
+            # ("Sequence contains no matching element") for all payload variants (tested from inside container).
+            # However, the Guides describe and we verified that *duplicating* an existing process works:
+            # POST /projects/{projectId}/processes/{processId}/duplicate/
+
+            url_list = f"{api_base}/projects/{self.arkite_project_id}/processes/"
+            list_resp = requests.get(url_list, params=params, headers=headers, verify=False, timeout=10)
+            if not list_resp.ok:
+                raise UserError(_("Failed to fetch processes: HTTP %s\n%s") % (list_resp.status_code, (list_resp.text or "")[:500]))
+
+            processes = list_resp.json()
+            if not isinstance(processes, list) or not processes:
+                raise UserError(_(
+                    "No processes exist in this Arkite project.\n\n"
+                    "This Arkite server currently fails POST /projects/{id}/processes/ with an internal error, "
+                    "so Odoo cannot create the first process via API.\n"
+                    "Please create one process in Arkite UI first, then Odoo can duplicate it."
+                ))
+
+            # Pick a template process to duplicate (prefer the Job Selection process)
+            template = None
+            for p in processes:
+                if isinstance(p, dict) and (p.get("Name") or "").strip().lower() == "job selection":
+                    template = p
+                    break
+            if not template:
+                template = processes[0] if isinstance(processes[0], dict) else None
+            if not template or not template.get("Id"):
+                raise UserError(_("Could not determine a template process to duplicate."))
+
+            template_id = str(template.get("Id"))
+            url_dup = f"{api_base}/projects/{self.arkite_project_id}/processes/{template_id}/duplicate/"
+            _logger.info("[ARKITE] Duplicating process %s in project %s", template_id, self.arkite_project_id)
+
+            dup_resp = requests.post(url_dup, params=params, headers=headers, verify=False, timeout=10)
+            if not dup_resp.ok:
+                raise UserError(_("Failed to duplicate process: HTTP %s\n%s") % (dup_resp.status_code, (dup_resp.text or "")[:500]))
+
+            created_process = dup_resp.json() if dup_resp.text else {}
+            if not isinstance(created_process, dict):
+                raise UserError(_("Unexpected response format from Arkite when duplicating a process."))
+
+            if created_process:
+                process_id = str(created_process.get("Id", ""))
+                process_name = created_process.get("Name", "New Process")
+                
+                # Create process temp record
+                process_temp = self.env['product_module.arkite.process.temp'].create({
+                    'project_id': self.id,
+                    'process_id': process_id,
+                    'name': process_name,
+                    'comment': created_process.get("Comment", "")
+                })
+                
+                # Auto-select the newly created process
+                self.selected_process_id_char = process_id
+                self.selected_arkite_process_id = process_id
+
+                # Refresh form so the new process shows immediately without hard reload.
+                return self._action_refresh_current_form()
+            else:
+                raise UserError(_("Unexpected response format from Arkite API"))
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error creating process: %s", e, exc_info=True)
+            raise UserError(_("Error creating process: %s") % str(e))
+
+    def action_create_blank_process(self):
+        """
+        Create a *blank* process for this project.
+
+        Arkite's direct create endpoint POST /projects/{id}/processes/ is broken on this server (HTTP 500),
+        but duplicating a process works. So we duplicate a template process and then delete its steps,
+        resulting in an empty process (still named like '<template> - Copy' because rename API is not implemented).
+        """
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception:
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
+
+        params = {"apiKey": api_key}
+        headers = {"Content-Type": "application/json"}
+
+        # 1) Duplicate an existing process (same logic as action_create_process)
+        url_list = f"{api_base}/projects/{self.arkite_project_id}/processes/"
+        list_resp = requests.get(url_list, params=params, headers=headers, verify=False, timeout=10)
+        if not list_resp.ok:
+            raise UserError(_("Failed to fetch processes: HTTP %s\n%s") % (list_resp.status_code, (list_resp.text or "")[:500]))
+
+        processes = list_resp.json()
+        if not isinstance(processes, list) or not processes:
+            raise UserError(_(
+                "No processes exist in this Arkite project.\n\n"
+                "This Arkite server currently fails POST /projects/{id}/processes/ with an internal error, "
+                "so Odoo cannot create the first process via API.\n"
+                "Please create one process in Arkite UI first, then Odoo can create blank ones by duplicating it."
+            ))
+
+        template = None
+        for p in processes:
+            if isinstance(p, dict) and (p.get("Name") or "").strip().lower() == "job selection":
+                template = p
+                break
+        if not template:
+            template = processes[0] if isinstance(processes[0], dict) else None
+        if not template or not template.get("Id"):
+            raise UserError(_("Could not determine a template process to duplicate."))
+
+        template_id = str(template.get("Id"))
+        url_dup = f"{api_base}/projects/{self.arkite_project_id}/processes/{template_id}/duplicate/"
+        dup_resp = requests.post(url_dup, params=params, headers=headers, verify=False, timeout=10)
+        if not dup_resp.ok:
+            raise UserError(_("Failed to duplicate process: HTTP %s\n%s") % (dup_resp.status_code, (dup_resp.text or "")[:500]))
+
+        created_process = dup_resp.json() if dup_resp.text else {}
+        if not isinstance(created_process, dict) or not created_process.get("Id"):
+            raise UserError(_("Unexpected response format from Arkite when duplicating a process."))
+
+        new_process_id = str(created_process.get("Id"))
+
+        # 2) Delete steps belonging to the new process
+        url_steps_for_process = f"{api_base}/projects/{self.arkite_project_id}/processes/{new_process_id}/steps/"
+        steps_resp = requests.get(url_steps_for_process, params=params, headers=headers, verify=False, timeout=10)
+        if steps_resp.ok:
+            steps = steps_resp.json()
+            if isinstance(steps, list) and steps:
+                for s in steps:
+                    sid = str(s.get("Id", "") or "")
+                    if not sid:
+                        continue
+                    del_url = f"{api_base}/projects/{self.arkite_project_id}/steps/{sid}"
+                    try:
+                        requests.delete(del_url, params=params, headers=headers, verify=False, timeout=10)
+                    except Exception:
+                        # Best-effort cleanup; don't fail the whole action due to one delete.
+                        pass
+
+        # 3) Record + select in Odoo
+        self.env['product_module.arkite.process.temp'].create({
+            'project_id': self.id,
+            'process_id': new_process_id,
+            'name': created_process.get("Name", "New Process"),
+            'comment': created_process.get("Comment", "") or "",
+        })
+        self.selected_process_id_char = new_process_id
+        self.selected_arkite_process_id = new_process_id
+
+        return self._action_refresh_current_form()
     
     def action_load_process_list(self):
         """Load list of available processes (exact copy from wizard)"""
@@ -856,8 +1509,13 @@ class ProductModuleProject(models.Model):
             if not processes:
                 raise UserError(_("No processes found in this project"))
             
-            # Clear existing process records
-            self.arkite_process_ids.unlink()
+            # Clear existing process records (but keep current record if this is called from a row button)
+            keep_id = self.env.context.get('keep_process_temp_id')
+            if keep_id:
+                to_unlink = self.arkite_process_ids.filtered(lambda r: r.id != keep_id)
+                to_unlink.unlink()
+            else:
+                self.arkite_process_ids.unlink()
             
             # Create process temp records
             process_records = []
@@ -880,10 +1538,11 @@ class ProductModuleProject(models.Model):
                 self.selected_process_id_char = process_temp.process_id
                 self.selected_arkite_process_id = process_temp.process_id
                 # Automatically load steps
-                return self.action_load_process_steps()
+                self.action_load_process_steps()
+                return False
             
-            # Reload form to show the loaded processes (one-time action, not disruptive)
-            return {'type': 'ir.actions.client', 'tag': 'reload'}
+            # Don't navigate/refresh the whole page; the one2many should update in-place.
+            return False
         except UserError:
             raise
         except Exception as e:
@@ -1020,7 +1679,7 @@ class ProductModuleProject(models.Model):
                     'sequence': step_index * 10,
                     'index': step_index,
                     'parent_step_id': "",  # Root step has no parent
-                    'parent_step_record': False,  # No parent record
+                    'parent_id': False,  # No parent record
                     'variant_ids': [(6, 0, step_variant_records)] if step_variant_records else [],
                     'for_all_variants': for_all_variants
                 })
@@ -1070,7 +1729,7 @@ class ProductModuleProject(models.Model):
                             'sequence': step_index * 10,
                             'index': step_index,
                             'parent_step_id': parent_step_id,  # Store parent step ID
-                            'parent_step_record': parent_record.id,  # Link to parent record
+                            'parent_id': parent_record.id,  # Link to parent record
                             'variant_ids': [(6, 0, step_variant_records)] if step_variant_records else [],
                             'for_all_variants': for_all_variants
                         })
@@ -1084,8 +1743,314 @@ class ProductModuleProject(models.Model):
             if remaining_child_steps:
                 _logger.warning("[ARKITE] Could not create %s child steps - parent not found", len(remaining_child_steps))
             
-            # Invalidate cache to force field refresh
+            # Invalidate cache to force field refresh; UI should update in place.
             self.invalidate_recordset(['arkite_process_step_ids', 'selected_arkite_process_name'])
+            return False
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("Error loading process steps: %s", e, exc_info=True)
+            raise UserError(_("Error loading process steps: %s") % str(e))
+    
+    def action_load_job_steps(self):
+        """Load all job steps from Arkite project (steps with Type='Job' and ProcessId=0)"""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("Please link to an Arkite project first."))
+        
+        # Get credentials
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception:
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
+        
+        # Clear existing job steps - this resets all changes and reloads from Arkite
+        # Use sudo() to ensure we can delete all records even if there are constraints
+        try:
+            self.arkite_job_step_ids.sudo().unlink()
+        except Exception as e:
+            _logger.warning("[ARKITE] Error clearing job steps, trying force unlink: %s", e)
+            # Force unlink all job steps for this project
+            all_job_steps = self.env['product_module.arkite.job.step'].search([
+                ('project_id', '=', self.id)
+            ])
+            all_job_steps.sudo().unlink()
+        
+        try:
+            # Get all steps from the project
+            url_steps = f"{api_base}/projects/{self.arkite_project_id}/steps/"
+            params = {"apiKey": api_key}
+            headers = {"Content-Type": "application/json"}
+            
+            response = requests.get(url_steps, params=params, headers=headers, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(_("Failed to fetch steps: HTTP %s") % response.status_code)
+            
+            all_steps = response.json()
+            if not isinstance(all_steps, list):
+                raise UserError(_("Unexpected response format for steps"))
+            
+            # Filter for job steps: Type='Job' and ProcessId=0
+            job_steps = [s for s in all_steps if s.get("Type") == "Job" and (not s.get("ProcessId") or str(s.get("ProcessId", "")) == "0")]
+            
+            if not job_steps:
+                raise UserError(_("No job steps found. Job steps are steps with Type='Job' and ProcessId=0."))
+            
+            # Log sample of step names from API for debugging - FULL DETAILS
+            _logger.info("[ARKITE] Sample of job step names from API (first 5):")
+            for i, step in enumerate(job_steps[:5]):
+                step_id = step.get("Id", "N/A")
+                step_name = step.get("Name", "MISSING")
+                step_index = step.get("Index", "N/A")
+                # Log ALL fields to see what's available
+                all_keys = list(step.keys())
+                _logger.info("[ARKITE]   Step %s: Id=%s, Name='%s' (type: %s, raw: %s), Index=%s", 
+                           i+1, step_id, step_name, type(step_name).__name__, repr(step_name), step_index)
+                _logger.info("[ARKITE]   Step %s - All fields: %s", i+1, all_keys)
+                _logger.info("[ARKITE]   Step %s - Full data: %s", i+1, json.dumps({k: v for k, v in step.items() if k not in ['TextInstruction', 'StepConditions']}, indent=2))
+                
+                # Log StepType and Comment for steps with missing names
+                if not step.get("Name") or not str(step.get("Name", "")).strip():
+                    step_type_debug = step.get("StepType", "N/A")
+                    comment_debug = step.get("Comment", "N/A")
+                    step_id_debug = step.get("Id", "N/A")
+                    _logger.info("[ARKITE]   Step %s (ID: %s) has no Name - StepType: '%s', Comment: '%s'", i+1, step_id_debug, step_type_debug, comment_debug)
+            
+            # Sort by Index to maintain order
+            job_steps.sort(key=lambda x: x.get("Index", 0))
+            
+            _logger.info("[ARKITE] Found %s job steps", len(job_steps))
+            
+            # Get variants
+            url_variants = f"{api_base}/projects/{self.arkite_project_id}/variants/"
+            response_variants = requests.get(url_variants, params=params, headers=headers, verify=False, timeout=10)
+            
+            # Create variant temp records if needed
+            variant_map = {}
+            if response_variants.ok:
+                variants = response_variants.json()
+                if isinstance(variants, list):
+                    for v in variants:
+                        variant_id = str(v.get("Id", ""))
+                        variant_temp = self.env['product_module.arkite.variant.temp'].search([
+                            ('variant_id', '=', variant_id),
+                            ('project_id', '=', self.id)
+                        ], limit=1)
+                        if not variant_temp:
+                            variant_temp = self.env['product_module.arkite.variant.temp'].create({
+                                'project_id': self.id,
+                                'variant_id': variant_id,
+                                'name': v.get("Name", "Unknown"),
+                                'description': v.get("Description", "")
+                            })
+                        variant_map[variant_id] = variant_temp
+            
+            # Separate root steps from child steps
+            root_steps = [s for s in job_steps if not s.get("ParentStepId") or str(s.get("ParentStepId", "")) == "0" or str(s.get("ParentStepId", "")) == ""]
+            child_steps = [s for s in job_steps if s.get("ParentStepId") and str(s.get("ParentStepId", "")) != "0" and str(s.get("ParentStepId", "")) != ""]
+            
+            root_steps.sort(key=lambda x: x.get("Index", 0))
+            child_steps.sort(key=lambda x: x.get("Index", 0))
+            
+            _logger.info("[ARKITE] Job root steps: %s, child steps: %s", len(root_steps), len(child_steps))
+            
+            # Create a mapping of step_id to record for parent lookup
+            step_id_to_record = {}
+            
+            # Store the root step ID - all steps in this job should use this as job_step_id
+            root_step_id = None
+            if root_steps:
+                # Use the first root step's ID as the job_step_id for all steps
+                root_step_id = str(root_steps[0].get("Id", ""))
+            
+            # Create root steps first
+            for step in root_steps:
+                step_id = str(step.get("Id", ""))
+                if not step_id:
+                    _logger.warning("[ARKITE] Skipping root step with empty ID")
+                    continue
+                
+                # Extract step name - handle None, empty string, and whitespace-only properly
+                step_name_raw = step.get("Name")
+                if step_name_raw is None:
+                    step_name = None
+                else:
+                    step_name = str(step_name_raw).strip() if step_name_raw else None
+                
+                # Only use fallback if name is truly missing or empty
+                if not step_name:
+                    # Try alternative fields before using Index fallback
+                    step_type_val = step.get("StepType", "")
+                    comment_val = step.get("Comment", "")
+                    step_index_val = step.get("Index")
+                    
+                    # Try StepType first (e.g., "WORK_INSTRUCTION", "COMPOSITE")
+                    if step_type_val and step_type_val.strip():
+                        step_name = step_type_val.replace("_", " ").title()
+                        _logger.info("[ARKITE] Root step %s has no Name, using StepType: '%s'", step_id, step_name)
+                    # Try Comment second
+                    elif comment_val and comment_val.strip():
+                        step_name = comment_val.strip()[:50]  # Limit length
+                        _logger.info("[ARKITE] Root step %s has no Name, using Comment: '%s'", step_id, step_name)
+                    # Fallback to Index
+                    elif step_index_val is not None:
+                        step_name = f"Step {step_index_val}"
+                        _logger.warning("[ARKITE] Root step %s has no Name, using Index fallback: '%s'", step_id, step_name)
+                    else:
+                        step_name = f"Step {step_id}" if step_id else "Unnamed Step"
+                        _logger.warning("[ARKITE] Root step %s has no Name, using ID fallback: '%s'", step_id, step_name)
+                else:
+                    _logger.debug("[ARKITE] Root step %s loaded with name: '%s' (raw: %s)", step_id, step_name, step_name_raw)
+                step_type = step.get("StepType", "WORK_INSTRUCTION")
+                variant_ids = step.get("VariantIds", [])
+                for_all_variants = step.get("ForAllVariants", False)
+                step_index = step.get("Index", 0)
+                
+                # Get variant records for this step
+                step_variant_records = []
+                for vid in variant_ids:
+                    variant_id_str = str(vid)
+                    if variant_id_str in variant_map:
+                        step_variant_records.append(variant_map[variant_id_str].id)
+                
+                # Use root_step_id for job_step_id (or step_id if this is the first root step)
+                job_step_id_value = root_step_id or step_id
+                
+                # Log what we're about to create
+                _logger.info("[ARKITE] Creating root step record: step_id=%s, step_name='%s' (from raw: %s)", 
+                           step_id, step_name, repr(step.get("Name")))
+                
+                record = self.env['product_module.arkite.job.step'].create({
+                    'project_id': self.id,
+                    'job_step_id': job_step_id_value,  # Use root step ID for all steps in this job
+                    'step_id': step_id,
+                    'step_name': step_name,
+                    'step_type': step_type,
+                    'sequence': step_index * 10,
+                    'index': step_index,
+                    'parent_step_id': "",  # Root step has no parent
+                    'parent_id': False,  # No parent record
+                    'variant_ids': [(6, 0, step_variant_records)] if step_variant_records else [],
+                    'for_all_variants': for_all_variants
+                })
+                step_id_to_record[step_id] = record
+            
+            # Create child steps (iteratively, handling nested hierarchy)
+            remaining_child_steps = child_steps.copy()
+            max_iterations = 100  # Prevent infinite loops
+            iteration = 0
+            
+            while remaining_child_steps and iteration < max_iterations:
+                iteration += 1
+                processed_this_iteration = []
+                
+                for step in remaining_child_steps:
+                    parent_step_id = str(step.get("ParentStepId", ""))
+                    
+                    # Check if parent exists in our records
+                    if parent_step_id in step_id_to_record:
+                        step_id = str(step.get("Id", ""))
+                        if not step_id:
+                            _logger.warning("[ARKITE] Skipping child step with empty ID")
+                            continue
+                        
+                        # Extract step name - handle None, empty string, and whitespace-only properly
+                        step_name_raw = step.get("Name")
+                        if step_name_raw is None:
+                            step_name = None
+                        else:
+                            step_name = str(step_name_raw).strip() if step_name_raw else None
+                        
+                        # Only use fallback if name is truly missing or empty
+                        if not step_name:
+                            # Try alternative fields before using Index fallback
+                            step_type_val = step.get("StepType", "")
+                            comment_val = step.get("Comment", "")
+                            step_index_val = step.get("Index")
+                            
+                            # Try StepType first (e.g., "WORK_INSTRUCTION", "COMPOSITE")
+                            if step_type_val and step_type_val.strip():
+                                step_name = step_type_val.replace("_", " ").title()
+                                _logger.info("[ARKITE] Child step %s has no Name, using StepType: '%s'", step_id, step_name)
+                            # Try Comment second
+                            elif comment_val and comment_val.strip():
+                                step_name = comment_val.strip()[:50]  # Limit length
+                                _logger.info("[ARKITE] Child step %s has no Name, using Comment: '%s'", step_id, step_name)
+                            # Fallback to Index
+                            elif step_index_val is not None:
+                                step_name = f"Step {step_index_val}"
+                                _logger.warning("[ARKITE] Child step %s has no Name, using Index fallback: '%s'", step_id, step_name)
+                            else:
+                                step_name = f"Step {step_id}" if step_id else "Unnamed Step"
+                                _logger.warning("[ARKITE] Child step %s has no Name, using ID fallback: '%s'", step_id, step_name)
+                        else:
+                            _logger.debug("[ARKITE] Child step %s loaded with name: '%s' (raw: %s)", step_id, step_name, step_name_raw)
+                        step_type = step.get("StepType", "WORK_INSTRUCTION")
+                        variant_ids = step.get("VariantIds", [])
+                        for_all_variants = step.get("ForAllVariants", False)
+                        step_index = step.get("Index", 0)
+                        
+                        # Get variant records for this step
+                        step_variant_records = []
+                        for vid in variant_ids:
+                            variant_id_str = str(vid)
+                            if variant_id_str in variant_map:
+                                step_variant_records.append(variant_map[variant_id_str].id)
+                        
+                        parent_record = step_id_to_record[parent_step_id]
+                        
+                        # Use root_step_id for job_step_id (all steps in a job share the same job_step_id)
+                        job_step_id_value = root_step_id or step_id
+                        if not job_step_id_value:
+                            _logger.warning("[ARKITE] No root_step_id available, using step_id: %s", step_id)
+                            job_step_id_value = step_id
+                        
+                        # Log what we're about to create
+                        _logger.info("[ARKITE] Creating child step record: step_id=%s, step_name='%s' (from raw: %s)", 
+                                   step_id, step_name, repr(step.get("Name")))
+                        
+                        record = self.env['product_module.arkite.job.step'].create({
+                            'project_id': self.id,
+                            'job_step_id': job_step_id_value,  # Use root step ID for all steps in this job
+                            'step_id': step_id,
+                            'step_name': step_name,
+                            'step_type': step_type,
+                            'sequence': step_index * 10,
+                            'index': step_index,
+                            'parent_step_id': parent_step_id,  # Store parent step ID
+                            'parent_id': parent_record.id,  # Link to parent record - this is the key!
+                            'variant_ids': [(6, 0, step_variant_records)] if step_variant_records else [],
+                            'for_all_variants': for_all_variants
+                        })
+                        step_id_to_record[step_id] = record
+                        processed_this_iteration.append(step)
+                
+                # Remove processed steps
+                for step in processed_this_iteration:
+                    remaining_child_steps.remove(step)
+            
+            if remaining_child_steps:
+                _logger.warning("[ARKITE] Could not create %s child steps - parent not found", len(remaining_child_steps))
+            
+            # Refresh computed fields for all created records
+            all_created_records = self.env['product_module.arkite.job.step'].search([
+                ('project_id', '=', self.id)
+            ])
+            if all_created_records:
+                # Invalidate first to clear any cached values
+                all_created_records.invalidate_recordset(['hierarchical_level', 'parent_step_name', 'hierarchy_level', 'hierarchy_path', 'hierarchy_css_class', 'hierarchical_level_html'])
+                # Then recompute in correct order
+                all_created_records._compute_hierarchical_level()
+                all_created_records._compute_hierarchy_level()
+                all_created_records._compute_hierarchy_path()
+                all_created_records._compute_parent_step_name()
+                all_created_records._compute_hierarchy_css_class()
+                all_created_records._compute_hierarchical_level_html()
+            
+            # Invalidate cache to force field refresh
+            self.invalidate_recordset(['arkite_job_step_ids'])
             
             # Ensure data is committed
             self.env.cr.commit()
@@ -1095,8 +2060,8 @@ class ProductModuleProject(models.Model):
         except UserError:
             raise
         except Exception as e:
-            _logger.error("Error loading process steps: %s", e, exc_info=True)
-            raise UserError(_("Error loading process steps: %s") % str(e))
+            _logger.error("Error loading job steps: %s", e, exc_info=True)
+            raise UserError(_("Error loading job steps: %s") % str(e))
     
     def action_load_arkite_process_steps(self):
         """Load process steps for the selected process"""
@@ -1157,8 +2122,17 @@ class ProductModuleProject(models.Model):
                     except Exception as e:
                         _logger.warning("Could not load variants for process steps: %s", e)
                     
-                    # Create process step records
-                    for step in process_steps:
+                    # Separate root and child steps for proper hierarchy
+                    root_steps = [s for s in process_steps if not s.get("ParentStepId") or str(s.get("ParentStepId", "")) == "0" or str(s.get("ParentStepId", "")) == ""]
+                    child_steps = [s for s in process_steps if s.get("ParentStepId") and str(s.get("ParentStepId", "")) != "0" and str(s.get("ParentStepId", "")) != ""]
+                    
+                    _logger.info("[ARKITE] Process steps: %s root, %s children", len(root_steps), len(child_steps))
+                    
+                    # Map step_id to record for parent lookup
+                    step_id_to_record = {}
+                    
+                    # Create root steps first
+                    for step in root_steps:
                         step_variants = []
                         variant_ids = step.get("VariantIds", [])
                         if variant_ids:
@@ -1167,17 +2141,78 @@ class ProductModuleProject(models.Model):
                                 if variant_id_str in variants and variants[variant_id_str]:
                                     step_variants.append((4, variants[variant_id_str].id))
                         
-                        self.env['product_module.arkite.process.step'].create({
+                        step_id = str(step.get("Id", ""))
+                        record = self.env['product_module.arkite.process.step'].with_context(skip_arkite_sync=True).create({
                             'project_id': self.id,
                             'process_id': selected_process_id_str,
-                            'step_id': str(step.get("Id", "")),
+                            'step_id': step_id,
                             'step_name': step.get("Name", "Unnamed"),
                             'step_type': step.get("StepType", "WORK_INSTRUCTION"),
-                            'sequence': step.get("Index", 0) * 10,  # Convert Index to sequence
+                            'sequence': step.get("Index", 0) * 10,
                             'index': step.get("Index", 0),
+                            'parent_step_id': "",
+                            'parent_id': False,
                             'for_all_variants': step.get("ForAllVariants", False),
                             'variant_ids': step_variants,
                         })
+                        step_id_to_record[step_id] = record
+                    
+                    # Create child steps iteratively
+                    remaining = child_steps.copy()
+                    max_iter = 50
+                    for _ in range(max_iter):
+                        if not remaining:
+                            break
+                        processed = []
+                        for step in remaining:
+                            parent_id = str(step.get("ParentStepId", ""))
+                            if parent_id in step_id_to_record:
+                                step_variants = []
+                                variant_ids = step.get("VariantIds", [])
+                                if variant_ids:
+                                    for variant_id in variant_ids:
+                                        variant_id_str = str(variant_id)
+                                        if variant_id_str in variants and variants[variant_id_str]:
+                                            step_variants.append((4, variants[variant_id_str].id))
+                                
+                                step_id = str(step.get("Id", ""))
+                                parent_record = step_id_to_record[parent_id]
+                                record = self.env['product_module.arkite.process.step'].with_context(skip_arkite_sync=True).create({
+                                    'project_id': self.id,
+                                    'process_id': selected_process_id_str,
+                                    'step_id': step_id,
+                                    'step_name': step.get("Name", "Unnamed"),
+                                    'step_type': step.get("StepType", "WORK_INSTRUCTION"),
+                                    'sequence': step.get("Index", 0) * 10,
+                                    'index': step.get("Index", 0),
+                                    'parent_step_id': parent_id,
+                                    'parent_id': parent_record.id,
+                                    'for_all_variants': step.get("ForAllVariants", False),
+                                    'variant_ids': step_variants,
+                                })
+                                step_id_to_record[step_id] = record
+                                processed.append(step)
+                        for s in processed:
+                            remaining.remove(s)
+                    
+                    if remaining:
+                        _logger.warning("[ARKITE] %s process steps orphaned (parent not found)", len(remaining))
+                    
+                    # Force recomputation of hierarchy fields after all steps are created
+                    all_created_records = self.env['product_module.arkite.process.step'].search([
+                        ('project_id', '=', self.id),
+                        ('process_id', '=', selected_process_id_str)
+                    ])
+                    if all_created_records:
+                        # Invalidate first to clear any cached values
+                        all_created_records.invalidate_recordset(['hierarchical_level', 'parent_step_name', 'hierarchy_level', 'hierarchy_path', 'hierarchy_css_class', 'hierarchical_level_html'])
+                        # Then recompute
+                        all_created_records._compute_hierarchical_level()
+                        all_created_records._compute_hierarchy_level()
+                        all_created_records._compute_hierarchy_path()
+                        all_created_records._compute_parent_step_name()
+                        all_created_records._compute_hierarchy_css_class()
+                        all_created_records._compute_hierarchical_level_html()
                     
                     return {
                         'type': 'ir.actions.client',
@@ -1641,7 +2676,196 @@ class ProductModuleProject(models.Model):
                 'sticky': True if error_messages else False,
             }
         }
-    
+
+    def action_sync_materials_from_arkite(self):
+        """Load/sync materials from Arkite into this project's Materials Used (material_ids)."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_('Please create or link an Arkite project first.'))
+
+        # Get credentials
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception as e:
+            _logger.error("[ARKITE SYNC] Credential error (materials): %s", e, exc_info=True)
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration. Error: %s') % str(e))
+
+        created_count = 0
+        updated_count = 0
+
+        try:
+            url = f"{api_base}/projects/{self.arkite_project_id}/materials/"
+            params = {"apiKey": api_key}
+            response = requests.get(url, params=params, verify=False, timeout=10)
+            if not response.ok:
+                raise UserError(_('Failed to fetch materials: HTTP %s') % response.status_code)
+
+            arkite_materials = response.json()
+            if not isinstance(arkite_materials, list):
+                raise UserError(_('Unexpected response format from Arkite API (materials).'))
+
+            arkite_material_ids = {str(m.get("Id", "")) for m in arkite_materials if m.get("Id")}
+            existing_by_arkite_id = {
+                (m.arkite_material_id or ""): m
+                for m in self.material_ids.filtered(lambda m: m.project_id == self and m.arkite_material_id)
+            }
+
+            def _map_type(arkite_type, fallback="StandardMaterial"):
+                if arkite_type == "PickingBinMaterial":
+                    return "PickingBinMaterial"
+                if arkite_type == "StandardMaterial":
+                    return "StandardMaterial"
+                if arkite_type == "Material" or not arkite_type:
+                    return "StandardMaterial"
+                return fallback
+
+            # Create missing materials by Arkite ID
+            for material_data in arkite_materials:
+                arkite_id = str(material_data.get("Id", "") or "")
+                if not arkite_id or arkite_id in existing_by_arkite_id:
+                    continue
+
+                picking_bin_ids = material_data.get("PickingBinIds", [])
+                picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                arkite_type = material_data.get("Type", "")
+                odoo_type = _map_type(arkite_type)
+
+                self.env['product_module.material'].create({
+                    'project_id': self.id,
+                    'page_id': self.page_id.id if self.page_id else False,
+                    'name': material_data.get("Name", "Unnamed"),
+                    'material_type': odoo_type,
+                    'description': material_data.get("Description", ""),
+                    'image_id': str(material_data.get("ImageId", "")) if material_data.get("ImageId") and material_data.get("ImageId") != "0" else "",
+                    'picking_bin_ids_text': picking_bin_str,
+                    'arkite_material_id': arkite_id,
+                })
+                created_count += 1
+
+            # Update existing + link by name where possible
+            for material in self.material_ids.filtered(lambda m: m.project_id == self):
+                if material.arkite_material_id and material.arkite_material_id in arkite_material_ids:
+                    match = next((m for m in arkite_materials if str(m.get("Id", "")) == material.arkite_material_id), None)
+                    if not match:
+                        continue
+                    picking_bin_ids = match.get("PickingBinIds", [])
+                    picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                    arkite_type = match.get("Type", "")
+                    odoo_type = _map_type(arkite_type, fallback=material.material_type)
+                    material.write({
+                        'name': match.get("Name", material.name),
+                        'material_type': odoo_type,
+                        'description': match.get("Description", material.description or ""),
+                        'image_id': str(match.get("ImageId", "")) if match.get("ImageId") else material.image_id,
+                        'picking_bin_ids_text': picking_bin_str,
+                    })
+                    updated_count += 1
+                elif not material.arkite_material_id:
+                    # Try match by name
+                    match = next((m for m in arkite_materials if (m.get("Name", "") and m.get("Name", "") == material.name)), None)
+                    if not match:
+                        continue
+                    picking_bin_ids = match.get("PickingBinIds", [])
+                    picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                    arkite_type = match.get("Type", "")
+                    odoo_type = _map_type(arkite_type, fallback=material.material_type)
+                    material.write({
+                        'arkite_material_id': str(match.get("Id", "")),
+                        'material_type': odoo_type,
+                        'description': match.get("Description", material.description or ""),
+                        'image_id': str(match.get("ImageId", "")) if match.get("ImageId") else material.image_id,
+                        'picking_bin_ids_text': picking_bin_str,
+                    })
+                    updated_count += 1
+
+            self.invalidate_recordset(['material_ids'])
+
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error("[ARKITE SYNC] Error syncing materials: %s", e, exc_info=True)
+            raise UserError(_('Error loading materials: %s') % str(e))
+
+        # Optionally fetch images right after sync so the user sees them immediately.
+        # This is best-effort; failures don't block material sync.
+        try:
+            import base64
+            for mat in self.material_ids.filtered(lambda m: m.image_id and not m.image):
+                img_bytes = self._arkite_download_image_bytes(api_base, api_key, mat.image_id)
+                if img_bytes:
+                    mat.image = base64.b64encode(img_bytes)
+        except Exception as e:
+            _logger.info("[ARKITE IMAGE] Skipped fetching some material images after sync: %s", e)
+
+        msg = _('Materials synced from Arkite: %s new, %s updated.') % (created_count, updated_count)
+        # Do NOT return an act_window refresh here.
+        # It forces modal forms to navigate into a full-page form.
+        # The UI reload is handled by a small JS hook after the button executes.
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Materials Loaded'),
+                'message': msg,
+                'type': 'success' if (created_count or updated_count) else 'info',
+                'sticky': False,
+            }
+        }
+
+    def _arkite_download_image_bytes(self, api_base, api_key, image_id):
+        """Best-effort download of an Arkite image by ID. Returns raw bytes or None."""
+        self.ensure_one()
+        client = ArkiteClient(api_base=api_base, api_key=api_key, verify_ssl=False, timeout_sec=20)
+        return client.download_image_bytes(str(self.arkite_project_id), str(image_id))
+
+    def action_fetch_material_images_from_arkite(self):
+        """Fetch material images from Arkite (by image_id) into the Materials Used list."""
+        import base64
+
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_('Please create or link an Arkite project first.'))
+
+        try:
+            creds = self._get_arkite_credentials()
+            api_base = creds['api_base']
+            api_key = creds['api_key']
+        except Exception as e:
+            _logger.error("[ARKITE IMAGE] Credential error: %s", e, exc_info=True)
+            raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
+
+        fetched = 0
+        skipped = 0
+        failed = 0
+
+        # Only fill missing images by default (avoid overwriting any uploaded ones)
+        materials = self.material_ids.filtered(lambda m: m.image_id)
+        for mat in materials:
+            if mat.image:
+                skipped += 1
+                continue
+            img_bytes = self._arkite_download_image_bytes(api_base, api_key, mat.image_id)
+            if not img_bytes:
+                failed += 1
+                continue
+            mat.image = base64.b64encode(img_bytes)
+            fetched += 1
+
+        msg = _("Fetched %s image(s). Skipped %s (already had image). Failed %s.") % (fetched, skipped, failed)
+        # Do NOT return an act_window refresh here for the same reason as materials sync.
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Images Updated'),
+                'message': msg,
+                'type': 'success' if fetched else ('warning' if failed else 'info'),
+                'sticky': False,
+            }
+        }
+
     def action_link_existing_materials(self):
         """Open a wizard to select and link existing materials to this project"""
         self.ensure_one()
@@ -2031,6 +3255,101 @@ class ProductModuleProject(models.Model):
         
         result = super().write(vals)
         
+        # Sync step sequence changes to Arkite when steps are reordered
+        if self.arkite_project_id:
+            try:
+                creds = self._get_arkite_credentials()
+                api_base = creds['api_base']
+                api_key = creds['api_key']
+                
+                # Handle process step reordering
+                if 'arkite_process_step_ids' in vals:
+                    _logger.info("[ARKITE] Process steps reordered, syncing to Arkite...")
+                    # Get all process steps sorted by sequence (current order)
+                    sorted_steps = self.arkite_process_step_ids.sorted('sequence')
+                    
+                    # Filter to only root steps (no parent) for reordering
+                    root_steps = sorted_steps.filtered(lambda s: not s.parent_id)
+                    
+                    for idx, step in enumerate(root_steps):
+                        if not step.step_id:
+                            continue
+                        new_index = idx  # Index starts at 0
+                        current_arkite_index = step.index if step.index is not False else None
+                        
+                        # Always update to ensure sync (don't check if different, just update)
+                        try:
+                            url = f"{api_base}/projects/{self.arkite_project_id}/steps/{step.step_id}/"
+                            params = {"apiKey": api_key}
+                            headers = {"Content-Type": "application/json"}
+                            
+                            # Get current step data
+                            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                            if response.ok:
+                                step_data = response.json()
+                                old_index = step_data.get("Index", 0)
+                                step_data["Index"] = new_index
+                                
+                                patch_response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+                                if patch_response.ok:
+                                    # Update our local index and sequence
+                                    step.with_context(skip_arkite_sync=True).write({
+                                        'index': new_index,
+                                        'sequence': new_index * 10
+                                    })
+                                    _logger.info("[ARKITE] Updated process step %s Index from %s to %s", step.step_id, old_index, new_index)
+                                else:
+                                    _logger.warning("[ARKITE] Failed to update process step %s: HTTP %s - %s", step.step_id, patch_response.status_code, patch_response.text[:200])
+                            else:
+                                _logger.warning("[ARKITE] Could not fetch process step %s: HTTP %s", step.step_id, response.status_code)
+                        except Exception as e:
+                            _logger.error("[ARKITE] Error updating process step %s: %s", step.step_id, e, exc_info=True)
+                
+                # Handle job step reordering
+                if 'arkite_job_step_ids' in vals:
+                    _logger.info("[ARKITE] Job steps reordered, syncing to Arkite...")
+                    # Get all job steps sorted by sequence (current order)
+                    sorted_steps = self.arkite_job_step_ids.sorted('sequence')
+                    
+                    # Filter to only root steps (no parent) for reordering
+                    root_steps = sorted_steps.filtered(lambda s: not s.parent_id)
+                    
+                    for idx, step in enumerate(root_steps):
+                        if not step.step_id:
+                            continue
+                        new_index = idx  # Index starts at 0
+                        current_arkite_index = step.index if step.index is not False else None
+                        
+                        # Always update to ensure sync
+                        try:
+                            url = f"{api_base}/projects/{self.arkite_project_id}/steps/{step.step_id}/"
+                            params = {"apiKey": api_key}
+                            headers = {"Content-Type": "application/json"}
+                            
+                            # Get current step data
+                            response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+                            if response.ok:
+                                step_data = response.json()
+                                old_index = step_data.get("Index", 0)
+                                step_data["Index"] = new_index
+                                
+                                patch_response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+                                if patch_response.ok:
+                                    # Update our local index and sequence
+                                    step.with_context(skip_arkite_sync=True).write({
+                                        'index': new_index,
+                                        'sequence': new_index * 10
+                                    })
+                                    _logger.info("[ARKITE] Updated job step %s Index from %s to %s", step.step_id, old_index, new_index)
+                                else:
+                                    _logger.warning("[ARKITE] Failed to update job step %s: HTTP %s - %s", step.step_id, patch_response.status_code, patch_response.text[:200])
+                            else:
+                                _logger.warning("[ARKITE] Could not fetch job step %s: HTTP %s", step.step_id, response.status_code)
+                        except Exception as e:
+                            _logger.error("[ARKITE] Error updating job step %s: %s", step.step_id, e, exc_info=True)
+            except Exception as e:
+                _logger.warning("[ARKITE] Error syncing step order to Arkite: %s", e)
+        
         # After saving, sync all materials to Arkite if project has Arkite project linked
         if self.arkite_project_id:
             # Get current materials with Arkite IDs
@@ -2069,5 +3388,54 @@ class ProductModuleProject(models.Model):
                     else:
                         material._sync_to_arkite(create=False)
         
+        return result
+
+    def _arkite_sync_all_staged_hierarchies(self):
+        """Push any staged hierarchy changes (job + process steps) to Arkite."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            return
+
+        # Job steps: sync all for project
+        try:
+            self.env['product_module.arkite.job.step'].with_context(default_project_id=self.id).pm_action_save_all()
+        except Exception as e:
+            raise UserError(_("Failed to sync Job Steps to Arkite:\n%s") % str(e))
+
+        # Process steps: sync per process_id
+        process_ids = self.env['product_module.arkite.process.step'].search([
+            ('project_id', '=', self.id),
+            ('process_id', '!=', False),
+        ]).mapped('process_id')
+        for pid in sorted(set(process_ids)):
+            try:
+                self.env['product_module.arkite.process.step'].with_context(
+                    default_project_id=self.id,
+                    default_process_id=pid,
+                ).pm_action_save_all()
+            except Exception as e:
+                raise UserError(_("Failed to sync Process Steps to Arkite (Process %s):\n%s") % (pid, str(e)))
+
+    def write(self, vals):
+        """Override write to sync all materials to Arkite when project is saved, and delete removed materials"""
+        # Track materials before write to detect removals
+        materials_before = set()
+        if self.arkite_project_id and 'material_ids' not in vals:
+            # If material_ids is being modified, track current materials
+            materials_before = set(self.material_ids.filtered(lambda m: m.project_id == self and m.arkite_material_id).mapped('arkite_material_id'))
+
+        result = super().write(vals)
+
+        # Existing behavior: materials + (legacy) step reorder sync blocks remain below
+        # (â€¦ existing code continues â€¦)
+
+        # At the very end of saving the Project in the form, if we have staged hierarchy changes,
+        # push them to Arkite once and clear the flag.
+        if not self.env.context.get('skip_arkite_hierarchy_autosync'):
+            for project in self:
+                if project.arkite_project_id and project.arkite_hierarchy_dirty:
+                    project._arkite_sync_all_staged_hierarchies()
+                    project.with_context(skip_arkite_hierarchy_autosync=True).write({'arkite_hierarchy_dirty': False})
+
         return result
 

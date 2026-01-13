@@ -1,5 +1,9 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# Husky is optional in this repo (esp. on fresh checkouts / CI).
+# If husky isn't installed, don't block commits.
+if [ -f "$(dirname "$0")/_/husky.sh" ]; then
+  . "$(dirname "$0")/_/husky.sh"
+fi
 
 COMMIT_MSG_FILE="$1"
 PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: '
