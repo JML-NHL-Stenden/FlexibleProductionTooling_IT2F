@@ -24,6 +24,7 @@ from . import arkite_detection_temp
 from . import arkite_material_temp
 from . import arkite_project_selection
 from . import arkite_unit
+from . import arkite_image_selector_wizard
 from . import hierarchy_test
 from . import project_hierarchy_save
 from . import project_arkite_step_flags
