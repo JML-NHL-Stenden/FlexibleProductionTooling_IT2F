@@ -77,18 +77,18 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                                 <div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Image ID</div>
-                                        <button name="action_browse_arkite_images" 
+                                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Image</div>
+                                        <button name="action_select_arkite_image" 
                                                 type="object" 
-                                                class="btn btn-sm btn-info"
-                                                string="Browse"
-                                                icon="fa-image"
+                                                class="btn btn-sm btn-primary"
+                                                string="Select from Arkite"
+                                                icon="fa-images"
                                                 invisible="not project_id and not project_ids"
-                                                help="Browse available images from Arkite project"/>
+                                                help="Browse and select an image from Arkite project"/>
                                     </div>
-                                    <field name="image_id" placeholder="Enter Image ID or upload image above" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace;"/>
+                                    <field name="image_id" placeholder="Click 'Select from Arkite' to choose an image" readonly="1" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace; background: #f8f9fa;"/>
                                     <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
-                                        <i class="fa fa-info-circle"/> Upload an image above to automatically send it to Arkite and get the Image ID, or enter an existing Image ID manually.
+                                        <i class="fa fa-lightbulb" style="color: #ffc107;"/> <strong>Tip:</strong> Click "Select from Arkite" to browse and select an existing image, or upload a new image above to automatically send it to Arkite.
                                     </div>
                                 </div>
                                 <div>
