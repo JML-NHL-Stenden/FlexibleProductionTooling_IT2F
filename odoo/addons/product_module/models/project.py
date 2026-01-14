@@ -297,6 +297,14 @@ class ProductModuleProject(models.Model):
         string='Detections',
         help='Arkite detections in the project'
     )
+    
+    # Project detection information (from linked Arkite project)
+    workstation_detection_info = fields.Html(
+        string='Project Detections',
+        compute='_compute_workstation_detection_info',
+        help='Detections configured in the linked Arkite project'
+    )
+    
     arkite_material_ids = fields.One2many(
         'product_module.arkite.material.temp',
         'project_id',
@@ -541,6 +549,161 @@ class ProductModuleProject(models.Model):
                 record.qr_image_name = f'qr_{code}.png'
             else:
                 record.qr_image_name = 'qr_code.png'
+    
+    def refresh_detection_info(self):
+        """Manually trigger recomputation of detection info"""
+        self._compute_workstation_detection_info()
+    
+    @api.depends('arkite_unit_id')
+    @api.depends('arkite_project_id', 'arkite_linked')
+    def _compute_workstation_detection_info(self):
+        """Fetch and display detection information from the linked Arkite project"""
+        for record in self:
+            # Only show detections if project is linked
+            if not record.arkite_linked or not record.arkite_project_id:
+                record.workstation_detection_info = '<div style="padding: 16px; text-align: center; color: #6c757d; font-style: italic;">Link an Arkite project to see its detections</div>'
+                continue
+            
+            # Get credentials from the unit or environment
+            creds = record._get_arkite_credentials()
+            api_base = creds.get('api_base')
+            api_key = creds.get('api_key')
+            
+            if not api_base or not api_key:
+                record.workstation_detection_info = '<div style="padding: 16px; text-align: center; color: #dc3545;">Arkite credentials not configured</div>'
+                continue
+            
+            try:
+                # Fetch detections for the linked project
+                detections_url = f"{api_base}/projects/{record.arkite_project_id}/detections/"
+                params = {"apiKey": api_key}
+                headers = {"Content-Type": "application/json"}
+                
+                response = requests.get(detections_url, params=params, headers=headers, verify=False, timeout=10)
+                
+                if not response.ok:
+                    record.workstation_detection_info = f'<div style="padding: 16px; text-align: center; color: #dc3545;">Failed to fetch detections: HTTP {response.status_code}</div>'
+                    continue
+                
+                detections = response.json()
+                
+                # Handle different API response formats
+                # Sometimes it might be wrapped in a dict or have different structure
+                if isinstance(detections, dict):
+                    # Check if response has detections nested under a key
+                    if 'detections' in detections:
+                        detections = detections['detections']
+                    elif 'Detections' in detections:
+                        detections = detections['Detections']
+                    else:
+                        # Try to extract any list from the dict
+                        for key, value in detections.items():
+                            if isinstance(value, list):
+                                detections = value
+                                break
+                
+                if not isinstance(detections, list) or not detections:
+                    record.workstation_detection_info = '<div style="padding: 16px; text-align: center; color: #6c757d;">No detections configured for this project</div>'
+                    continue
+                
+                # Log detection structure for debugging - show ALL detections
+                _logger.info("Total detections: %d", len(detections))
+                for idx, det in enumerate(detections):
+                    _logger.info("Detection %d: Type=%s, Name=%s, DetectionType=%s, Id=%s", 
+                                 idx, det.get("Type"), det.get("Name"), det.get("DetectionType"), det.get("Id"))
+                
+                # Organize detections by group (using Name field, with Job-Specific as separate category)
+                organized_detections = {}
+                for detection in detections:
+                    # Use Name field for grouping
+                    group_name = detection.get("Name", "Unknown")
+                    detection_type = detection.get("Type", "")
+                    is_job_specific = detection.get("IsJobSpecific", False) or detection.get("isJobSpecific", False)
+                    job_name = detection.get("JobName") if is_job_specific else None
+                    
+                    # Create a unique key for grouping
+                    if is_job_specific and job_name:
+                        key = f"Job-Specific ({job_name})"
+                    else:
+                        key = group_name
+                    
+                    if key not in organized_detections:
+                        organized_detections[key] = []
+                    
+                    organized_detections[key].append(detection)
+                
+                # Log the organized structure for debugging
+                _logger.info("Organized detections by group: %s", {k: len(v) for k, v in organized_detections.items()})
+                
+                # Group detections by their actual DetectionType (PICKING_BIN, OBJECT, ACTIVITY, etc.)
+                # Filter out Detection groups - only keep actual detections
+                type_groups = {}
+                
+                for detection in detections:
+                    det_type = detection.get("Type", "")
+                    # Skip detection group entries - we only want actual detections
+                    if det_type == "Detection group":
+                        continue
+                    
+                    # Use the DetectionType as the grouping key and map to friendly names
+                    detection_type = detection.get("DetectionType", "Unknown")
+                    
+                    # Map DetectionType codes to friendly names
+                    type_map = {
+                        "PICKING_BIN": "Containers",
+                        "OBJECT": "Objects",
+                        "ACTIVITY": "Activities",
+                        "QUALITY_CHECK": "Quality Checks",
+                        "VIRTUAL_BUTTON": "Virtual Buttons",
+                        "TOOL": "Tools",
+                    }
+                    
+                    type_key = type_map.get(detection_type, detection_type)
+                    
+                    if type_key not in type_groups:
+                        type_groups[type_key] = []
+                    
+                    type_groups[type_key].append(detection)
+                
+                # Build hierarchical display grouped by detection type
+                html = '<div style="font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
+                
+                # Display each detection type group
+                for type_name in sorted(type_groups.keys()):
+                    detections_in_type = type_groups[type_name]
+                    
+                    # Type header row
+                    html += '<div style="display: flex; padding: 10px 12px; background: #e3f2fd; border-bottom: 1px solid #90caf9; border-radius: 4px 4px 0 0; margin-bottom: 2px;">'
+                    html += f'<div style="flex: 1; font-weight: 600; color: #01579b;">'
+                    html += f'<i class="fa fa-cube" style="margin-right: 6px; color: #2196f3;"></i>{type_name}'
+                    html += f'<span style="margin-left: 8px; color: #666; font-size: 11px; font-weight: normal;">({len(detections_in_type)} items)</span>'
+                    html += '</div>'
+                    html += '</div>'
+                    
+                    # Detection items under this type (indented)
+                    for i, detection in enumerate(detections_in_type):
+                        is_last = (i == len(detections_in_type) - 1)
+                        name = detection.get("Name", "Unnamed")
+                        det_subtype = detection.get("DetectionType", "Unknown")
+                        
+                        border_radius = '0 0 4px 4px' if is_last else '0'
+                        border_bottom = '1px solid #f0f0f0' if not is_last else '1px solid #90caf9'
+                        
+                        html += '<div style="display: flex; padding: 8px 12px; padding-left: 40px; background: #f9f9f9; border-bottom: ' + border_bottom + '; border-radius: ' + border_radius + '; position: relative;">'
+                        html += f'<div style="position: absolute; left: 20px; top: 0; bottom: 0; display: flex; align-items: center;"><i class="fa fa-circle" style="margin-right: 6px; color: #90caf9; font-size: 6px;"></i></div>'
+                        html += f'<div style="flex: 1; color: #333;">{name}</div>'
+                        html += f'<div style="min-width: 120px; text-align: right; color: #666; font-size: 11px;">{det_subtype}</div>'
+                        html += '</div>'
+                    
+                    html += '<div style="margin-bottom: 12px;"></div>'
+                
+                html += '</div>'
+                record.workstation_detection_info = html
+                    
+            except Exception as e:
+                _logger.warning("Error fetching project detections: %s", e)
+                record.workstation_detection_info = f'<div style="padding: 16px; text-align: center; color: #dc3545;">Error loading detections: {str(e)}</div>'
+    
     # ====================
     # MQTT / "Run in Arkite"
     # ====================
