@@ -540,6 +540,9 @@
                                             <field name="sequence"/>
                                             <field name="title"/>
                                             <field name="is_completed" widget="boolean_toggle"/>
+                                            <field name="detection_name"/>
+                                            <field name="detection_status" widget="boolean_toggle"/>
+                                            <field name="detection_id"/>
                                         </list>
                                     </field>
                                 </group>

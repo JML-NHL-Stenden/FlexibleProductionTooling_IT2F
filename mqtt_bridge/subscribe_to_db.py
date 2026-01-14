@@ -229,7 +229,7 @@ def on_message(_cli, _userdata, msg):
                         project_id = EXCLUDED.project_id,
                         detection_name = EXCLUDED.detection_name,
                         detection_id = EXCLUDED.detection_id,
-                        detection_status = EXCLUDED.detection_name,
+                        detection_status = EXCLUDED.detection_status,
                         is_completed = public.product_module_instruction.is_completed
                             OR EXCLUDED.is_completed;
                 """, (
