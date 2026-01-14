@@ -512,7 +512,7 @@ class ArkiteProcessStep(models.TransientModel):
                 if len(parts) <= 2:
                     short_level = full_level
                 else:
-                    short_level = f"{parts[0]}.{parts[1]}â€¦{parts[-1]}"
+                    short_level = f"{parts[0]}.{parts[1]}...{parts[-1]}"
 
                 # Count dots to determine level depth
                 dot_count = full_level.count('.')
