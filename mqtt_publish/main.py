@@ -16,8 +16,9 @@ def run_arkite_publish():
 if __name__ == "__main__":
     logging.info("Starting MQTT Arkite publish + DB publish in one container")
 
+    t1 = threading.Thread(target=run_publish, daemon=True)
     t2 = threading.Thread(target=run_arkite_publish, daemon=True)
-
+    t1.start()
     t2.start()
 
     # Keep container alive
