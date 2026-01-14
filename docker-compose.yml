@@ -8,13 +8,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${DB_PORT_HOST}:5432"
     volumes:
       - odoo-db-data:/var/lib/postgresql/data
     networks:
       - odoo-net
 
   odoo:
-    image: odoo:${ODOO_VERSION}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flexible-production-tooling-odoo:${ODOO_VERSION}
     container_name: flexible-production-tooling-odoo-1
     depends_on:
       - db
@@ -27,6 +32,10 @@ services:
       HOST: ${DB_HOST}
       USER: ${DB_USER}
       PASSWORD: ${DB_PASS}
+      # Arkite API configuration for wizard
+      ARKITE_API_BASE: ${ARKITE_API_BASE}
+      ARKITE_API_KEY: ${ARKITE_API_KEY}
+      ARKITE_UNIT_ID: ${ARKITE_UNIT_ID}
     networks:
       - odoo-net
 
@@ -60,13 +69,23 @@ services:
       - db
       - mqtt
     environment:
+      # MQTT connection (broker is your mosquitto service in Docker)
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
+
+      # Topic that carries the Arkite QR payload
+      MQTT_TOPIC_QR: ${MQTT_TOPIC_QR}
+
+      # Database connection for reading Arkite units
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
+
+      # Optional logging / loop tuning
+      LOG_LEVEL: ${LOG_LEVEL}
+      IDLE_INTERVAL_SEC: ${IDLE_INTERVAL_SEC}
     networks:
       - odoo-net
 
@@ -81,6 +100,7 @@ services:
       MQTT_PORT: ${MQTT_PORT}
       MQTT_TOPIC_CODES: ${MQTT_TOPIC_CODES}
       MQTT_TOPIC_DETAILS: ${MQTT_TOPIC_DETAILS}
+      MQTT_TOPIC_QR: ${MQTT_TOPIC_QR}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}

@@ -6,13 +6,20 @@ class ProductAssemblePage(models.Model):
     _description = 'Static backend page for Product Assemble'
 
     # Header/label
-    name = fields.Char(default="Products", readonly=True)
+    name = fields.Char(default="Management", readonly=True)
+
+    # Projects on this page
+    project_ids = fields.One2many(
+        comodel_name='product_module.project',
+        inverse_name='page_id',
+        string='Projects'
+    )
 
     # Product types on this page
     product_type_ids = fields.One2many(
         comodel_name='product_module.type',
         inverse_name='page_id',
-        string='Product Types'
+        string='Product Jobs'
     )
 
     # Registered products on this page
@@ -22,11 +29,11 @@ class ProductAssemblePage(models.Model):
         string='Products'
     )
 
-    # Components on this page
-    component_ids = fields.One2many(
-        comodel_name='product_module.component',
+    # Materials on this page
+    material_ids = fields.One2many(
+        comodel_name='product_module.material',
         inverse_name='page_id',
-        string='Components'
+        string='Materials'
     )
 
     # Progress tracking on this page
@@ -37,9 +44,10 @@ class ProductAssemblePage(models.Model):
     )
 
     # Computed counts for display
-    category_count = fields.Integer(string='Category Count', compute='_compute_counts')
+    project_count = fields.Integer(string='Project Count', compute='_compute_counts')
+    job_count = fields.Integer(string='Job Count', compute='_compute_counts')
     product_count = fields.Integer(string='Product Count', compute='_compute_counts')
-    component_count = fields.Integer(string='Component Count', compute='_compute_counts')
+    material_count = fields.Integer(string='Material Count', compute='_compute_counts')
     progress_count = fields.Integer(string='Progress Count', compute='_compute_counts')
 
     # Selected product for Product Details tab
@@ -48,15 +56,16 @@ class ProductAssemblePage(models.Model):
     selected_product_code = fields.Char(related='selected_product_id.product_code', string='Product Code')
     selected_product_description = fields.Text(related='selected_product_id.description', string='Product Description')
     selected_product_image = fields.Binary(related='selected_product_id.image', string='Product Image')
-    selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Categories')
+    selected_product_type_ids = fields.Many2many(related='selected_product_id.product_type_ids', string='Product Jobs')
 
-    @api.depends('product_type_ids', 'product_ids', 'component_ids', 'progress_ids')
+    @api.depends('project_ids', 'product_type_ids', 'product_ids', 'material_ids', 'progress_ids')
     def _compute_counts(self):
-        """Compute category, product, component and progress counts for display"""
+        """Compute project, job, product, material and progress counts for display"""
         for record in self:
-            record.category_count = len(record.product_type_ids)
+            record.project_count = len(record.project_ids)
+            record.job_count = len(record.product_type_ids)
             record.product_count = len(record.product_ids)
-            record.component_count = len(record.component_ids)
+            record.material_count = len(record.material_ids)
             record.progress_count = len(record.progress_ids)
 
     def action_edit_product(self):
@@ -80,11 +89,24 @@ class ProductAssemblePage(models.Model):
             'tag': 'reload',
         }
 
-    def action_create_product_type(self):
-        """Open form to create a new product type/category"""
+    def action_create_project(self):
+        """Open form to create a new project"""
         return {
             'type': 'ir.actions.act_window',
-            'name': 'Create Product Category',
+            'name': 'Create Project',
+            'res_model': 'product_module.project',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_page_id': self.id,
+            }
+        }
+
+    def action_create_product_type(self):
+        """Open form to create a new product type/job"""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Product Job',
             'res_model': 'product_module.type',
             'view_mode': 'form',
             'target': 'new',
@@ -106,18 +128,26 @@ class ProductAssemblePage(models.Model):
             }
         }
 
-    def action_create_component(self):
-        """Open form to create a new component"""
+    def action_create_material(self):
+        """Open form to create a new material"""
         return {
             'type': 'ir.actions.act_window',
-            'name': 'Create Component',
-            'res_model': 'product_module.component',
+            'name': 'Create Material',
+            'res_model': 'product_module.material',
             'view_mode': 'form',
             'target': 'new',
             'context': {
                 'default_page_id': self.id,
             }
         }
+    
+    def action_refresh_materials(self):
+        """Refresh the materials kanban view without full page reload"""
+        self.ensure_one()
+        # Invalidate cache to force reload
+        self.material_ids.invalidate_recordset(['name', 'material_type', 'image', 'usage_count'])
+        # Return empty dict - JavaScript will handle the reload
+        return {}
 
     def action_create_progress(self):
         """Open form to create a new progress tracking item with better defaults"""
@@ -134,8 +164,22 @@ class ProductAssemblePage(models.Model):
             }
         }
 
+    def action_create_arkite_project(self):
+        """Called by 'Create Arkite Project' button on the Product List tab."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Arkite Project'),
+                'message': _('Create Arkite Project clicked. Implement project creation logic here.'),
+                'type': 'info',
+                'sticky': False,
+            }
+        }
+
     def write(self, vals):
-        """Override write to update progress records when instructions change"""
+        """Override write to update progress records when processes change"""
         result = super().write(vals)
 
         if 'instruction_ids' in vals:

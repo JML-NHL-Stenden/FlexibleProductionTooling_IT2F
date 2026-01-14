@@ -1,0 +1,1252 @@
+﻿<!-- product_module/views/project_views.xml -->
+<odoo>
+    <!-- Project List View -->
+    <record id="view_project_list" model="ir.ui.view">
+        <field name="name">product.module.project.list</field>
+        <field name="model">product_module.project</field>
+        <field name="arch" type="xml">
+            <list string="Projects">
+                <field name="name"/>
+                <field name="job_count" string="Total Jobs"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Process Steps List View -->
+    <record id="view_arkite_process_step_tree" model="ir.ui.view">
+        <field name="name">product_module.arkite.process.step.tree</field>
+        <field name="model">product_module.arkite.process.step</field>
+        <field name="arch" type="xml">
+            <!-- Embedded list: allow quick add/delete; drag reordering is disabled (use Hierarchy/Diagram manage screens). -->
+            <list string="Process Steps" editable="bottom" create="1" delete="1"
+                  decoration-info="hierarchy_css_class == 'hierarchy-root'"
+                  decoration-success="hierarchy_css_class == 'hierarchy-level-1'"
+                  decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
+                  decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
+                  decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
+                <field name="hierarchical_level_html" string="Level" readonly="1" width="100px" widget="html" options="{'sanitize': False}"/>
+                <field name="hierarchical_level" column_invisible="1"/>
+                <field name="step_name" string="Step Name"/>
+                <field name="step_type" string="Type"/>
+                <field name="parent_id" string="Parent" options="{'no_create': True}" domain="[('project_id', '=', project_id), ('process_id', '=', process_id)]"/>
+                <field name="parent_step_display" string="Parent Name" readonly="1" column_invisible="1"/>
+                <field name="hierarchy_css_class" column_invisible="1"/>
+                <field name="parent_step_name" column_invisible="1"/>
+                <field name="display_name_hierarchy" column_invisible="1"/>
+                <field name="hierarchy_path" column_invisible="1"/>
+                <field name="hierarchy_level" column_invisible="1"/>
+                <field name="parent_step_id" column_invisible="1"/>
+                <field name="step_id" column_invisible="1"/>
+                <field name="process_id" column_invisible="1"/>
+                <field name="index" column_invisible="1"/>
+                <field name="for_all_variants" column_invisible="1"/>
+                <field name="variant_ids" column_invisible="1"/>
+                <field name="child_ids" column_invisible="1"/>
+                <field name="child_count" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Process Steps Manage List View (create/edit/delete + reorder) -->
+    <record id="view_arkite_process_step_tree_manage" model="ir.ui.view">
+        <field name="name">product_module.arkite.process.step.tree.manage</field>
+        <field name="model">product_module.arkite.process.step</field>
+        <field name="arch" type="xml">
+            <list string="Process Steps" editable="bottom" create="1" delete="1" default_order="sequence,id"
+                  decoration-info="hierarchy_css_class == 'hierarchy-root'"
+                  decoration-success="hierarchy_css_class == 'hierarchy-level-1'"
+                  decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
+                  decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
+                  decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
+                <!-- Drag is enabled; use the handle (indent/outdent still available for changing hierarchy level) -->
+                <button name="action_indent" type="object" icon="fa-indent" string="" class="btn btn-sm btn-secondary" title="Indent (make child of previous)"/>
+                <button name="action_outdent" type="object" icon="fa-outdent" string="" class="btn btn-sm btn-secondary" title="Outdent (move up one level)"/>
+                <field name="sequence" widget="handle" string="" width="24px"/>
+                <field name="hierarchical_level_html" string="Level" readonly="1" width="90px" widget="html" options="{'sanitize': False}"/>
+                <field name="step_name" string="Step Name" required="1"/>
+                <field name="display_name_hierarchy" string="Step (Tree)" readonly="1" column_invisible="1"/>
+                <field name="step_type" string="Type"/>
+                <field name="parent_id" string="Parent" options="{'no_create': True}"
+                       domain="[('project_id', '=', project_id), ('process_id', '=', process_id)]"/>
+                <field name="process_id" column_invisible="1"/>
+                <field name="group_parent_id" column_invisible="1"/>
+                <field name="hierarchy_css_class" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Process Steps Search View (for grouped hierarchy browsing) -->
+    <record id="view_arkite_process_step_search" model="ir.ui.view">
+        <field name="name">product_module.arkite.process.step.search</field>
+        <field name="model">product_module.arkite.process.step</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="step_name"/>
+                <field name="step_type"/>
+                <field name="process_id"/>
+                <field name="parent_id"/>
+                <separator/>
+                <filter string="Roots" name="roots" domain="[('parent_id','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Parent" name="group_by_parent" context="{'group_by':'group_parent_id'}"/>
+                    <filter string="Type" name="group_by_type" context="{'group_by':'step_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Job Steps List View -->
+    <record id="view_arkite_job_step_tree" model="ir.ui.view">
+        <field name="name">product_module.arkite.job.step.tree</field>
+        <field name="model">product_module.arkite.job.step</field>
+        <field name="arch" type="xml">
+            <!-- Embedded list: allow quick add/delete; drag reordering is disabled (use Hierarchy/Diagram manage screens). -->
+            <list string="Job Steps" editable="bottom" create="1" delete="1"
+                  decoration-info="hierarchy_css_class == 'hierarchy-root'"
+                  decoration-success="hierarchy_css_class == 'hierarchy-level-1'"
+                  decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
+                  decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
+                  decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
+                <field name="hierarchical_level_html" string="Level" readonly="1" width="100px" widget="html" options="{'sanitize': False}"/>
+                <field name="hierarchical_level" column_invisible="1"/>
+                <field name="step_name" string="Step Name"/>
+                <field name="step_type" string="Type"/>
+                <field name="parent_id" string="Parent" options="{'no_create': True}" domain="[('project_id', '=', project_id)]"/>
+                <field name="parent_step_display" string="Parent Name" readonly="1" column_invisible="1"/>
+                <field name="hierarchy_css_class" column_invisible="1"/>
+                <field name="parent_step_name" column_invisible="1"/>
+                <field name="display_name_hierarchy" column_invisible="1"/>
+                <field name="hierarchy_path" column_invisible="1"/>
+                <field name="hierarchy_level" column_invisible="1"/>
+                <field name="parent_step_id" column_invisible="1"/>
+                <field name="step_id" column_invisible="1"/>
+                <field name="job_step_id" column_invisible="1"/>
+                <field name="index" column_invisible="1"/>
+                <field name="for_all_variants" column_invisible="1"/>
+                <field name="variant_ids" column_invisible="1"/>
+                <field name="child_ids" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Job Steps Manage List View (create/edit/delete + reorder) -->
+    <record id="view_arkite_job_step_tree_manage" model="ir.ui.view">
+        <field name="name">product_module.arkite.job.step.tree.manage</field>
+        <field name="model">product_module.arkite.job.step</field>
+        <field name="arch" type="xml">
+            <list string="Job Steps" editable="bottom" create="1" delete="1" default_order="sequence,id"
+                  decoration-info="hierarchy_css_class == 'hierarchy-root'"
+                  decoration-success="hierarchy_css_class == 'hierarchy-level-1'"
+                  decoration-warning="hierarchy_css_class == 'hierarchy-level-2'"
+                  decoration-muted="hierarchy_css_class == 'hierarchy-level-3'"
+                  decoration-danger="hierarchy_css_class == 'hierarchy-level-4' or hierarchy_css_class == 'hierarchy-level-5'">
+                <!-- Drag is enabled; use the handle (indent/outdent still available for changing hierarchy level) -->
+                <button name="action_indent" type="object" icon="fa-indent" string="" class="btn btn-sm btn-secondary" title="Indent (make child of previous)"/>
+                <button name="action_outdent" type="object" icon="fa-outdent" string="" class="btn btn-sm btn-secondary" title="Outdent (move up one level)"/>
+                <field name="sequence" widget="handle" string="" width="24px"/>
+                <field name="hierarchical_level_html" string="Level" readonly="1" width="90px" widget="html" options="{'sanitize': False}"/>
+                <field name="step_name" string="Step Name" required="1"/>
+                <field name="display_name_hierarchy" string="Step (Tree)" readonly="1" column_invisible="1"/>
+                <field name="step_type" string="Type"/>
+                <field name="parent_id" string="Parent" options="{'no_create': True}" domain="[('project_id', '=', project_id)]"/>
+                <field name="group_parent_id" column_invisible="1"/>
+                <field name="hierarchy_css_class" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    
+
+    <!-- Job Steps Search View (for grouped hierarchy browsing) -->
+    <record id="view_arkite_job_step_search" model="ir.ui.view">
+        <field name="name">product_module.arkite.job.step.search</field>
+        <field name="model">product_module.arkite.job.step</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="step_name"/>
+                <field name="step_type"/>
+                <field name="parent_id"/>
+                <separator/>
+                <filter string="Roots" name="roots" domain="[('parent_id','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Parent" name="group_by_parent" context="{'group_by':'group_parent_id'}"/>
+                    <filter string="Type" name="group_by_type" context="{'group_by':'step_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Native hierarchy views (web_hierarchy) for reliable tree editing -->
+    <record id="view_arkite_job_step_hierarchy" model="ir.ui.view">
+        <field name="name">product_module.arkite.job.step.hierarchy</field>
+        <field name="model">product_module.arkite.job.step</field>
+        <field name="arch" type="xml">
+            <!-- Diagram: enable drag-to-reorder/reparent (saves immediately on drop). -->
+            <hierarchy child_field="child_ids" draggable="1" default_order="sequence">
+                <!-- Include sequence so drag-reorder has a real order field to write and won't "snap back". -->
+                <field name="sequence" invisible="1"/>
+                <!-- Fields used by custom diagram reorder logic -->
+                <field name="step_type" invisible="1"/>
+                <field name="child_ids" invisible="1"/>
+                <!-- Needed by inline reorder panel to fetch children with correct domain -->
+                <field name="project_id" invisible="1"/>
+                <templates>
+                    <t t-name="hierarchy-box">
+                        <div class="pm-hnode">
+                            <div class="pm-hnode__title" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span class="pm-hnode__name"><field name="step_name"/></span>
+                            </div>
+                            <div class="pm-hnode__meta">
+                                <span class="pm-chip pm-chip--level">Lvl: <field name="hierarchical_level"/></span>
+                                <span class="pm-chip pm-chip--type"><field name="step_type"/></span>
+                                <span class="pm-chip pm-chip--kids"><i class="fa fa-sitemap"/> <field name="child_count"/></span>
+                            </div>
+                            <div class="pm-hnode__parent">
+                                <span class="pm-hnode__label">Parent:</span>
+                                <span class="pm-hnode__value"><field name="parent_id"/></span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </hierarchy>
+        </field>
+    </record>
+
+    <record id="view_arkite_process_step_hierarchy" model="ir.ui.view">
+        <field name="name">product_module.arkite.process.step.hierarchy</field>
+        <field name="model">product_module.arkite.process.step</field>
+        <field name="arch" type="xml">
+            <!-- Diagram: enable drag-to-reorder/reparent (saves immediately on drop). -->
+            <hierarchy child_field="child_ids" draggable="1" default_order="sequence">
+                <field name="sequence" invisible="1"/>
+                <field name="step_type" invisible="1"/>
+                <field name="child_ids" invisible="1"/>
+                <field name="project_id" invisible="1"/>
+                <field name="process_id" invisible="1"/>
+                <templates>
+                    <t t-name="hierarchy-box">
+                        <div class="pm-hnode">
+                            <div class="pm-hnode__title" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span class="pm-hnode__name"><field name="step_name"/></span>
+                            </div>
+                            <div class="pm-hnode__meta">
+                                <span class="pm-chip pm-chip--level">Lvl: <field name="hierarchical_level"/></span>
+                                <span class="pm-chip pm-chip--type"><field name="step_type"/></span>
+                                <span class="pm-chip pm-chip--kids"><i class="fa fa-sitemap"/> <field name="child_count"/></span>
+                            </div>
+                            <div class="pm-hnode__parent">
+                                <span class="pm-hnode__label">Parent:</span>
+                                <span class="pm-hnode__value"><field name="parent_id"/></span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </hierarchy>
+        </field>
+    </record>
+
+    <!-- Form views so Diagram can Create/Edit -->
+    <record id="view_arkite_job_step_form" model="ir.ui.view">
+        <field name="name">product_module.arkite.job.step.form</field>
+        <field name="model">product_module.arkite.job.step</field>
+        <field name="arch" type="xml">
+            <form string="Job Step">
+                <sheet>
+                    <group>
+                        <field name="project_id" readonly="1"/>
+                        <field name="step_name" required="1"/>
+                        <field name="step_type" required="1"/>
+                        <field name="parent_id" options="{'no_create': True}"/>
+                        <field name="for_all_variants"/>
+                        <field name="variant_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    </group>
+                    <group string="System" col="2">
+                        <!-- job_step_id is required on the model, but it is auto-derived on create.
+                             Keep it hidden so the UI doesn't block saving on an empty required field. -->
+                        <field name="job_step_id" invisible="1" required="0"/>
+                        <field name="step_id" readonly="1"/>
+                        <field name="index" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_arkite_process_step_form" model="ir.ui.view">
+        <field name="name">product_module.arkite.process.step.form</field>
+        <field name="model">product_module.arkite.process.step</field>
+        <field name="arch" type="xml">
+            <form string="Process Step">
+                <sheet>
+                    <group>
+                        <field name="project_id" readonly="1"/>
+                        <field name="process_id" readonly="1"/>
+                        <field name="step_name" required="1"/>
+                        <field name="step_type" required="1"/>
+                        <field name="parent_id" options="{'no_create': True}"/>
+                        <field name="for_all_variants"/>
+                        <field name="variant_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    </group>
+                    <group string="System" col="2">
+                        <field name="step_id" readonly="1"/>
+                        <field name="index" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Project Form View -->
+    <record id="view_project_form" model="ir.ui.view">
+        <field name="name">product.module.project.form</field>
+        <field name="model">product_module.project</field>
+        <field name="arch" type="xml">
+            <form string="Project">
+                <sheet>
+                    <!-- Two Column Layout -->
+                    <div style="display: flex; width: 100%; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; box-sizing: border-box;">
+                        
+                        <!-- LEFT COLUMN - Project Information -->
+                        <div style="display: flex; flex-direction: column; flex: 1; min-width: 300px; max-width: 100%;">
+                            <!-- Top Section: Name -->
+                            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                                <div>
+                                    <h1 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 700;">
+                                        <field name="name" placeholder="Project Name" required="1" style="color: white; background: transparent; border: none; font-size: 24px; width: 100%;"/>
+                                    </h1>
+                                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+                                        <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                            <i class="fa fa-briefcase"/> <field name="job_count"/> Total Jobs
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Section: Description and Arkite Management -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 24px;">
+                                <!-- Project Information -->
+                                <div style="display: flex; flex-direction: column;">
+                                    <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                        <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Project Information
+                                    </h3>
+                                    <div class="o_form_label" style="font-weight: 600; color: #495057; margin-bottom: 8px; display: block;">Description:</div>
+                                    <field name="description" placeholder="Describe this project..." style="width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-family: inherit;"/>
+                                </div>
+                                
+                                <!-- Arkite Management Section -->
+                                <div style="border-top: 2px solid #e9ecef; padding-top: 24px;">
+                                    <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                        <i class="fa fa-project-diagram" style="color: #667eea; margin-right: 8px;"/> Arkite Project Management
+                                    </h3>
+                                    
+                                    <!-- Unit Selection -->
+                                    <div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Unit:</div>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button name="%(product_module.action_arkite_unit)d" 
+                                                    type="action" 
+                                                    class="btn btn-sm btn-secondary"
+                                                    string="Manage Units"
+                                                    style="white-space: nowrap; padding: 4px 12px; font-size: 12px;"
+                                                    help="Open Arkite Units management to create or edit units"/>
+                                                <button name="action_create_unit_from_tracking" 
+                                                        type="object" 
+                                                        class="btn btn-sm btn-info"
+                                                        string="Create from Unit Tracking"
+                                                        style="white-space: nowrap; padding: 4px 12px; font-size: 12px;"
+                                                        help="Create an Arkite Unit from a Unit Tracking entry"/>
+                                            </div>
+                                        </div>
+                                        <field name="arkite_unit_id" 
+                                               options="{'no_create': True, 'no_create_edit': True}"
+                                               domain="[('active', '=', True)]"
+                                               context="{'default_active': True}"
+                                               placeholder="Select an Arkite unit..."/>
+                                        <div style="margin-top: 12px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">
+                                            <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                            <strong>Note:</strong> Assign an Arkite unit to use its API credentials. If you created units in "Unit Tracking", click "Create from Unit Tracking" to make them available here. Otherwise, click "Manage Units" to create units directly.
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Arkite Project Info -->
+                                    <div invisible="not arkite_linked" style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                            <i class="fa fa-check-circle" style="color: #28a745; font-size: 18px;"/>
+                                            <span style="font-weight: 600; color: #2c3e50;">Linked to Arkite Project</span>
+                                        </div>
+                                        <div style="margin-left: 30px; color: #495057; font-size: 14px;">
+                                            <div><strong>Project ID:</strong> <field name="arkite_project_id" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                                            <div><strong>Project Name:</strong> <field name="arkite_project_name" readonly="1" style="display: inline; border: none; background: transparent;"/></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                        <button name="action_create_arkite_project" 
+                                                type="object" 
+                                                class="btn btn-success" 
+                                                invisible="arkite_linked"
+                                                style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+                                            <i class="fa fa-plus" style="margin-right: 8px;"/> Create Arkite Project
+                                        </button>
+                                        
+                                        <button name="action_duplicate_arkite_project" 
+                                                type="object" 
+                                                class="btn btn-info" 
+                                                invisible="arkite_linked"
+                                                style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+                                            <i class="fa fa-copy" style="margin-right: 8px;"/> Duplicate from Template
+                                        </button>
+                                        
+                                        <button name="action_link_arkite_project" 
+                                                type="object" 
+                                                class="btn btn-secondary" 
+                                                invisible="arkite_linked"
+                                                style="border-radius: 8px; font-weight: 600; padding: 10px 20px;">
+                                            <i class="fa fa-link" style="margin-right: 8px;"/> Link Existing Project
+                                        </button>
+                                        
+                                        <button name="action_sync_from_arkite" 
+                                                type="object" 
+                                                class="btn btn-primary" 
+                                                invisible="not arkite_linked"
+                                                style="background: linear-gradient(45deg, #007bff 0%, #0056b3 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;"
+                                                id="sync_from_arkite_btn">
+                                            <i class="fa fa-sync" style="margin-right: 8px;"/> Sync from Arkite
+                                        </button>
+
+                                        <button name="action_unlink_arkite_project"
+                                                type="object"
+                                                class="btn btn-outline-danger"
+                                                invisible="not arkite_linked"
+                                                confirm="This will de-link the Arkite project and clear locally loaded Arkite data (variants/processes/steps/detections/materials) from this Odoo project. Continue?"
+                                                style="border-radius: 8px; font-weight: 700; padding: 10px 20px;">
+                                            <i class="fa fa-unlink" style="margin-right: 8px;"/> De-link Arkite Project
+                                        </button>
+                                        <!-- Removed legacy inline JS (can break modals / cause unexpected reloads in Odoo 18). -->
+                                        
+                                    </div>
+                                    
+                                    <!-- Help Text -->
+                                    <div style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #6c757d;">
+                                        <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
+                                        <strong>Note:</strong> Create or link an Arkite project to manage steps, variants, processes, and detections.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN - Jobs List -->
+                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; flex: 1; min-width: 400px; max-width: 50%;">
+                            <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600;">
+                                <i class="fa fa-list" style="color: #28a745; margin-right: 8px;"/> Jobs in this Project
+                            </h3>
+
+                            <!-- Jobs List (scrollable and editable) -->
+                            <div style="flex: 1; overflow-y: auto; max-height: calc(100vh - 300px);">
+                                <field name="job_ids" widget="many2many" nolabel="1">
+                                    <list>
+                                        <field name="name" string="Job Name"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="product_count" string="Products"/>
+                                    </list>
+                                </field>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div invisible="job_ids" style="text-align: center; padding: 40px; color: #6c757d;">
+                                <i class="fa fa-briefcase" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                                <h4 style="color: #6c757d; margin-bottom: 8px;">No Jobs in this Project</h4>
+                                <p style="font-size: 14px; margin-bottom: 16px;">Jobs that belong to this project will appear here.</p>
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; font-size: 13px; color: #495057;">
+                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
+                                    <strong>Note:</strong> Click "Add a line" above to add jobs to this project
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Inline Sections: Processes & Jobs, Materials, QR Code -->
+                    <div style="display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; box-sizing: border-box; align-items: flex-start;">
+                        <!-- Processes Section -->
+                        <div style="flex: 1 1 100%; min-width: 520px; background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: auto; box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                    <i class="fa fa-cogs" style="color: #007bff; margin-right: 8px;"/> Arkite Processes &amp; Steps
+                                </h3>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button name="action_load_process_list" 
+                                            string="Load Processes" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            id="pm-auto-load-processes-btn"
+                                            invisible="not arkite_linked"
+                                            icon="fa-refresh"
+                                            help="Load available processes from Arkite"/>
+                                    <button name="action_open_duplicate_process_wizard"
+                                            string="Duplicate Process"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked"
+                                            icon="fa-plus"
+                                            help="Create a new Arkite process by duplicating an existing one (works on this Arkite server)."/>
+                                    <button name="action_open_create_process_wizard"
+                                            string="Create Process"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked"
+                                            icon="fa-file-o"
+                                            help="Create a new blank Arkite process (with Name/Comment)."/>
+                                    <button name="action_open_process_steps_hierarchy"
+                                            string="Hierarchy"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not selected_process_id_char"
+                                            icon="fa-sitemap"
+                                            help="Open process steps in a manageable list (Add/Edit/Delete/Reorder). Use Search > Group By > Parent to fold/unfold."/>
+                                    <button name="action_open_process_steps_diagram"
+                                            string="Diagram (drag)"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not selected_process_id_char"
+                                            icon="fa-share-alt"
+                                            help="Open the diagram view for drag/reparent. Use the List tab for New/Edit/Delete."/>
+                                    <button name="action_sync_staged_hierarchy_to_arkite"
+                                            string="Sync to Arkite"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked or not arkite_hierarchy_dirty"
+                                            icon="fa-cloud-upload"
+                                            help="Sync staged hierarchy changes (job + process steps) to Arkite and show a toast."/>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden fields for selected process -->
+                            <field name="selected_process_id_char" invisible="1"/>
+                            <field name="selected_arkite_process_id" invisible="1"/>
+                            <field name="arkite_hierarchy_dirty" invisible="1"/>
+                            
+                            <!-- Process Selection -->
+                            <group col="1">
+                                <group string="Process Selection" col="1">
+                                    <!-- Selected Process Display (Clear Visual Indicator) -->
+                                    <div invisible="not arkite_linked or not selected_process_id_char" 
+                                         style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
+                                                border: 2px solid #28a745; 
+                                                border-radius: 8px; 
+                                                padding: 16px; 
+                                                margin-bottom: 16px;
+                                                box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <i class="fa fa-check-circle" style="font-size: 24px; color: #28a745;"/>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 12px; color: #155724; font-weight: 600; margin-bottom: 4px;">
+                                                    SELECTED PROCESS:
+                                                </div>
+                                                <div style="font-size: 16px; color: #155724; font-weight: 700;">
+                                                    <field name="selected_arkite_process_name" readonly="1" 
+                                                           style="display: inline; border: none; background: transparent; font-weight: 700; color: #155724;"/>
+                                                </div>
+                                                <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">
+                                                    ID: <field name="selected_process_id_char" readonly="1" 
+                                                              style="display: inline; border: none; background: transparent;"/>
+                                                </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <field name="arkite_process_ids" 
+                                           invisible="not arkite_linked"
+                                           nolabel="1"
+                                           readonly="1">
+                                        <list decoration-success="process_id == parent.selected_process_id_char">
+                                            <field name="name"/>
+                                            <field name="process_id"/>
+                                            <field name="comment"/>
+                                            <button name="action_select_process" 
+                                                    type="object" 
+                                                    string="Select"
+                                                    class="btn btn-sm btn-success"
+                                                    icon="fa-check-circle"
+                                                    invisible="process_id == parent.selected_process_id_char"
+                                                    help="Click to select this process and automatically load its steps"/>
+                                            <button name="action_delete_process"
+                                                    type="object"
+                                                    string="Delete"
+                                                    class="btn btn-sm btn-danger"
+                                                    icon="fa-trash"
+                                                    confirm="Delete this process in Arkite? This cannot be undone."
+                                                    help="Delete this process in Arkite"/>
+                                            <button name="action_select_process" 
+                                                    type="object" 
+                                                    string="Selected âœ“"
+                                                    class="btn btn-sm"
+                                                    style="background-color: #28a745; color: white; cursor: default;"
+                                                    invisible="process_id != parent.selected_process_id_char"
+                                                    readonly="1"
+                                                    help="This process is currently selected"/>
+                                        </list>
+                                    </field>
+                                </group>
+                                
+                                <group string="Process Steps" col="1">
+                                    <div invisible="not selected_process_id_char" 
+                                         style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                        <div style="font-size: 13px; color: #0056b3; font-weight: 600; margin-bottom: 8px;">
+                                            <i class="fa fa-sitemap" style="margin-right: 6px;"/> 
+                                            Steps for: <field name="selected_arkite_process_name" readonly="1" 
+                                                              style="display: inline; border: none; background: transparent; font-weight: 700;"/>
+                                </div>
+                                        <div style="font-size: 11px; color: #495057;">
+                                            <strong>Tip:</strong> Use the <strong>Hierarchy</strong> button to edit and reorder steps in a collapsible tree (native Odoo hierarchy view). This preview list is read-only.
+                                </div>
+                                        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                                            <button name="action_new_process_step"
+                                                    string="New Process Step"
+                                                    type="object"
+                                                    class="btn-secondary"
+                                                    icon="fa-plus"
+                                                    help="Create a new process step for the selected process"/>
+                                        </div>
+                            </div>
+                            
+                                    <div style="max-height: 55vh; overflow: auto;">
+                                        <field name="arkite_process_step_ids" 
+                                               nolabel="1" 
+                                               invisible="not selected_process_id_char"
+                                               context="{'default_project_id': id, 'default_process_id': selected_process_id_char}"
+                                               mode="list"/>
+                                    </div>
+                                    
+                                    <!-- Empty state when no process selected -->
+                                    <div invisible="selected_process_id_char" 
+                                         style="text-align: center; padding: 40px; color: #6c757d; border: 2px dashed #dee2e6; border-radius: 8px; background: #f8f9fa;">
+                                        <i class="fa fa-hand-pointer" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                                        <h4 style="color: #6c757d; margin-bottom: 8px;">No Process Selected</h4>
+                                        <p style="font-size: 14px; margin-bottom: 0;">Click "Select" on a process above to automatically view its steps.</p>
+                            </div>
+                                </group>
+                            </group>
+                            <div style="display:none">
+                                <![CDATA[
+                                    // Update fields via RPC without any reload
+                                    (function() {
+                                        function updateFieldsViaRPC() {
+                                            var form = document.querySelector('.o_form_view');
+                                            if (!form || !form.__controller__) return;
+                                            
+                                            var controller = form.__controller__;
+                                            var recordId = controller.handle;
+                                            
+                                            if (!recordId) return;
+                                            
+                                            // Use Odoo's RPC to read updated data
+                                            require(['web.rpc'], function(rpc) {
+                                                rpc.query({
+                                                    model: 'product_module.project',
+                                                    method: 'read',
+                                                    args: [[recordId], ['arkite_process_ids', 'arkite_process_step_ids', 'selected_process_id_char', 'selected_arkite_process_name']]
+                                                }).then(function(result) {
+                                                    if (result && result[0] && controller.renderer) {
+                                                        var data = result[0];
+                                                        
+                                                        // Update controller's state
+                                                        if (controller.renderer.state) {
+                                                            // Merge new data into state
+                                                            Object.assign(controller.renderer.state.data, data);
+                                                            
+                                                            // Update field widgets
+                                                            if (controller.renderer.widgets) {
+                                                                // Update process list
+                                                                if (controller.renderer.widgets.arkite_process_ids) {
+                                                                    var widget = controller.renderer.widgets.arkite_process_ids;
+                                                                    if (widget && typeof widget.reset === 'function') {
+                                                                        widget.reset(data.arkite_process_ids, {});
+                                                                    }
+                                                                }
+                                                                
+                                                                // Update steps list
+                                                                if (controller.renderer.widgets.arkite_process_step_ids) {
+                                                                    var widget = controller.renderer.widgets.arkite_process_step_ids;
+                                                                    if (widget && typeof widget.reset === 'function') {
+                                                                        widget.reset(data.arkite_process_step_ids, {});
+                                                                    }
+                                                                }
+                                                                
+                                                                // Update selected process name
+                                                                if (controller.renderer.widgets.selected_arkite_process_name) {
+                                                                    var widget = controller.renderer.widgets.selected_arkite_process_name;
+                                                                    if (widget && typeof widget.reset === 'function') {
+                                                                        widget.reset(data.selected_arkite_process_name, {});
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            });
+                                        }
+                                        
+                                        // Listen for Select button clicks
+                                        setTimeout(function() {
+                                            function setupListeners() {
+                                                var processList = document.querySelector('field[name="arkite_process_ids"]');
+                                                if (processList) {
+                                                    var selectButtons = processList.querySelectorAll('button[name="action_select_process"]');
+                                                    selectButtons.forEach(function(btn) {
+                                                        if (!btn.dataset.listenerAdded) {
+                                                            btn.dataset.listenerAdded = 'true';
+                                                            btn.addEventListener('click', function() {
+                                                                // Wait for RPC to complete, then update fields
+                                                                setTimeout(updateFieldsViaRPC, 1500);
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                            
+                                            setupListeners();
+                                            
+                                            // Watch for new buttons
+                                            var processList = document.querySelector('field[name="arkite_process_ids"]');
+                                            if (processList) {
+                                                var observer = new MutationObserver(setupListeners);
+                                                observer.observe(processList, { childList: true, subtree: true });
+                                            }
+                                        }, 500);
+                                    })();
+                                    
+                                    // Expandable rows for process steps
+                                    (function() {
+                                        function initExpandableRows() {
+                                            try {
+                                                var stepLists = document.querySelectorAll('field[name="arkite_process_step_ids"] .o_list_table');
+                                                
+                                                stepLists.forEach(function(table) {
+                                                    if (table.dataset.expandableInitialized) return;
+                                                    table.dataset.expandableInitialized = 'true';
+                                                    
+                                                    // Add header
+                                                    var headerRow = table.querySelector('thead tr');
+                                                    if (headerRow && !headerRow.querySelector('.o_expand_header')) {
+                                                        var th = document.createElement('th');
+                                                        th.className = 'o_expand_header';
+                                                        th.style.cssText = 'width: 36px; min-width: 36px;';
+                                                        headerRow.insertBefore(th, headerRow.firstChild);
+                                                    }
+                                                    
+                                                    // Process rows
+                                                    var rows = table.querySelectorAll('tbody tr.o_data_row');
+                                                    rows.forEach(function(row) {
+                                                        if (row.querySelector('.o_expand_cell')) return;
+                                                        
+                                                        var td = document.createElement('td');
+                                                        td.className = 'o_expand_cell';
+                                                        td.style.cssText = 'width: 36px; text-align: center; cursor: pointer;';
+                                                        td.innerHTML = '<i class="fa fa-chevron-right o_expand_icon" style="color: #495057;"></i>';
+                                                        
+                                                        td.onclick = function(e) {
+                                                            e.stopPropagation();
+                                                            toggleStepRow(row);
+                                                        };
+                                                        
+                                                        row.insertBefore(td, row.firstChild);
+                                                    });
+                                                });
+                                            } catch (err) {
+                                                console.warn('Expandable rows error:', err);
+                                            }
+                                        }
+                                        
+                                        function toggleStepRow(row) {
+                                            try {
+                                                var isOpen = row.dataset.expanded === 'true';
+                                                var icon = row.querySelector('.o_expand_icon');
+                                                
+                                                if (isOpen) {
+                                                    row.dataset.expanded = 'false';
+                                                    icon.className = 'fa fa-chevron-right o_expand_icon';
+                                                    var detailRow = row.nextElementSibling;
+                                                    if (detailRow && detailRow.classList.contains('o_expand_detail_row')) {
+                                                        detailRow.remove();
+                                                    }
+                                                } else {
+                                                    row.dataset.expanded = 'true';
+                                                    icon.className = 'fa fa-chevron-down o_expand_icon';
+                                                    
+                                                    var cells = row.querySelectorAll('td');
+                                                    var stepName = (cells[1] && cells[1].textContent.trim()) || 'Unnamed Step';
+                                                    var stepType = (cells[2] && cells[2].textContent.trim()) || 'WORK_INSTRUCTION';
+                                                    var colspan = cells.length;
+                                                    
+                                                    var detailRow = document.createElement('tr');
+                                                    detailRow.className = 'o_expand_detail_row';
+                                                    detailRow.innerHTML = 
+                                                        '<td colspan="' + colspan + '" style="padding: 0; background: #f8f9fa;">' +
+                                                        '<div style="margin: 4px 12px 12px 48px; padding: 16px; background: white; border: 1px solid #dee2e6; border-radius: 8px;">' +
+                                                        '<div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e9ecef;">' +
+                                                        '<div><span class="badge bg-primary" style="font-size: 11px; padding: 4px 8px;">' + escapeHtml(stepType) + '</span> ' +
+                                                        '<strong style="margin-left: 10px;">' + escapeHtml(stepName) + '</strong></div>' +
+                                                        '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="this.closest(\'tr\').previousElementSibling.click()">' +
+                                                        '<i class="fa fa-chevron-up"></i> Collapse</button></div>' +
+                                                        '<div style="font-size: 12px; color: #6c757d;">Step details for: <strong>' + escapeHtml(stepName) + '</strong></div>' +
+                                                        '</div></td>';
+                                                    
+                                                    row.insertAdjacentElement('afterend', detailRow);
+                                                }
+                                            } catch (err) {
+                                                console.warn('Toggle row error:', err);
+                                            }
+                                        }
+                                        
+                                        function escapeHtml(text) {
+                                            var div = document.createElement('div');
+                                            div.textContent = text;
+                                            return div.innerHTML;
+                                        }
+                                        
+                                        // Initialize after page loads
+                                        setTimeout(initExpandableRows, 1000);
+                                        
+                                        // Watch for new rows
+                                        if (typeof MutationObserver !== 'undefined') {
+                                            var observer = new MutationObserver(function() {
+                                                setTimeout(initExpandableRows, 500);
+                                            });
+                                            if (document.body) {
+                                                observer.observe(document.body, { childList: true, subtree: true });
+                                            }
+                                        }
+                                    })();
+                                    
+                                    // Apply visual hierarchy styling for job steps
+                                    function applyJobStepsHierarchy() {
+                                        var listView = document.querySelector('field[name="arkite_job_step_ids"] .o_list_view');
+                                        if (listView) {
+                                            var rows = listView.querySelectorAll('tbody tr.o_data_row');
+                                            rows.forEach(function(row) {
+                                                var cells = row.querySelectorAll('td.o_data_cell');
+                                                var hierarchyLevel = null;
+                                                
+                                                cells.forEach(function(cell) {
+                                                    var fieldName = cell.getAttribute('data-name');
+                                                    if (fieldName === 'hierarchy_level') {
+                                                        hierarchyLevel = parseInt(cell.textContent.trim()) || 0;
+                                                    }
+                                                });
+                                                
+                                                if (hierarchyLevel === null) {
+                                                    cells.forEach(function(cell) {
+                                                        var fieldName = cell.getAttribute('data-name');
+                                                        if (fieldName === 'hierarchy_path') {
+                                                            var path = cell.textContent.trim();
+                                                            if (path) {
+                                                                hierarchyLevel = (path.match(/>/g) || []).length;
+                                                            } else {
+                                                                hierarchyLevel = 0;
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                                
+                                                if (hierarchyLevel !== null) {
+                                                    row.setAttribute('data-hierarchy-level', hierarchyLevel);
+                                                    var stepNameCell = row.querySelector('td[data-name="step_name"]');
+                                                    if (stepNameCell) {
+                                                        stepNameCell.style.paddingLeft = (hierarchyLevel * 30 + 10) + 'px';
+                                                        if (hierarchyLevel > 0) {
+                                                            stepNameCell.style.borderLeft = '3px solid #007bff';
+                                                            stepNameCell.style.marginLeft = '5px';
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }
+                                    
+                                    setTimeout(applyJobStepsHierarchy, 1000);
+                                    
+                                    var jobStepsObserver = new MutationObserver(function() {
+                                        applyJobStepsHierarchy();
+                                    });
+                                    
+                                    setTimeout(function() {
+                                        var listView = document.querySelector('field[name="arkite_job_step_ids"] .o_list_view');
+                                        if (listView) {
+                                            jobStepsObserver.observe(listView, { childList: true, subtree: true });
+                                        }
+                                    }, 1500);
+                                ]]>
+                            </div>
+                            
+                            <!-- Auto-load processes when form opens -->
+                            <div style="display:none">
+                                <![CDATA[
+                                    (function() {
+                                        setTimeout(function() {
+                                            var loadBtn = document.getElementById('pm-auto-load-processes-btn');
+                                            if (loadBtn) {
+                                                var form = loadBtn.closest('form');
+                                                if (form) {
+                                                    var arkiteLinkedField = form.querySelector('field[name="arkite_linked"]');
+                                                    var processListField = form.querySelector('field[name="arkite_process_ids"]');
+                                                    
+                                                    if (arkiteLinkedField && processListField) {
+                                                        var isLinked = arkiteLinkedField.value === 'True' || arkiteLinkedField.value === true;
+                                                        var hasProcesses = processListField.querySelectorAll('tbody tr').length > 0;
+                                                        
+                                                        if (isLinked && !hasProcesses) {
+                                                            loadBtn.click();
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }, 1000);
+                                    })();
+                                ]]>
+                            </div>
+                            
+                            
+                        </div>
+                        
+                        <!-- Job Steps Section -->
+                        <div style="flex: 1 1 100%; min-width: 520px; background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: auto; box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                    <i class="fa fa-list-ol" style="color: #ff9800; margin-right: 8px;"/> Arkite Job Steps
+                                </h3>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button name="action_load_job_steps" 
+                                            string="Load Job Steps" 
+                                            type="object" 
+                                            class="btn-primary"
+                                            invisible="not arkite_linked"
+                                            icon="fa-refresh"
+                                            help="Load all job steps from Arkite (steps with Type='Job' and ProcessId=0)"/>
+                                    <button name="action_open_job_steps_hierarchy"
+                                            string="Hierarchy"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked"
+                                            icon="fa-sitemap"
+                                            help="Open job steps in a manageable list (Add/Edit/Delete/Reorder). Use Search > Group By > Parent to fold/unfold."/>
+                                    <button name="action_new_job_step"
+                                            string="New Step"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked"
+                                            icon="fa-plus"
+                                            help="Create a new job step for this project"/>
+                                    <button name="action_open_job_steps_diagram"
+                                            string="Diagram (drag)"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked"
+                                            icon="fa-share-alt"
+                                            help="Open the diagram view for drag/reparent. Use the List tab for New/Edit/Delete."/>
+                                    <button name="action_sync_staged_hierarchy_to_arkite"
+                                            string="Sync to Arkite"
+                                            type="object"
+                                            class="btn-secondary"
+                                            invisible="not arkite_linked or not arkite_hierarchy_dirty"
+                                            icon="fa-cloud-upload"
+                                            help="Sync staged hierarchy changes (job + process steps) to Arkite and show a toast."/>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                <div style="font-size: 13px; color: #e65100; font-weight: 600; margin-bottom: 8px;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/> 
+                                    Job Steps
+                                </div>
+                                <div style="font-size: 11px; color: #495057;">
+                                    <strong>Note:</strong> Use the <strong>Hierarchy</strong> button to edit and reorder job steps in a collapsible tree (native Odoo hierarchy view). This preview list is read-only.
+                                </div>
+                            </div>
+                            
+                            <div style="max-height: 55vh; overflow: auto;">
+                                <field name="arkite_job_step_ids" 
+                                       nolabel="1" 
+                                       invisible="not arkite_linked"
+                                       context="{'default_project_id': id, 'default_parent_id': False}"
+                                       mode="list"/>
+                            </div>
+                            
+                            <!-- Empty state -->
+                            <div invisible="arkite_job_step_ids" 
+                                 style="text-align: center; padding: 40px; color: #6c757d; border: 2px dashed #dee2e6; border-radius: 8px; background: #f8f9fa; margin-top: 16px;">
+                                <i class="fa fa-list" style="font-size: 48px; margin-bottom: 16px; display: block; color: #dee2e6;"/>
+                                <h4 style="color: #6c757d; margin-bottom: 8px;">No Job Steps Loaded</h4>
+                                <p style="font-size: 14px; margin-bottom: 0;">Click "Load Job Steps" to load all job steps from Arkite.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Materials & QR Code Section -->
+                        <div style="flex: 1 1 100%; min-width: 350px; display: flex; flex-direction: column; gap: 24px; margin-top: 16px;">
+                            <!-- Materials -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials Used
+                                    </h3>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button name="action_help_browse_images" 
+                                                type="object" 
+                                                class="btn btn-sm btn-info"
+                                                string="Browse Images"
+                                                icon="fa-image"
+                                                help="Show available Arkite image IDs"/>
+                                        <button name="action_fetch_material_images_from_arkite"
+                                                type="object"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                string="Fetch Images"
+                                                icon="fa-download"
+                                                invisible="not arkite_linked"
+                                                help="Download Arkite images for materials that have an Image ID but no image loaded in Odoo"/>
+                                        <button name="action_sync_materials_from_arkite"
+                                                type="object"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                string="Load from Arkite"
+                                                icon="fa-cloud-download"
+                                                invisible="not arkite_linked"
+                                                help="Load/sync materials from the linked Arkite project into this Materials Used list"/>
+                                    <button name="action_help_load_picking_bins" 
+                                            type="object" 
+                                            class="btn btn-sm btn-success"
+                                            string="Load Picking Bins"
+                                            icon="fa-download"
+                                            help="Auto-fill picking bin IDs from detections for the first empty material"/>
+                                    <button name="action_link_existing_materials" 
+                                            type="object" 
+                                            class="btn btn-sm btn-primary"
+                                            string="Link Existing Material"
+                                            icon="fa-link"
+                                            help="Select and link existing materials from the Materials tab"/>
+                                    </div>
+                                </div>
+                                <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Tip:</strong> Click "Add a line" to create new materials, or "Link Existing Material" to select materials from the Materials tab. Upload an image to automatically send it to Arkite and get the Image ID. <strong>Save the project form to sync all materials to Arkite</strong> - they will then appear in the Materials tab.
+                                </div>
+                                <field name="material_ids" nolabel="1" context="{'default_project_id': id, 'default_page_id': page_id}">
+                                    <list editable="bottom" create="1" delete="1">
+                                        <field name="name" string="Name" required="1"/>
+                                        <field name="material_type" string="Type" required="1"/>
+                                        <field name="image" widget="image" options="{'size': [64, 64]}" string="Image" help="Upload image to automatically send to Arkite and get Image ID"/>
+                                        <field name="image_id" string="Image ID" placeholder="Auto-filled when image uploaded" readonly="1"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="picking_bin_ids_text" string="Picking Bins" placeholder="e.g., 1111,2222,3333"/>
+                                    </list>
+                                </field>
+                            </div>
+                            
+                            <!-- QR Code -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                                <h3 style="margin: 0 0 16px 0; color: #2c3e50; font-weight: 600;">
+                                    <i class="fa fa-qrcode" style="color: #667eea; margin-right: 8px;"/> QR Code
+                                </h3>
+                                <div style="display: inline-block; padding: 16px; background: #f8f9fa; border-radius: 12px;">
+                                    <field name="qr_image" widget="image" options="{'size': [200, 200]}" nolabel="1"/>
+                                    <div style="margin-top: 12px; color: #6c757d; font-size: 13px;">
+                                        <field name="qr_text" readonly="1" style="display: inline; border: none; background: transparent; font-weight: 600;"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Hierarchy Test Section - DISABLED due to model loading order issue -->
+                        </div>
+                    </div>
+                    
+                    <!-- Notebook with Tabs for Arkite Data -->
+                    <notebook>
+                        
+                        <!-- Arkite Steps Tab -->
+                        <page string="Arkite Steps" name="arkite_steps" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-list-ol" style="color: #667eea; margin-right: 8px;"/> Job Steps
+                                    </h3>
+                                    <button name="action_load_arkite_steps" 
+                                            type="object" 
+                                            class="btn btn-sm btn-primary"
+                                            string="Refresh Steps"
+                                            icon="fa-refresh"
+                                            help="Refresh steps from Arkite project"/>
+                                </div>
+                                <field name="arkite_job_step_ids" nolabel="1" mode="list"/>
+                                <div style="margin-top: 16px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; font-size: 13px; color: #0056b3;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Variant Assignment:</strong> Assign specific variants to steps by selecting them in the "Variants" column. Steps with no assigned variants will apply to all variants by default.
+                                </div>
+                            </div>
+                        </page>
+                        
+                        <!-- Variants Tab -->
+                        <page string="Variants" name="variants" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-tags" style="color: #ffc107; margin-right: 8px;"/> Variants
+                                    </h3>
+                                    <button name="action_load_arkite_variants" 
+                                            type="object" 
+                                            class="btn btn-sm btn-warning"
+                                            string="Refresh Variants"
+                                            icon="fa-refresh"
+                                            help="Refresh variants from Arkite project"/>
+                                </div>
+                                <field name="arkite_variant_ids" nolabel="1" editable="bottom">
+                                    <list>
+                                        <field name="name" string="Variant Name"/>
+                                        <field name="description" string="Description"/>
+                                    </list>
+                                </field>
+                                <div style="margin-top: 16px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-size: 13px; color: #856404;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Variant Assignment:</strong> You can assign different variants to different steps. Use the steps tab to configure variant assignments.
+                                </div>
+                            </div>
+                        </page>
+                        
+                        <!-- Detections Tab -->
+                        <page string="Detections" name="detections" invisible="not arkite_project_loaded">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-eye" style="color: #dc3545; margin-right: 8px;"/> Detections
+                                    </h3>
+                                    <button name="action_load_arkite_detections" 
+                                            type="object" 
+                                            class="btn btn-sm btn-danger"
+                                            string="Refresh Detections"
+                                            icon="fa-refresh"
+                                            help="Refresh detections from Arkite project"/>
+                                </div>
+                                <field name="arkite_detection_ids" nolabel="1" editable="bottom">
+                                    <list>
+                                        <field name="name" string="Detection Name"/>
+                                        <field name="detection_type" string="Type"/>
+                                        <field name="is_job_specific" widget="boolean_toggle" string="Job-Specific"/>
+                                    </list>
+                                </field>
+                            </div>
+                        </page>
+                        
+                        <!-- Arkite Materials Tab (Debug) -->
+                        <!-- Keep for admins/debug only to avoid duplicate material UIs for end users. -->
+                        <page string="Arkite Materials (Debug)" name="arkite_materials" invisible="not arkite_project_loaded" groups="base.group_system">
+                            <div style="padding: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                        <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials in Arkite
+                                    </h3>
+                                    <button name="action_load_arkite_materials" 
+                                            type="object" 
+                                            class="btn btn-sm btn-success"
+                                            string="Refresh Materials"
+                                            icon="fa-refresh"
+                                            help="Refresh materials from Arkite project"/>
+                                </div>
+                                <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
+                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
+                                    <strong>Tip:</strong> Click "Add a line" to create new materials in Arkite. All changes are synced automatically. For picking bins, enter IDs separated by commas (e.g., 1111,2222,3333).
+                                </div>
+                                <field name="arkite_material_ids" nolabel="1" context="{'default_project_id': id}" editable="bottom" create="1" delete="1">
+                                    <list>
+                                        <field name="name" string="Material Name" required="1"/>
+                                        <field name="material_type" string="Type" required="1"/>
+                                        <field name="description" string="Description"/>
+                                        <field name="image_id" string="Image ID" placeholder="Optional"/>
+                                        <field name="picking_bin_ids_text" string="Picking Bin IDs" placeholder="e.g., 1111,2222,3333"/>
+                                        <field name="material_id" column_invisible="1"/>
+                                    </list>
+                                    <form>
+                                        <sheet>
+                                            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                                                <h2 style="color: white; margin: 0 0 16px 0; font-size: 24px; font-weight: 700;">
+                                                    <i class="fa fa-box" style="margin-right: 12px;"/> Material Details
+                                                </h2>
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Material Name *</div>
+                                                        <field name="name" required="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; font-size: 16px;"/>
+                                                    </div>
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Type *</div>
+                                                        <field name="material_type" required="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white;"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; font-size: 18px;">
+                                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Additional Information
+                                                </h3>
+                                                <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Description</div>
+                                                        <field name="description" placeholder="Enter material description..." style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; resize: vertical;"/>
+                                                    </div>
+                                                    <div>
+                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Image ID</div>
+                                                        <field name="image_id" placeholder="Enter Arkite Image ID (optional)" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px;"/>
+                                                        <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                                                            <i class="fa fa-info-circle"/> Optional: ID of an image uploaded to Arkite
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                            <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Picking Bin IDs</div>
+                                                            <button name="action_load_picking_bins_from_detections" 
+                                                                    type="object" 
+                                                                    class="btn btn-sm btn-info"
+                                                                    string="Load from Detections"
+                                                                    icon="fa-download"
+                                                                    help="Automatically load picking bin IDs from detections in this project"/>
+                                                        </div>
+                                                        <field name="picking_bin_ids_text" placeholder="e.g., 1111,2222,3333" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace;"/>
+                                                        <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                                                            <i class="fa fa-info-circle"/> Enter picking bin IDs separated by commas, or click "Load from Detections" to automatically populate from picking bin detections.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div invisible="not material_id" style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 16px;">
+                                                <div style="font-weight: 600; color: #0056b3; margin-bottom: 8px;">
+                                                    <i class="fa fa-check-circle" style="margin-right: 6px;"/> Material ID
+                                                </div>
+                                                <div style="color: #495057; font-size: 14px;">
+                                                    <field name="material_id" readonly="1" style="display: inline; border: none; background: transparent; font-weight: 600; font-family: monospace;"/>
+                                                </div>
+                                            </div>
+                                        </sheet>
+                                    </form>
+                                </field>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_project" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">product_module.project</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_project_list"/>
+    </record>
+    
+    <!-- Menu item for Projects (moved from product_views.xml to avoid load order issues) -->
+    <menuitem id="menu_projects"
+              name="Projects"
+              parent="menu_product_module_root"
+              action="action_project"
+              sequence="15"/>
+</odoo>
+
+

@@ -19,7 +19,7 @@ MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 
 # Topics
 MQTT_TOPIC_CODES = os.getenv("MQTT_TOPIC_CODES", "factory/products/all_product_codes")
-# NOTE: This topic publishes data GROUPED BY CATEGORY
+# NOTE: This topic publishes data GROUPED BY JOB
 MQTT_TOPIC_DETAILS = os.getenv("MQTT_TOPIC_DETAILS", "factory/products/all_product_details")
 
 # Pretty JSON output (set PRETTY_JSON=true for indented payloads)
@@ -140,7 +140,7 @@ def detect_m2m_table_and_cols():
 
 
 # =========================
-# SQL (Grouped by Category) – built after M2M detection
+# SQL (Grouped by Job) – built after M2M detection
 # =========================
 def build_sql_by_category(m2m_rel_table: str, left_col: str, right_col: str) -> str:
     return f"""
@@ -161,7 +161,7 @@ base AS (
         i.id            AS instr_id,
         i.sequence      AS instr_sequence,
         i.title         AS instr_title,
-        i.description   AS instr_description,
+        i.arkite_comment  AS instr_description,
         CASE
             WHEN %(odoo_base_url)s <> '' AND a.attachment_id IS NOT NULL THEN
                 %(odoo_base_url)s || '/web/image/' || a.attachment_id::text
@@ -238,16 +238,16 @@ def fetch_details_grouped_by_category():
     with get_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute(sql, {"odoo_base_url": ODOO_BASE_URL})
         rows = cur.fetchall()
-        categories = []
+        jobs = []
         for r in rows:
-            categories.append(
+            jobs.append(
                 {
-                    "category_id": r["category_id"],
-                    "category_name": r["category_name"],
+                    "job_id": r["job_id"],
+                    "job_name": r["job_name"],
                     "products": r["products"],  # list of product objects
                 }
             )
-        return categories
+        return jobs
 
 
 # =========================
@@ -262,12 +262,12 @@ def payload_for_codes(codes):
     }
 
 
-def payload_for_details_grouped(categories):
+def payload_for_details_grouped(jobs):
     return {
         "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "count": len(categories),
-        "categories": categories,
-        "fields": ["category_id", "category_name", "products[*]"],
+        "count": len(jobs),
+        "jobs": jobs,
+        "fields": ["job_id", "job_name", "products[*]"],
         "source": {
             "db": DB_NAME,
             "tables": [
@@ -294,12 +294,12 @@ def hash_strings(items):
 
 def hash_categories(items):
     m = hashlib.sha256()
-    for cat in items:
-        m.update(str(cat.get("category_id")).encode("utf-8"))
+    for job in items:
+        m.update(str(job.get("job_id")).encode("utf-8"))
         m.update(b"\x1e")
-        m.update((cat.get("category_name") or "").encode("utf-8"))
+        m.update((job.get("job_name") or "").encode("utf-8"))
         m.update(b"\x1f")
-        m.update(json.dumps(cat.get("products") or [], separators=(",", ":"), sort_keys=True).encode("utf-8"))
+        m.update(json.dumps(job.get("products") or [], separators=(",", ":"), sort_keys=True).encode("utf-8"))
         m.update(b"\x00")
     return m.hexdigest()
 
@@ -333,12 +333,12 @@ def publish_all_product_data():
             else:
                 log.debug("No change in product codes; skipping publish.")
 
-            # 2) Details topic (GROUPED BY CATEGORY)
-            categories = fetch_details_grouped_by_category()
-            h_details = hash_categories(categories)
+            # 2) Details topic (GROUPED BY JOB)
+            jobs = fetch_details_grouped_by_category()
+            h_details = hash_categories(jobs)
             if h_details != last_hash_details:
-                mqtt_client.publish(MQTT_TOPIC_DETAILS, dumps(payload_for_details_grouped(categories)), qos=1, retain=True)
-                log.info("Published %d categories (grouped details) to '%s'", len(categories), MQTT_TOPIC_DETAILS)
+                mqtt_client.publish(MQTT_TOPIC_DETAILS, dumps(payload_for_details_grouped(jobs)), qos=1, retain=True)
+                log.info("Published %d jobs (grouped details) to '%s'", len(jobs), MQTT_TOPIC_DETAILS)
                 last_hash_details = h_details
             else:
                 log.debug("No change in grouped details; skipping publish.")

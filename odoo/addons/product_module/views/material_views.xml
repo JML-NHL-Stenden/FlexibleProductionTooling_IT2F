@@ -1,0 +1,140 @@
+<!-- product_module/views/material_views.xml -->
+<odoo>
+    <!-- Material Search View -->
+    <record id="view_material_search" model="ir.ui.view">
+        <field name="name">product.module.material.search</field>
+        <field name="model">product_module.material</field>
+        <field name="arch" type="xml">
+            <search string="Search Materials">
+                <field name="name" string="Name"/>
+                <field name="material_type" string="Type"/>
+                <field name="project_id" string="Project"/>
+                <filter string="All" name="all" domain="[]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Material List View -->
+    <record id="view_material_list" model="ir.ui.view">
+        <field name="name">product.module.material.list</field>
+        <field name="model">product_module.material</field>
+        <field name="arch" type="xml">
+            <list string="Materials" multi_edit="1">
+                <field name="name"/>
+                <field name="material_type"/>
+                <field name="project_id" string="Project"/>
+                <field name="usage_count" string="Used in Products"/>
+                <field name="image" widget="image" options="{'size': [64, 64]}"/>
+                <button name="action_link_to_project" 
+                        type="object" 
+                        string="Link to Project"
+                        icon="fa-link"
+                        invisible="context.get('link_to_project', False) == False"
+                        help="Link this material to the current project"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Material Form View -->
+    <record id="view_material_form" model="ir.ui.view">
+        <field name="name">product.module.material.form</field>
+        <field name="model">product_module.material</field>
+        <field name="arch" type="xml">
+            <form string="Material Details">
+                <sheet style="max-width: 800px; margin: 0 auto; padding: 0;">
+                    <!-- Material Header -->
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); border-radius: 16px; padding: 30px; margin-bottom: 24px; color: white;">
+                        <div style="display: flex; align-items: center; gap: 24px;">
+                            <div style="width: 100px; height: 100px; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3);">
+                                <field name="image" widget="image" options="{'size': [100, 100]}"/>
+                            </div>
+                            <div style="flex: 1;">
+                                <h1 style="color: white; margin: 0 0 12px 0; font-size: 28px; font-weight: 700;">
+                                    <field name="name" placeholder="Material Name" required="1" style="color: white; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 8px 12px; font-size: 28px; width: 100%;"/>
+                                </h1>
+                                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+                                    <div style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa fa-tag"/> <field name="material_type" placeholder="Type" required="1" style="color: white; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 4px 8px; font-size: 14px; min-width: 150px;"/>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600;">
+                                        <i class="fa fa-folder"/> Project: <field name="project_id" readonly="1" style="color: white; background: transparent; border: none; padding: 0; font-weight: 600;"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Material Details -->
+                    <div style="background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 24px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 24px; font-weight: 600; font-size: 20px;">
+                            <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Material Information
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                            <div>
+                                <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Description</div>
+                                <field name="description" placeholder="Enter material description..." style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; resize: vertical;"/>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Arkite Image ID</div>
+                                        <button name="action_browse_arkite_images" 
+                                                type="object" 
+                                                class="btn btn-sm btn-info"
+                                                string="Browse"
+                                                icon="fa-image"
+                                                invisible="not project_id and not project_ids"
+                                                help="Browse available images from Arkite project"/>
+                                    </div>
+                                    <field name="image_id" placeholder="Enter Image ID or upload image above" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace;"/>
+                                    <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                                        <i class="fa fa-info-circle"/> Upload an image above to automatically send it to Arkite and get the Image ID, or enter an existing Image ID manually.
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Picking Bin IDs</div>
+                                        <button name="action_load_picking_bins_from_detections" 
+                                                type="object" 
+                                                class="btn btn-sm btn-success"
+                                                string="Load from Detections"
+                                                icon="fa-download"
+                                                invisible="not project_id and not project_ids"
+                                                help="Load picking bin IDs from detections"/>
+                                    </div>
+                                    <field name="picking_bin_ids_text" placeholder="e.g., 1111,2222,3333 or click Load button" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace;"/>
+                                    <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                                        <i class="fa fa-info-circle"/> Enter picking bin IDs separated by commas, or click "Load from Detections" to automatically populate from linked projects.
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Linked Projects</div>
+                                <field name="project_ids" widget="many2many_tags" placeholder="Select projects that use this material"/>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Materials -->
+    <record id="action_material" model="ir.actions.act_window">
+        <field name="name">All Materials</field>
+        <field name="res_model">product_module.material</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_material_list"/>
+        <field name="search_view_id" ref="view_material_search"/>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Menu item for All Materials -->
+    <menuitem id="menu_all_materials"
+              name="All Materials"
+              parent="menu_product_module_root"
+              action="action_material"
+              sequence="40"/>
+</odoo>
+

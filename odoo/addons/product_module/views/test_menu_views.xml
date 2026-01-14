@@ -1,0 +1,17 @@
+<!-- product_module/views/test_menu_views.xml -->
+<!-- Separate file for Test menu to avoid merge conflicts -->
+<odoo>
+    <!-- Test Menu - Under Product Module root (will appear in top bar) -->
+    <menuitem id="menu_test"
+              name="Test"
+              parent="menu_product_module_root"
+              action="action_arkite_project_wizard"
+              sequence="50"/>
+    
+    <!-- Submenu for Test -->
+    <menuitem id="menu_test_add_steps"
+              name="Add Steps to Job"
+              parent="menu_test"
+              action="action_arkite_job_step_wizard"
+              sequence="10"/>
+</odoo>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- 
+        Expandable One2Many Widget Templates
+        
+        The main expandable functionality is implemented via DOM manipulation in JS
+        for better compatibility with Odoo 18's OWL component system.
+        
+        This file provides any additional template overrides if needed.
+    -->
+</templates>

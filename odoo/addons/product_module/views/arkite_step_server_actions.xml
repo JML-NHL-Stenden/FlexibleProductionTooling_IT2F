@@ -1,0 +1,48 @@
+<odoo>
+    <!-- Global actions appear in the "Action" menu (safe, no JS, works on list + hierarchy). -->
+
+    <record id="action_job_steps_save_to_arkite" model="ir.actions.server">
+        <field name="name">Save Job Steps to Arkite</field>
+        <field name="model_id" ref="model_product_module_arkite_job_step"/>
+        <field name="binding_model_id" ref="model_product_module_arkite_job_step"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = env['product_module.arkite.job.step'].with_context(**env.context).pm_action_save_all()
+        </field>
+    </record>
+
+    <record id="action_job_steps_discard_from_arkite" model="ir.actions.server">
+        <field name="name">Discard Job Step Changes (Reload from Arkite)</field>
+        <field name="model_id" ref="model_product_module_arkite_job_step"/>
+        <field name="binding_model_id" ref="model_product_module_arkite_job_step"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = env['product_module.arkite.job.step'].with_context(**env.context).pm_action_discard_all()
+        </field>
+    </record>
+
+    <record id="action_process_steps_save_to_arkite" model="ir.actions.server">
+        <field name="name">Save Process Steps to Arkite</field>
+        <field name="model_id" ref="model_product_module_arkite_process_step"/>
+        <field name="binding_model_id" ref="model_product_module_arkite_process_step"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = env['product_module.arkite.process.step'].with_context(**env.context).pm_action_save_all()
+        </field>
+    </record>
+
+    <record id="action_process_steps_discard_from_arkite" model="ir.actions.server">
+        <field name="name">Discard Process Step Changes (Reload from Arkite)</field>
+        <field name="model_id" ref="model_product_module_arkite_process_step"/>
+        <field name="binding_model_id" ref="model_product_module_arkite_process_step"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = env['product_module.arkite.process.step'].with_context(**env.context).pm_action_discard_all()
+        </field>
+    </record>
+</odoo>
+
