@@ -220,13 +220,16 @@ def on_message(_cli, _userdata, msg):
             try:
                 db_cur.execute("""
                     INSERT INTO public.product_module_instruction
-                    (step_id, title, sequence, project_id, is_completed)
-                    VALUES (%s, %s, %s, %s, %s)
+                    (step_id, title, sequence, project_id, detection_name, detection_id, detection_status, is_completed)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (step_id) DO UPDATE
                     SET
                         title = EXCLUDED.title,
                         sequence = EXCLUDED.sequence,
                         project_id = EXCLUDED.project_id,
+                        detection_name = EXCLUDED.detection_name,
+                        detection_id = EXCLUDED.detection_id,
+                        detection_status = EXCLUDED.detection_name,
                         is_completed = public.product_module_instruction.is_completed
                             OR EXCLUDED.is_completed;
                 """, (
@@ -234,6 +237,9 @@ def on_message(_cli, _userdata, msg):
                     clean_title,
                     step["sequence"],
                     project_db_id,
+                    step["detectionName"],
+                    step["detectionId"],
+                    step.get("detection_status", False),
                     is_completed_now
                 ))
                 db_conn.commit()

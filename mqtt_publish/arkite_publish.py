@@ -128,6 +128,7 @@ def fetch_steps_payload():
                 "sequence": extract_step_number(step.get("Name")),
                 "step_type": step.get("StepType"),
                 "isProjectLoaded": is_project_loaded,
+                "detectionName" : detection_name,
                 "detectionId": detection_id,
                 "detection_status": detection_status,
             })

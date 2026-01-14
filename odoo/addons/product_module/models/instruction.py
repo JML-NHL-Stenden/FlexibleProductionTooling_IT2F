@@ -39,6 +39,12 @@ class ProductModuleInstruction(models.Model):
     is_completed = fields.Boolean(
         default=False
     )
+    detection_name = fields.Char(string='Detection Name', size=250)
+    detection_status = fields.Boolean(default=False)
+    detection_id = fields.Char(
+        string='Detection ID',
+        help='Detection ID (required for detection-based steps like TOOL_PLACING, OBJECT_PLACING, etc.)'
+    )
     sequence = fields.Integer(string='Step #', default=0, help='Order of process steps')
     title = fields.Char(string='Process Title', required=True, size=250)
     arkite_process_id = fields.Char(
