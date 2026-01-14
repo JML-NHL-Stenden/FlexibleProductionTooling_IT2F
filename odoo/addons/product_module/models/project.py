@@ -2773,7 +2773,12 @@ class ProductModuleProject(models.Model):
         return client.download_image_bytes(str(self.arkite_project_id), str(image_id))
 
     def action_fetch_material_images_from_arkite(self):
-        """Fetch material images from Arkite (by image_id) into the Materials Used list."""
+        """Fetch material images from Arkite (by image_id) into the Materials Used list.
+        
+        This function will:
+        1. First sync/create materials from Arkite (to get image_id values)
+        2. Then download images for all materials that have an image_id
+        """
         import base64
 
         self.ensure_one()
@@ -2788,33 +2793,127 @@ class ProductModuleProject(models.Model):
             _logger.error("[ARKITE IMAGE] Credential error: %s", e, exc_info=True)
             raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
 
+        # STEP 1: First sync materials from Arkite (create if not exists, update if exists)
+        _logger.info("[ARKITE IMAGE] Step 1: Syncing materials from Arkite...")
+        created_count = 0
+        updated_count = 0
+        
+        try:
+            url = f"{api_base}/projects/{self.arkite_project_id}/materials/"
+            params = {"apiKey": api_key}
+            response = requests.get(url, params=params, verify=False, timeout=10)
+            
+            if not response.ok:
+                raise UserError(_('Failed to fetch materials from Arkite: HTTP %s') % response.status_code)
+            
+            arkite_materials = response.json()
+            if not isinstance(arkite_materials, list):
+                raise UserError(_('Unexpected response format from Arkite API (materials).'))
+            
+            _logger.info("[ARKITE IMAGE] Found %s material(s) in Arkite", len(arkite_materials))
+            
+            def _map_type(arkite_type, fallback="StandardMaterial"):
+                if arkite_type == "PickingBinMaterial":
+                    return "PickingBinMaterial"
+                if arkite_type == "StandardMaterial":
+                    return "StandardMaterial"
+                return fallback
+            
+            # Process each material from Arkite
+            for arkite_mat in arkite_materials:
+                arkite_id = str(arkite_mat.get("Id", "") or "")
+                image_id = str(arkite_mat.get("ImageId", "") or "")
+                material_name = arkite_mat.get("Name", "Unnamed Material")
+                
+                if not arkite_id:
+                    continue
+                
+                _logger.info("[ARKITE IMAGE] Processing material: %s (ID: %s, ImageId: %s)", material_name, arkite_id, image_id)
+                
+                # Find matching material in Odoo by arkite_material_id or name
+                odoo_mat = self.material_ids.filtered(lambda m: m.arkite_material_id == arkite_id)
+                if not odoo_mat:
+                    odoo_mat = self.material_ids.filtered(lambda m: m.name == material_name)
+                
+                picking_bin_ids = arkite_mat.get("PickingBinIds", [])
+                picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
+                arkite_type = arkite_mat.get("Type", "")
+                odoo_type = _map_type(arkite_type)
+                
+                if odoo_mat:
+                    # Update existing material
+                    odoo_mat.write({
+                        'arkite_material_id': arkite_id,
+                        'material_type': odoo_type,
+                        'description': arkite_mat.get("Description", odoo_mat.description or ""),
+                        'image_id': image_id if image_id and image_id != "0" else odoo_mat.image_id,
+                        'picking_bin_ids_text': picking_bin_str,
+                    })
+                    updated_count += 1
+                    _logger.info("[ARKITE IMAGE] Updated existing material: %s", material_name)
+                else:
+                    # Create new material
+                    self.env['product_module.material'].create({
+                        'project_id': self.id,
+                        'page_id': self.page_id.id if self.page_id else False,
+                        'name': material_name,
+                        'material_type': odoo_type,
+                        'description': arkite_mat.get("Description", ""),
+                        'image_id': image_id if image_id and image_id != "0" else "",
+                        'picking_bin_ids_text': picking_bin_str,
+                        'arkite_material_id': arkite_id,
+                    })
+                    created_count += 1
+                    _logger.info("[ARKITE IMAGE] Created new material: %s", material_name)
+            
+            _logger.info("[ARKITE IMAGE] Material sync complete. Created: %s, Updated: %s", created_count, updated_count)
+            
+        except Exception as e:
+            _logger.error("[ARKITE IMAGE] Error syncing materials: %s", e, exc_info=True)
+            raise UserError(_('Failed to sync materials from Arkite: %s') % str(e))
+
+        # STEP 2: Now fetch images for materials that have image_id
         fetched = 0
         skipped = 0
         failed = 0
 
-        # Only fill missing images by default (avoid overwriting any uploaded ones)
-        materials = self.material_ids.filtered(lambda m: m.image_id)
+        # Get all materials with image_id
+        materials = self.material_ids.filtered(lambda m: m.image_id and m.image_id != "0")
+        
+        _logger.info("[ARKITE IMAGE] Step 2: Found %s material(s) with image_id. Starting image download...", len(materials))
+        
         for mat in materials:
             if mat.image:
                 skipped += 1
+                _logger.debug("[ARKITE IMAGE] Skipped material '%s' (already has image)", mat.name)
                 continue
+            
+            _logger.info("[ARKITE IMAGE] Downloading image for material '%s' (image_id: %s)", mat.name, mat.image_id)
             img_bytes = self._arkite_download_image_bytes(api_base, api_key, mat.image_id)
+            
             if not img_bytes:
                 failed += 1
+                _logger.warning("[ARKITE IMAGE] Failed to download image for material '%s' (image_id: %s)", mat.name, mat.image_id)
                 continue
-            mat.image = base64.b64encode(img_bytes)
+            
+            mat.write({'image': base64.b64encode(img_bytes)})
             fetched += 1
+            _logger.info("[ARKITE IMAGE] Successfully downloaded image for material '%s'", mat.name)
 
-        msg = _("Fetched %s image(s). Skipped %s (already had image). Failed %s.") % (fetched, skipped, failed)
-        # Do NOT return an act_window refresh here for the same reason as materials sync.
+        # Build result message
+        sync_msg = _("Synced %s material(s) from Arkite (%s new, %s updated)") % (created_count + updated_count, created_count, updated_count)
+        image_msg = _("Downloaded %s image(s) (Skipped: %s already had images, Failed: %s)") % (fetched, skipped, failed)
+        
+        full_msg = f"{sync_msg}\n\n{image_msg}"
+        
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': _('Images Updated'),
-                'message': msg,
-                'type': 'success' if fetched else ('warning' if failed else 'info'),
-                'sticky': False,
+                'title': _('Fetch Arkite Images Complete'),
+                'message': full_msg,
+                'type': 'success' if fetched > 0 else ('warning' if failed > 0 else 'info'),
+                'sticky': True,
             }
         }
 
@@ -2897,6 +2996,33 @@ class ProductModuleProject(models.Model):
         
         return False
     
+    def action_open_arkite_image_selector(self):
+        """Open wizard to browse and select Arkite images"""
+        self.ensure_one()
+        
+        if not self.arkite_project_id:
+            raise UserError(_('Please link this project to an Arkite project first.'))
+        
+        # Create wizard
+        wizard = self.env['product_module.arkite.image.selector.wizard'].create({
+            'project_id': self.id,
+        })
+        
+        # Auto-load images
+        wizard.action_load_images()
+        
+        return {
+            'name': _('Select Arkite Image'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'product_module.arkite.image.selector.wizard',
+            'res_id': wizard.id,
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_project_id': self.id,
+            }
+        }
+    
     def action_help_browse_images(self):
         """Show available Arkite image IDs in a notification"""
         self.ensure_one()
@@ -2963,15 +3089,15 @@ class ProductModuleProject(models.Model):
             
             image_ids = [str(img.get('Id', '')) for img in images if img.get('Id')]
             if image_ids:
-                message = _('Available Image IDs: %s\n\nCopy an ID and paste it into the Image ID field.') % ', '.join(image_ids[:30])
+                message = _('Available Image IDs in Arkite: %s\n\nClick "Fetch Arkite Images" to automatically download these images to your materials.') % ', '.join(image_ids[:30])
                 if len(image_ids) > 30:
-                    message += _('\n(Showing first 30 of %s images)') % len(image_ids)
+                    message += _('\n\n(Showing first 30 of %s images)') % len(image_ids)
                 
                 return {
                     'type': 'ir.actions.client',
                     'tag': 'display_notification',
                     'params': {
-                        'title': _('Available Images (%s)') % len(image_ids),
+                        'title': _('Available Images in Arkite (%s)') % len(image_ids),
                         'message': message,
                         'type': 'info',
                         'sticky': True,

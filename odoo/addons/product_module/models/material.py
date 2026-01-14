@@ -372,6 +372,40 @@ class ProductModuleMaterial(models.Model):
         
         return super().unlink()
     
+    def action_select_arkite_image(self):
+        """Open Arkite image selector wizard to select an image for this material"""
+        self.ensure_one()
+        
+        # Get project from material
+        project = self.project_id
+        if not project:
+            raise UserError(_('Material must be linked to a project to select Arkite images.'))
+        
+        if not project.arkite_project_id:
+            raise UserError(_('Project must be linked to an Arkite project first.'))
+        
+        # Create wizard with material context
+        wizard = self.env['product_module.arkite.image.selector.wizard'].create({
+            'project_id': project.id,
+            'material_id': self.id,
+        })
+        
+        # Auto-load images
+        wizard.action_load_images()
+        
+        return {
+            'name': _('Select Arkite Image for %s') % self.name,
+            'type': 'ir.actions.act_window',
+            'res_model': 'product_module.arkite.image.selector.wizard',
+            'res_id': wizard.id,
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_project_id': project.id,
+                'default_material_id': self.id,
+            }
+        }
+    
     def action_link_to_project(self):
         """Link selected materials to the project from context"""
         if not self:

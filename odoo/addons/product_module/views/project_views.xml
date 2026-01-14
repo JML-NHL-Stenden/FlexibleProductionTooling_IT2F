@@ -991,19 +991,13 @@
                                         <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials Used
                                     </h3>
                                     <div style="display: flex; gap: 8px;">
-                                        <button name="action_help_browse_images" 
-                                                type="object" 
-                                                class="btn btn-sm btn-info"
-                                                string="Browse Images"
-                                                icon="fa-image"
-                                                help="Show available Arkite image IDs"/>
-                                        <button name="action_fetch_material_images_from_arkite"
+                                        <button name="action_open_arkite_image_selector"
                                                 type="object"
                                                 class="btn btn-sm btn-outline-secondary"
                                                 string="Fetch Images"
                                                 icon="fa-download"
                                                 invisible="not arkite_linked"
-                                                help="Download Arkite images for materials that have an Image ID but no image loaded in Odoo"/>
+                                                help="Browse and select images from Arkite project"/>
                                         <button name="action_sync_materials_from_arkite"
                                                 type="object"
                                                 class="btn btn-sm btn-outline-secondary"
@@ -1027,14 +1021,23 @@
                                 </div>
                                 <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
                                     <i class="fa fa-info-circle" style="margin-right: 6px;"/>
-                                    <strong>Tip:</strong> Click "Add a line" to create new materials, or "Link Existing Material" to select materials from the Materials tab. Upload an image to automatically send it to Arkite and get the Image ID. <strong>Save the project form to sync all materials to Arkite</strong> - they will then appear in the Materials tab.
+                                    <strong>Tip:</strong> Click "Add a line" to create new materials, or "Link Existing Material" to select materials from the Materials tab. 
+                                    To add an image: <strong>click the <i class="fa fa-images"/> button</strong> to browse Arkite images, or upload directly. 
+                                    <strong>Save the project form to sync all materials to Arkite</strong> - they will then appear in the Materials tab.
                                 </div>
                                 <field name="material_ids" nolabel="1" context="{'default_project_id': id, 'default_page_id': page_id}">
                                     <list editable="bottom" create="1" delete="1">
                                         <field name="name" string="Name" required="1"/>
                                         <field name="material_type" string="Type" required="1"/>
-                                        <field name="image" widget="image" options="{'size': [64, 64]}" string="Image" help="Upload image to automatically send to Arkite and get Image ID"/>
-                                        <field name="image_id" string="Image ID" placeholder="Auto-filled when image uploaded" readonly="1"/>
+                                        <field name="image" widget="image" options="{'size': [64, 64]}" string="Image" help="Upload image to automatically send to Arkite"/>
+                                        <button name="action_select_arkite_image" 
+                                                type="object" 
+                                                string="Select Image" 
+                                                icon="fa-images" 
+                                                class="btn btn-primary"
+                                                style="padding: 8px 16px; min-width: 120px; font-weight: 600; text-align: center;"
+                                                title="Select image from Arkite"
+                                                help="Browse and select an image from Arkite project"/>
                                         <field name="description" string="Description"/>
                                         <field name="picking_bin_ids_text" string="Picking Bins" placeholder="e.g., 1111,2222,3333"/>
                                     </list>
