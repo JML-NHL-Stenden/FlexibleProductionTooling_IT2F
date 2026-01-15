@@ -1,0 +1,134 @@
+<!-- product_module/views/arkite_image_selector_wizard_view.xml -->
+<odoo>
+    <!-- Arkite Image Selector Wizard Form View -->
+    <record id="view_arkite_image_selector_wizard_form" model="ir.ui.view">
+        <field name="name">product_module.arkite.image.selector.wizard.form</field>
+        <field name="model">product_module.arkite.image.selector.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Select Arkite Image">
+                <header>
+                    <button name="action_load_images" 
+                            type="object" 
+                            string="Reload Images" 
+                            class="btn-primary"
+                            icon="fa-refresh"
+                            invisible="state == 'loading'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="loading,loaded"/>
+                </header>
+                <sheet>
+                    <!-- Loading State -->
+                    <div invisible="state != 'loading'" style="text-align: center; padding: 40px;">
+                        <i class="fa fa-spinner fa-spin" style="font-size: 48px; color: #007bff; margin-bottom: 16px;"/>
+                        <h3 style="color: #6c757d;">Loading images from Arkite...</h3>
+                        <p style="color: #6c757d;">Please wait while we fetch available images.</p>
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div invisible="state != 'error'" style="background: #f8d7da; border: 2px solid #dc3545; border-radius: 8px; padding: 24px; margin: 16px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <i class="fa fa-exclamation-triangle" style="font-size: 48px; color: #dc3545;"/>
+                            <div>
+                                <h3 style="color: #721c24; margin: 0 0 8px 0;">Error Loading Images</h3>
+                                <field name="error_message" readonly="1" style="color: #721c24; border: none; background: transparent;"/>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loaded State -->
+                    <div invisible="state != 'loaded'">
+                        <!-- Header Info -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
+                            <h2 style="color: white; margin: 0 0 12px 0; font-size: 24px; font-weight: 700;">
+                                <i class="fa fa-images" style="margin-right: 12px;"/> Select an Image from Arkite
+                            </h2>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                    <i class="fa fa-project-diagram"/> Project: <field name="project_id" readonly="1" style="display: inline; border: none; background: transparent; color: white;"/>
+                                </span>
+                                <span invisible="not material_id" style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                    <i class="fa fa-box"/> Material: <field name="material_id" readonly="1" style="display: inline; border: none; background: transparent; color: white;"/>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Info Box -->
+                        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fa fa-info-circle" style="font-size: 24px; color: #007bff;"/>
+                                <div style="flex: 1;">
+                                    <strong style="color: #0056b3;">Click on an image to select it.</strong>
+                                    <p style="margin: 4px 0 0 0; color: #495057; font-size: 13px;">
+                                        The selected image will be assigned to the material and downloaded automatically.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Images Grid -->
+                        <field name="image_ids" nolabel="1" mode="kanban">
+                            <kanban class="o_kanban_mobile" create="0" delete="0" edit="0">
+                                <templates>
+                                    <t t-name="kanban-box">
+                                        <div class="oe_kanban_global_click" style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease; min-height: 280px; display: flex; flex-direction: column;">
+                                            <!-- Image Preview -->
+                                            <div style="flex: 1; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px; margin-bottom: 12px; min-height: 160px; overflow: hidden;">
+                                                <field name="thumbnail" widget="image" options="{'size': [150, 150]}" style="max-width: 100%; max-height: 160px; object-fit: contain;"/>
+                                            </div>
+                                            
+                                            <!-- Image Info -->
+                                            <div style="border-top: 2px solid #e9ecef; padding-top: 12px;">
+                                                <div style="font-weight: 600; color: #2c3e50; margin-bottom: 8px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                    <i class="fa fa-image" style="color: #667eea; margin-right: 6px;"/> 
+                                                    <field name="name"/>
+                                                </div>
+                                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                                    <span style="background: #e7f3ff; color: #0056b3; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; font-family: monospace;">
+                                                        ID: <field name="image_id"/>
+                                                    </span>
+                                                    <button name="action_select_image" 
+                                                            type="object" 
+                                                            string="Select" 
+                                                            class="btn btn-sm btn-success"
+                                                            style="font-weight: 600; padding: 4px 12px; border-radius: 6px;">
+                                                        <i class="fa fa-check"/> Select
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </templates>
+                            </kanban>
+                        </field>
+                        
+                        <!-- Empty State -->
+                        <div invisible="image_ids" style="text-align: center; padding: 60px 20px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 12px; margin-top: 24px;">
+                            <i class="fa fa-image" style="font-size: 64px; color: #dee2e6; margin-bottom: 20px; display: block;"/>
+                            <h3 style="color: #6c757d; margin-bottom: 12px;">No Images Found</h3>
+                            <p style="color: #6c757d; font-size: 14px; margin-bottom: 20px;">
+                                No images were found in this Arkite project.
+                            </p>
+                            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; max-width: 500px; margin: 0 auto;">
+                                <i class="fa fa-lightbulb" style="color: #856404; margin-right: 8px;"/>
+                                <strong style="color: #856404;">Tip:</strong>
+                                <span style="color: #856404;"> Upload images to your Arkite project first, then reload this wizard.</span>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+                <footer>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Arkite Image Selector Wizard Action -->
+    <record id="action_arkite_image_selector_wizard" model="ir.actions.act_window">
+        <field name="name">Select Arkite Image</field>
+        <field name="res_model">product_module.arkite.image.selector.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_product_module_material"/>
+    </record>
+</odoo>
+
