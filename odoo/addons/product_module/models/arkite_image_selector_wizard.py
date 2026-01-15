@@ -130,8 +130,13 @@ class ArkiteImageSelectorWizard(models.TransientModel):
             
             self.write({'state': 'loaded'})
             
+            # Return action to reload the wizard view
             return {
-                'type': 'ir.actions.do_nothing',
+                'type': 'ir.actions.act_window',
+                'res_model': 'product_module.arkite.image.selector.wizard',
+                'res_id': self.id,
+                'view_mode': 'form',
+                'target': 'new',
             }
             
         except Exception as e:
