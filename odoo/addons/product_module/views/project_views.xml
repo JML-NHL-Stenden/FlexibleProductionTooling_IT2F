@@ -1058,8 +1058,27 @@
                                 </field>
                             </div>
                             
+                            <!-- Project Detection Information -->
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 16px;">
+                                        <i class="fa fa-eye" style="color: #28a745; margin-right: 8px;"/> Project Detections
+                                    </h3>
+                                    <button type="object" class="btn btn-sm btn-primary" name="refresh_detection_info" string="Refresh Detections">
+                                        <i class="fa fa-refresh" style="margin-right: 4px;"/> Refresh
+                                    </button>
+                                </div>
+                                <div style="background: #f8f9fa; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #495057; margin-bottom: 12px;">
+                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
+                                    <strong>Info:</strong> Detections from the linked Arkite project
+                                </div>
+                                <div style="overflow-x: auto;">
+                                    <field name="workstation_detection_info" widget="html" nolabel="1"/>
+                                </div>
+                            </div>
+                            
                             <!-- QR Code -->
-                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; margin-top: 24px;">
                                 <h3 style="margin: 0 0 16px 0; color: #2c3e50; font-weight: 600;">
                                     <i class="fa fa-qrcode" style="color: #667eea; margin-right: 8px;"/> QR Code
                                 </h3>
