@@ -105,6 +105,11 @@ def fetch_steps_payload():
         )
 
         for step in steps:
+            step_name = step.get("Name")
+
+            if step_name and "<#>" in step_name:
+                continue
+
             detection_id = (
                 step.get("DetectionId")
                 or extract_detection_id_from_name(step.get("Name"))
@@ -120,9 +125,12 @@ def fetch_steps_payload():
                 current_state = unit_state_by_name.get(detection_name)
                 detection_status = detect_state_to_bool(current_state)
 
+            if step_name and "<#>" in step_name:
+                continue
+            
             detection_steps.append({
                 "id": step["Id"],
-                "name": step.get("Name"),
+                "name": step_name,
                 "projectId": project_id,
                 "projectName": proj["Name"],
                 "sequence": extract_step_number(step.get("Name")),
