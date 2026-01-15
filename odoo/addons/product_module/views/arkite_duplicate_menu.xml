@@ -5,7 +5,8 @@
         <field name="name">Duplicate from Arkite Template</field>
         <field name="res_model">product_module.arkite.project.selection</field>
         <field name="view_mode">form</field>
-        <field name="view_id" ref="view_arkite_template_selection"/>
+        <!-- Open the template-selection wizard view (loaded before this action in __manifest__.py) -->
+        <field name="view_id" ref="product_module.view_arkite_template_selection"/>
         <field name="target">new</field>
         <field name="context">{'default_selection_type': 'template'}</field>
     </record>
