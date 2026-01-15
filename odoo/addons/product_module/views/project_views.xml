@@ -391,13 +391,8 @@
                                             <i class="fa fa-plus" style="margin-right: 8px;"/> Create Arkite Project
                                         </button>
                                         
-                                        <button name="action_duplicate_arkite_project" 
-                                                type="object" 
-                                                class="btn btn-info" 
-                                                invisible="arkite_linked"
-                                                style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;">
-                                            <i class="fa fa-copy" style="margin-right: 8px;"/> Duplicate from Template
-                                        </button>
+                                        <!-- Duplicate-from-template moved to a dedicated menu action (outside the Project form)
+                                             to avoid modal/navigation issues. -->
                                         
                                         <button name="action_link_arkite_project" 
                                                 type="object" 

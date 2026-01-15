@@ -7,6 +7,20 @@
         <field name="arch" type="xml">
             <form string="Select Template">
                 <sheet>
+                    <group>
+                        <!-- When launched from Dashboard, the target Project does not exist yet; choose the Unit here. -->
+                        <field name="arkite_unit_id"
+                               options="{'no_create': True, 'no_create_edit': True}"
+                               domain="[('active', '=', True)]"
+                               placeholder="Select Arkite Unit (required for Dashboard duplication)..."/>
+
+                        <!-- Optional: when launched from a Project flow, you can target a specific Project -->
+                        <field name="odoo_project_id"
+                               options="{'no_create': True, 'no_create_edit': True}"
+                               domain="[('arkite_project_id', '=', False)]"
+                               placeholder="Select the Odoo Project to receive the duplicated Arkite project..."
+                               invisible="context.get('active_model') == 'product_module.page'"/>
+                    </group>
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
                         <h3 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">
                             <i class="fa fa-copy" style="margin-right: 12px;"/> Select Template to Duplicate
@@ -87,6 +101,16 @@
         <field name="arch" type="xml">
             <form string="Select Arkite Project">
                 <sheet>
+                    <group>
+                        <field name="arkite_unit_id"
+                               options="{'no_create': True, 'no_create_edit': True}"
+                               domain="[('active', '=', True)]"
+                               placeholder="Select Arkite Unit..."/>
+                        <field name="odoo_project_id"
+                               options="{'no_create': True, 'no_create_edit': True}"
+                               domain="[('arkite_project_id', '=', False)]"
+                               placeholder="Select the Odoo Project to link..."/>
+                    </group>
                     <div style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
                         <h3 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">
                             <i class="fa fa-link" style="margin-right: 12px;"/> Select Arkite Project to Link

@@ -609,7 +609,11 @@ class ProductModuleProject(models.Model):
     # ====================
     
     def _get_arkite_credentials(self):
-        """Get Arkite API credentials from unit or fallback to environment variables"""
+        """Get Arkite API credentials.
+
+        For a multi-server setup, credentials should come from the selected Arkite Unit on the Project.
+        We only fall back to Unit Tracking (progress) credentials if they exist.
+        """
         # Try to get from assigned Arkite Unit model first
         if self.arkite_unit_id:
             if not self.arkite_unit_id.api_base or not self.arkite_unit_id.api_key:
@@ -635,19 +639,12 @@ class ProductModuleProject(models.Model):
                     'unit_id': progress_unit.arkite_unit_id or os.getenv('ARKITE_UNIT_ID'),
                 }
         
-        # Fallback to environment variables (for backward compatibility)
-        api_base = os.getenv('ARKITE_API_BASE')
-        api_key = os.getenv('ARKITE_API_KEY')
-        unit_id = os.getenv('ARKITE_UNIT_ID')
-        
-        if not api_base or not api_key:
-            raise UserError(_('No Arkite unit assigned to this project and environment variables are not configured. Please assign a unit or configure ARKITE_API_BASE and ARKITE_API_KEY.'))
-        
-        return {
-            'api_base': api_base,
-            'api_key': api_key,
-            'unit_id': unit_id,
-        }
+        # Do not fall back to global environment variables here: it easily causes
+        # cross-server mismatches when multiple Arkite servers/keys exist.
+        raise UserError(_(
+            'No Arkite Unit is assigned to this project.\n\n'
+            'Please select an Arkite Unit first so Odoo knows which Arkite server and API key to use.'
+        ))
     
     def action_create_unit_from_tracking(self):
         """Open a wizard to select a Unit Tracking entry and create an Arkite Unit from it"""

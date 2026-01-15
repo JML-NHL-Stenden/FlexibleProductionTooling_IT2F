@@ -290,9 +290,15 @@
                                 <strong>Projects</strong> - Create projects to organize your jobs. Each project can contain multiple jobs.
                             </div>
 
-                            <div style="margin-bottom: 16px;">
+                            <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
                                 <button name="action_create_project" type="object" class="btn btn-success" style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
                                     <i class="fa fa-plus" style="margin-right: 8px;"/> Add New Project
+                                </button>
+                                <button name="%(product_module.action_arkite_duplicate_from_template)d"
+                                        type="action"
+                                        class="btn btn-info"
+                                        style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; height: 44px; line-height: 44px; padding: 0 24px; display: inline-block;">
+                                    <i class="fa fa-copy" style="margin-right: 8px;"/> Duplicate from Arkite Template
                                 </button>
                             </div>
 

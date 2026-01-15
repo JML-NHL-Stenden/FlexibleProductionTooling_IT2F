@@ -1,0 +1,13 @@
+<!-- product_module/views/arkite_duplicate_menu.xml -->
+<odoo>
+    <!-- Open the duplicate-from-template wizard from the Dashboard (next to "Add New Project") -->
+    <record id="action_arkite_duplicate_from_template" model="ir.actions.act_window">
+        <field name="name">Duplicate from Arkite Template</field>
+        <field name="res_model">product_module.arkite.project.selection</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_arkite_template_selection"/>
+        <field name="target">new</field>
+        <field name="context">{'default_selection_type': 'template'}</field>
+    </record>
+</odoo>
+

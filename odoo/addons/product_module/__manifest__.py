@@ -35,6 +35,7 @@
         'views/arkite_job_step_wizard_view.xml',
         'views/arkite_process_create_wizard_view.xml',
         'views/arkite_project_selection_views.xml',
+        'views/arkite_duplicate_menu.xml',
         'data/arkite_security_data.xml',
         'views/test_menu_views.xml',
     ],
