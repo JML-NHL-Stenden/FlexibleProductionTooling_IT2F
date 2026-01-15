@@ -101,7 +101,7 @@ class ProductModuleProject(models.Model):
             ('in_progress', 'In Progress'),
             ('done', 'Done'),
         ],
-        string="Status",
+        string="Assembly Status",
         store=True,
         default='not_started',
         required=True,

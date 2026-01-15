@@ -8,6 +8,7 @@
             <list string="Projects">
                 <field name="name"/>
                 <field name="job_count" string="Total Jobs"/>
+                <field name="status" string="Assembly Status"/>
             </list>
         </field>
     </record>
@@ -322,7 +323,7 @@
                                     <div style="display:flex; gap:12px;">
                                         <field name="status" widget="statusbar"
                                             statusbar_visible="not_started,in_progress,done"/>
-                                        <field name="active_completion_time" readonly="1"/>
+                                        <field name="active_completion_time" string="Completion time in seconds:" readonly="1"/>
                                     </div>
                                 </div>
                             </div>
@@ -534,18 +535,6 @@
                             
                             <!-- Process Selection -->
                             <group col="1">
-                                <group string="Instruction Steps">
-                                    <field name="instruction_ids" nolabel="1">
-                                        <list delete="false">
-                                            <field name="sequence"/>
-                                            <field name="title"/>
-                                            <field name="is_completed" widget="boolean_toggle"/>
-                                            <field name="detection_name"/>
-                                            <field name="detection_status" widget="boolean_toggle"/>
-                                            <field name="detection_id"/>
-                                        </list>
-                                    </field>
-                                </group>
                                 <group string="Process Selection" col="1">
                                     <!-- Selected Process Display (Clear Visual Indicator) -->
                                     <div invisible="not arkite_linked or not selected_process_id_char" 
@@ -643,6 +632,17 @@
                                         <h4 style="color: #6c757d; margin-bottom: 8px;">No Process Selected</h4>
                                         <p style="font-size: 14px; margin-bottom: 0;">Click "Select" on a process above to automatically view its steps.</p>
                             </div>
+                                </group>
+                                <group string="Detection Job Steps">
+                                    <field name="instruction_ids" nolabel="1">
+                                        <list delete="false">
+                                            <field name="sequence"/>
+                                            <field name="title" string="Detection Step Title"/>
+                                            <field name="detection_name" string="Related Detection Name"/>
+                                            <field name="detection_status" widget="boolean_toggle" string="Related Detection Status" readonly="1"/>
+                                            <field name="is_completed" widget="boolean_toggle" string="Step Was Completed" readonly="1"/>
+                                        </list>
+                                    </field>
                                 </group>
                             </group>
                             <div style="display:none">

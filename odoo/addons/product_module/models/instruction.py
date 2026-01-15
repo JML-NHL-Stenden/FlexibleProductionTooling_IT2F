@@ -46,7 +46,7 @@ class ProductModuleInstruction(models.Model):
         help='Detection ID (required for detection-based steps like TOOL_PLACING, OBJECT_PLACING, etc.)'
     )
     sequence = fields.Integer(string='Step #', default=0, help='Order of process steps')
-    title = fields.Char(string='Process Title', required=True, size=250)
+    title = fields.Char(string='Step Title', required=True, size=250)
     arkite_process_id = fields.Char(
         string='Arkite Process ID',
         readonly=True,
