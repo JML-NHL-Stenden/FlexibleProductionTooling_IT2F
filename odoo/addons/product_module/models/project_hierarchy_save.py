@@ -5,6 +5,49 @@ from odoo.exceptions import UserError
 class ProductModuleProjectHierarchySave(models.Model):
     _inherit = 'product_module.project'
 
+    def action_sync_staged_hierarchy_to_arkite(self):
+        """Explicitly push staged hierarchy changes to Arkite (no Project save needed).
+
+        Use this after reordering in the hierarchy diagram (which stages changes with defer_arkite_sync=True).
+        """
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("No Arkite project is linked to this project."))
+
+        if not self.arkite_hierarchy_dirty:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No changes'),
+                    'message': _('No staged hierarchy changes to sync to Arkite.'),
+                    'type': 'info',
+                    'sticky': False,
+                },
+            }
+
+        self._arkite_sync_all_staged_hierarchies()
+
+        # Clear dirty flags directly (avoid calling write() again and triggering other sync logic).
+        self.env.cr.execute(
+            "UPDATE product_module_project "
+            "SET arkite_hierarchy_dirty = FALSE, arkite_job_steps_dirty = FALSE, arkite_process_steps_dirty = FALSE "
+            "WHERE id = %s",
+            [self.id],
+        )
+        self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Synced'),
+                'message': _('Synced staged hierarchy changes to Arkite.'),
+                'type': 'success',
+                'sticky': False,
+            },
+        }
+
     def _arkite_sync_all_staged_hierarchies(self):
         """Push any staged hierarchy changes (job + process steps) to Arkite."""
         self.ensure_one()
