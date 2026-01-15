@@ -15,7 +15,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 API_BASE = os.getenv("ARKITE_API_BASE")
 API_KEY = os.getenv("ARKITE_API_KEY")
-UNIT_ID = os.getenv("171880875434312") # SINGLE UNIT
+UNIT_ID = os.getenv("ARKITE_UNIT_ID") # SINGLE UNIT
 
 MQTT_HOST = os.getenv("MQTT_HOST")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
