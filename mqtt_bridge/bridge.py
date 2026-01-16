@@ -6,6 +6,7 @@ import logging
 
 import requests
 import urllib3
+import psycopg2
 import paho.mqtt.client as mqtt
 
 # =========================
@@ -22,25 +23,127 @@ log = logging.getLogger("mqtt-arkite-bridge")
 # ARKITE API CONFIG
 # =========================
 
-API_BASE = os.getenv("ARKITE_API_BASE")
-API_KEY = os.getenv("ARKITE_API_KEY")
+API_BASE = None
+API_KEY = None
+TEMPLATE_PROJECT_NAME = None
+UNIT_ID = None
 
-# Template project in Arkite you want to duplicate
-TEMPLATE_PROJECT_NAME = os.getenv("ARKITE_TEMPLATE_NAME")
 
-# Workstation / unit ID (from Arkite UI)
-UNIT_ID_STR = os.getenv("ARKITE_UNIT_ID")
-UNIT_ID = int(UNIT_ID_STR) if UNIT_ID_STR else None
+def _parse_int(value: str | None):
+    try:
+        return int(value) if value not in (None, "") else None
+    except Exception:
+        return None
 
-# Validate required environment variables
-if not API_BASE:
-    raise ValueError("ARKITE_API_BASE environment variable is required")
-if not API_KEY:
-    raise ValueError("ARKITE_API_KEY environment variable is required")
-if not TEMPLATE_PROJECT_NAME:
-    raise ValueError("ARKITE_TEMPLATE_NAME environment variable is required")
-if not UNIT_ID:
-    raise ValueError("ARKITE_UNIT_ID environment variable is required")
+
+def _load_arkite_config_from_env():
+    """Load Arkite config from environment variables.
+
+    Expected:
+      - ARKITE_API_BASE
+      - ARKITE_API_KEY
+      - ARKITE_TEMPLATE_NAME
+      - ARKITE_UNIT_ID (int)
+    """
+    api_base = os.getenv("ARKITE_API_BASE") or None
+    api_key = os.getenv("ARKITE_API_KEY") or None
+    template_name = os.getenv("ARKITE_TEMPLATE_NAME") or None
+    unit_id = _parse_int(os.getenv("ARKITE_UNIT_ID"))
+
+    if api_base and api_key and template_name and unit_id:
+        return {
+            "api_base": api_base,
+            "api_key": api_key,
+            "template_name": template_name,
+            "unit_id": unit_id,
+            "source": "env",
+        }
+    return None
+
+
+def _load_arkite_config_from_db():
+    """Fallback: load Arkite config from the Odoo DB (product_module.arkite.unit).
+
+    This enables running without ARKITE_* in .env once credentials are stored in Odoo.
+    Requires DB connection vars (defaults work in Docker):
+      - DB_HOST (default: db)
+      - DB_PORT (default: 5432)
+      - DB_NAME / POSTGRES_DB
+      - DB_USER / POSTGRES_USER
+      - DB_PASS / POSTGRES_PASSWORD
+    """
+    host = os.getenv("DB_HOST", "db")
+    port = int(os.getenv("DB_PORT", "5432"))
+    dbname = os.getenv("DB_NAME") or os.getenv("POSTGRES_DB")
+    user = os.getenv("DB_USER") or os.getenv("POSTGRES_USER")
+    password = os.getenv("DB_PASS") or os.getenv("POSTGRES_PASSWORD")
+
+    if not (dbname and user and password):
+        return None
+
+    try:
+        conn = psycopg2.connect(
+            host=host,
+            port=port,
+            dbname=dbname,
+            user=user,
+            password=password,
+            connect_timeout=5,
+        )
+    except Exception:
+        return None
+
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT api_base, api_key, unit_id, template_name
+                    FROM public.product_module_arkite_unit
+                    WHERE active IS TRUE
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """
+                )
+                row = cur.fetchone()
+                if not row:
+                    return None
+                api_base, api_key, unit_id_str, template_name = row
+                unit_id = _parse_int(str(unit_id_str) if unit_id_str is not None else None)
+                if api_base and api_key and template_name and unit_id:
+                    return {
+                        "api_base": api_base,
+                        "api_key": api_key,
+                        "template_name": template_name,
+                        "unit_id": unit_id,
+                        "source": "db",
+                    }
+                return None
+    except psycopg2.errors.UndefinedTable:
+        # Module tables not created yet / DB not initialized.
+        return None
+    except Exception:
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def resolve_arkite_config():
+    """Resolve Arkite config, preferring env vars but falling back to the DB."""
+    poll_sec = float(os.getenv("ARKITE_CONFIG_POLL_SEC", "5"))
+    while True:
+        cfg = _load_arkite_config_from_env() or _load_arkite_config_from_db()
+        if cfg:
+            return cfg
+        log.warning(
+            "Arkite config missing. Set ARKITE_API_BASE/ARKITE_API_KEY/ARKITE_UNIT_ID/ARKITE_TEMPLATE_NAME "
+            "or create an active Arkite Unit record in Odoo. Retrying in %ss...",
+            poll_sec,
+        )
+        time.sleep(poll_sec)
 
 # Disable SSL warnings for self-signed Arkite cert
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -497,13 +600,22 @@ def setup_mqtt():
 
 
 def main():
+    global API_BASE, API_KEY, TEMPLATE_PROJECT_NAME, UNIT_ID
+
+    cfg = resolve_arkite_config()
+    API_BASE = cfg["api_base"]
+    API_KEY = cfg["api_key"]
+    TEMPLATE_PROJECT_NAME = cfg["template_name"]
+    UNIT_ID = cfg["unit_id"]
+
     log.info(
         "=== MQTT → Arkite Bridge (in Docker) ===\n"
-        "Broker: %s:%s | Topic: %s | Template: %s",
+        "Broker: %s:%s | Topic: %s | Template: %s | ArkiteConfig: %s",
         MQTT_HOST,
         MQTT_PORT,
         MQTT_TOPIC,
         TEMPLATE_PROJECT_NAME,
+        cfg.get("source"),
     )
 
     setup_mqtt()

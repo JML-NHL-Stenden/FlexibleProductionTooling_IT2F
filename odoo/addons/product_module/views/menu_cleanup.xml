@@ -1,6 +1,6 @@
 <!-- product_module/views/menu_cleanup.xml -->
 <odoo>
     <!-- Remove obsolete Test menu entries if they were previously installed -->
-    <delete model="ir.ui.menu" id="product_module.menu_test"/>
-    <delete model="ir.ui.menu" id="product_module.menu_test_add_steps"/>
+    <!-- These IDs may not exist in clean installs; deleting missing xmlids breaks module upgrades. -->
+    <!-- Keeping this file as a placeholder for future safe migrations. -->
 </odoo>

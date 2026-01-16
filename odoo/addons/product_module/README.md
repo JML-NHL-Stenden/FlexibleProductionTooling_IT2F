@@ -116,6 +116,16 @@ QR codes are automatically generated and visible:
 
 ## Technical Details
 
+## Arkite Integration Notes
+
+This repository supports integrating Odoo Projects with Arkite via the Arkite REST API.
+
+- **Credentials are server-specific**: if you have multiple Arkite servers (e.g. different IPs), each server can have a different `apiKey`. A key for one server will not work on another.
+- **Recommended configuration**: create/select an **Arkite Unit** (`product_module.arkite.unit`) on the Odoo Project and store the Unit's `API Base URL` + `API Key` there. This avoids relying on a single global `.env` and supports multi-server setups.
+- **Duplicate-from-template API behavior** (as implemented/expected):
+  - `POST /projects/{templateId}/duplicate/` uses an **empty body**.
+  - `PATCH /projects/{newId}` to rename uses a JSON object like `{"Name": "..."}` and typically returns **204 No Content**.
+
 ### Models
 
 #### `product_module.page`

@@ -11,6 +11,7 @@
                         <!-- When launched from Dashboard, the target Project does not exist yet; choose the Unit here. -->
                         <field name="arkite_unit_id"
                                options="{'no_create': True, 'no_create_edit': True}"
+                               required="1"
                                domain="[('active', '=', True)]"
                                placeholder="Select Arkite Unit (required for Dashboard duplication)..."/>
 

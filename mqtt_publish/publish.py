@@ -9,6 +9,7 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 import psycopg2
 import psycopg2.extras
+import psycopg2.errors
 
 
 # =========================
@@ -83,6 +84,28 @@ def get_conn():
     return psycopg2.connect(
         host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASS
     )
+
+def _table_exists(cur, full_table_name: str) -> bool:
+    """
+    Return True if table exists, False otherwise.
+    Uses to_regclass() to avoid raising when the table is missing.
+    """
+    cur.execute("SELECT to_regclass(%s)", (full_table_name,))
+    return cur.fetchone()[0] is not None
+
+
+def schema_ready() -> bool:
+    """Check whether the minimum Product Module tables exist yet."""
+    required = [
+        "public.product_module_product",
+        "public.product_module_type",
+    ]
+    try:
+        with get_conn() as conn, conn.cursor() as cur:
+            return all(_table_exists(cur, t) for t in required)
+    except Exception:
+        # DB might still be starting; treat as not ready
+        return False
 
 
 # =========================
@@ -172,7 +195,7 @@ base AS (
         i.id            AS instr_id,
         i.sequence      AS instr_sequence,
         i.title         AS instr_title,
-        i.process_step  AS instr_description,
+        i.arkite_comment  AS instr_description,
         CASE
             WHEN %(odoo_base_url)s <> '' AND a.attachment_id IS NOT NULL THEN
                 %(odoo_base_url)s || '/web/image/' || a.attachment_id::text
@@ -334,6 +357,19 @@ def publish_all_product_data():
 
     while True:
         try:
+            # On fresh stacks, mqtt-publish can start before Odoo has created module tables.
+            # Avoid spamming errors in that window.
+            if not schema_ready():
+                log.warning(
+                    "Waiting for Odoo module tables to exist (product_module_*). Retrying in %ss...",
+                    CHECK_INTERVAL,
+                )
+                if ci_mode:
+                    log.info("CI/dry-run mode: exiting (schema not ready)")
+                    break
+                time.sleep(CHECK_INTERVAL)
+                continue
+
             # 1) Codes-only topic
             codes = fetch_product_codes()
             h_codes = hash_strings(codes)
@@ -354,6 +390,10 @@ def publish_all_product_data():
             else:
                 log.debug("No change in grouped details; skipping publish.")
 
+        except psycopg2.errors.UndefinedTable as e:
+            # Another safety net in case a table disappears or the schema check races.
+            msg = (str(e) or "UndefinedTable").splitlines()[0]
+            log.warning("DB schema not ready yet (%s). Retrying in %ss...", msg, CHECK_INTERVAL)
         except Exception as e:
             log.error("Error while publishing product data: %s", e, exc_info=True)
 

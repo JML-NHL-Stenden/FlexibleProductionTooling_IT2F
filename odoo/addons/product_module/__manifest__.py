@@ -23,12 +23,11 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/instruction_form_wizard_views.xml',
-        # NOTE: ordering matters:
-        # - the wizard view must exist before the action can reference it
-        # - the action XMLID must exist before product_views.xml references it via %(...)d
+        # Arkite template selection + action must be loaded BEFORE product_views.xml,
+        # because product_views.xml references action_arkite_duplicate_from_template.
         'views/arkite_project_selection_views.xml',
         'views/arkite_duplicate_menu.xml',
-        'views/product_views.xml',  # Defines menu_product_module_root used by many later view files
+        'views/product_views.xml',  # Defines menu_product_module_root and dashboard views
         'views/arkite_unit_views.xml',  # Load after product_views.xml (needs menu_product_module_root), defines action_arkite_unit
         'views/project_views.xml',  # Load after arkite_unit_views.xml (needs action_arkite_unit), defines action_project
         'views/arkite_step_server_actions.xml',
@@ -39,8 +38,8 @@
         'views/arkite_project_wizard_view.xml',
         'views/arkite_job_step_wizard_view.xml',
         'views/arkite_process_create_wizard_view.xml',
-        'data/arkite_security_data.xml',
         'views/menu_cleanup.xml',
+        'data/arkite_security_data.xml',
     ],
     'assets': {
         'web.assets_backend': [

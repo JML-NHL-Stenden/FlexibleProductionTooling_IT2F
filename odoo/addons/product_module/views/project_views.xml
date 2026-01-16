@@ -303,14 +303,6 @@
         <field name="arch" type="xml">
             <form string="Project">
                 <sheet>
-                    <!-- Hidden fields used for UI logic / buttons -->
-                    <field name="arkite_linked" invisible="1"/>
-                    <field name="arkite_hierarchy_dirty" invisible="1"/>
-                    <field name="arkite_job_steps_loaded" invisible="1"/>
-                    <field name="arkite_process_steps_loaded" invisible="1"/>
-                    <field name="arkite_job_steps_dirty" invisible="1"/>
-                    <field name="arkite_process_steps_dirty" invisible="1"/>
-
                     <!-- Two Column Layout -->
                     <div style="display: flex; width: 100%; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; box-sizing: border-box;">
                         
@@ -421,11 +413,11 @@
 
                                         <button name="action_sync_staged_hierarchy_to_arkite"
                                                 type="object"
-                                                class="btn btn-success"
-                                                invisible="not arkite_linked"
-                                                style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;"
-                                                help="Push staged hierarchy changes (diagram edits / reorders) from Odoo to Arkite. Note: 'Sync from Arkite' pulls and can overwrite local changes.">
-                                            <i class="fa fa-upload" style="margin-right: 8px;"/> Sync to Arkite
+                                                class="btn btn-warning"
+                                                invisible="not arkite_linked or not arkite_hierarchy_dirty"
+                                                style="background: linear-gradient(45deg, #f0ad4e 0%, #ec971f 100%); border: none; border-radius: 8px; font-weight: 700; padding: 10px 20px;"
+                                                help="Push staged hierarchy changes (job/process step order + parent) to Arkite now.">
+                                            <i class="fa fa-upload" style="margin-right: 8px;"/> Sync hierarchy to Arkite
                                         </button>
 
                                         <button name="action_unlink_arkite_project"
@@ -443,7 +435,7 @@
                                     <!-- Help Text -->
                                     <div style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #6c757d;">
                                         <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
-                                        <strong>Note:</strong> After reordering in the diagram, click <strong>Sync to Arkite</strong> to push changes. <strong>Sync from Arkite</strong> pulls from Arkite and can overwrite local edits.
+                                        <strong>Note:</strong> Create or link an Arkite project to manage steps, variants, processes, and detections.
                                     </div>
                                 </div>
                             </div>
@@ -488,13 +480,6 @@
                                     <i class="fa fa-cogs" style="color: #007bff; margin-right: 8px;"/> Arkite Processes &amp; Steps
                                 </h3>
                                 <div style="display: flex; gap: 8px; align-items: center;">
-                                    <button name="action_sync_staged_hierarchy_to_arkite"
-                                            string="Sync to Arkite"
-                                            type="object"
-                                            class="btn-success"
-                                            invisible="not arkite_linked"
-                                            icon="fa-upload"
-                                            help="Push staged hierarchy changes to Arkite (after diagram edits)."/>
                                     <button name="action_load_process_list" 
                                             string="Load Processes" 
                                             type="object" 
@@ -928,13 +913,6 @@
                                     <i class="fa fa-list-ol" style="color: #ff9800; margin-right: 8px;"/> Arkite Job Steps
                                 </h3>
                                 <div style="display: flex; gap: 8px; align-items: center;">
-                                    <button name="action_sync_staged_hierarchy_to_arkite"
-                                            string="Sync to Arkite"
-                                            type="object"
-                                            class="btn-success"
-                                            invisible="not arkite_linked"
-                                            icon="fa-upload"
-                                            help="Push staged hierarchy changes to Arkite (after diagram edits)."/>
                                     <button name="action_load_job_steps" 
                                             string="Load Job Steps" 
                                             type="object" 
@@ -1066,8 +1044,8 @@
                         </div>
                     </div>
                     
-                    <!-- Removed legacy Arkite notebook (duplicate tables under QR section).
-                         The primary Arkite UI is the inline sections above. -->
+                    <!-- Removed legacy Arkite notebook (duplicate Job Steps / Variants / Detections tables).
+                         The primary Arkite UI is the inline sections above (Processes/Steps, Job Steps, Materials). -->
                 </sheet>
             </form>
         </field>

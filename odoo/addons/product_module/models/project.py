@@ -3312,6 +3312,37 @@ class ProductModuleProject(models.Model):
             except Exception as e:
                 raise UserError(_("Failed to sync Process Steps to Arkite (Process %s):\n%s") % (pid, str(e)))
 
+    def action_sync_staged_hierarchy_to_arkite(self):
+        """Manually push staged hierarchy changes to Arkite and clear the dirty flag."""
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("This project is not linked to an Arkite project yet."))
+        if not self.arkite_hierarchy_dirty:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Nothing to sync'),
+                    'message': _('No staged hierarchy changes to push to Arkite.'),
+                    'type': 'info',
+                    'sticky': False,
+                }
+            }
+
+        self._arkite_sync_all_staged_hierarchies()
+        self.with_context(skip_arkite_hierarchy_autosync=True).write({'arkite_hierarchy_dirty': False})
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Synced to Arkite'),
+                'message': _('Staged hierarchy changes were pushed to Arkite successfully.'),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
     def write(self, vals):
         """Override write to sync all materials to Arkite when project is saved, and delete removed materials"""
         # Track materials before write to detect removals
