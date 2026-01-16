@@ -169,7 +169,10 @@ class ArkiteProjectSelection(models.TransientModel):
         
         try:
             response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-            
+
+            if response.status_code == 401:
+                self._pm_raise_auth_error(api_base)
+
             if not response.ok:
                 raise UserError(_('Failed to fetch projects from Arkite: HTTP %s') % response.status_code)
             
@@ -348,7 +351,14 @@ class ArkiteProjectSelection(models.TransientModel):
             'template_arkite_project_name': template_record.project_name,
         })
         
-        return {'type': 'ir.actions.client', 'tag': 'reload'}
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'product_module.arkite.project.selection',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
+
     
     def _get_project_id_by_name(self, project_name):
         """Get Arkite project ID by name"""
