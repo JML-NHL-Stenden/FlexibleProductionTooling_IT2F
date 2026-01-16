@@ -13,7 +13,7 @@ class ArkiteProjectSelection(models.TransientModel):
     _name = 'product_module.arkite.project.selection'
     _description = 'Select Arkite Project or Template'
     _rec_name = 'display_name'
-    
+
     selection_type = fields.Selection([
         ('template', 'Template'),
         ('project', 'Project'),
@@ -404,16 +404,20 @@ class ArkiteProjectSelection(models.TransientModel):
             pass
 
         return None
+    def _generate_unique_project_name(self, base_name):
+        counter = 2
+        candidate = base_name
+        while self._get_project_id_by_name(candidate):
+            candidate = f"{base_name} ({counter})"
+            counter += 1
+        return candidate
+
 
     def _duplicate_project(self, template_id, new_project_name):
         """Duplicate a project from template"""
         api_base, api_key = self._pm_get_arkite_api_credentials(require_unit=True)
 
-        # Check if project with same name already exists
-        existing_id = self._get_project_id_by_name(new_project_name)
-        if existing_id:
-            # Update existing project instead of creating new
-            return str(existing_id)
+        final_name = self._generate_unique_project_name(new_project_name)
 
         # Duplicate the template project
         url = f"{api_base}/projects/{template_id}/duplicate/"
@@ -445,11 +449,15 @@ class ArkiteProjectSelection(models.TransientModel):
                         self._pm_raise_auth_error(api_base)
 
                     if patch_response.status_code in (200, 204):
-                        return str(new_project_id)
+                        return str(new_project_id), final_name
                     else:
-                        # Duplication succeeded but name update failed - still return the ID
-                        _logger.warning("Project duplicated but name update failed: %s", patch_response.text)
-                        return str(new_project_id)
+                        # Duplication succeeded but name update failed — still return usable result
+                        _logger.warning(
+                            "Project duplicated but name update failed: %s",
+                            patch_response.text
+                        )
+                        return str(new_project_id), final_name
+
                 else:
                     raise UserError(_('Duplication succeeded but no project ID returned'))
             else:
@@ -466,7 +474,7 @@ class ArkiteProjectSelection(models.TransientModel):
     def action_select_and_duplicate(self):
         """Selected a template, now duplicate directly"""
         self.ensure_one()
-        raise UserError("Duplicate button executed (backend reached action_select_and_duplicate).")
+
         if not self.template_arkite_project_id:
             raise UserError(_('Please select a project to use as template.'))
 
@@ -506,7 +514,11 @@ class ArkiteProjectSelection(models.TransientModel):
             raise UserError(_('Template project ID is missing.'))
 
         try:
-            project_id = self._duplicate_project(template_arkite_id, project_name)
+            project_id, final_project_name = self._duplicate_project(
+                template_arkite_id,
+                project_name
+            )
+
 
             # Link to Odoo project OR create a new one when launched from the Dashboard.
             active_id = self.env.context.get('active_id')
@@ -549,7 +561,7 @@ class ArkiteProjectSelection(models.TransientModel):
                             pass
 
                     odoo_project.write({
-                        'arkite_project_id': str(project_id),
+                        'arkite_project_id': project_id,
                         'arkite_project_name': final_project_name,
                     })
 
