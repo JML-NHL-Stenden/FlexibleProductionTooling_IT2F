@@ -23,6 +23,9 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/instruction_form_wizard_views.xml',
+        'views/arkite_project_selection_views.xml',
+        'views/arkite_duplicate_menu.xml',
+        'views/menu_cleanup.xml',
         'views/product_views.xml',  # Load first to define menu_product_module_root (but menu items referencing actions from other files should be in those files)
         'views/arkite_unit_views.xml',  # Load after product_views.xml (needs menu_product_module_root), defines action_arkite_unit
         'views/project_views.xml',  # Load after arkite_unit_views.xml (needs action_arkite_unit), defines action_project
@@ -35,7 +38,6 @@
         'views/arkite_project_wizard_view.xml',
         'views/arkite_job_step_wizard_view.xml',
         'views/arkite_process_create_wizard_view.xml',
-        'views/arkite_project_selection_views.xml',
         'data/arkite_security_data.xml',
         'views/test_menu_views.xml',
     ],
