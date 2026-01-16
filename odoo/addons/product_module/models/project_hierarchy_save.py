@@ -1,9 +1,52 @@
-﻿from odoo import models, _
+from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
 
 class ProductModuleProjectHierarchySave(models.Model):
     _inherit = 'product_module.project'
+
+    def action_sync_staged_hierarchy_to_arkite(self):
+        """Explicitly push staged hierarchy changes to Arkite (no Project save needed).
+
+        Use this after reordering in the hierarchy diagram (which stages changes with defer_arkite_sync=True).
+        """
+        self.ensure_one()
+        if not self.arkite_project_id:
+            raise UserError(_("No Arkite project is linked to this project."))
+
+        if not self.arkite_hierarchy_dirty:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No changes'),
+                    'message': _('No staged hierarchy changes to sync to Arkite.'),
+                    'type': 'info',
+                    'sticky': False,
+                },
+            }
+
+        self._arkite_sync_all_staged_hierarchies()
+
+        # Clear dirty flags directly (avoid calling write() again and triggering other sync logic).
+        self.env.cr.execute(
+            "UPDATE product_module_project "
+            "SET arkite_hierarchy_dirty = FALSE, arkite_job_steps_dirty = FALSE, arkite_process_steps_dirty = FALSE "
+            "WHERE id = %s",
+            [self.id],
+        )
+        self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Synced'),
+                'message': _('Synced staged hierarchy changes to Arkite.'),
+                'type': 'success',
+                'sticky': False,
+            },
+        }
 
     def _arkite_sync_all_staged_hierarchies(self):
         """Push any staged hierarchy changes (job + process steps) to Arkite."""
@@ -19,6 +62,7 @@ class ProductModuleProjectHierarchySave(models.Model):
                 raise UserError(_("Failed to sync Job Steps to Arkite:\n%s") % str(e))
 
         if getattr(self, 'arkite_process_steps_loaded', False) and getattr(self, 'arkite_process_steps_dirty', False):
+            # Process steps: sync per process_id
             process_ids = self.env['product_module.arkite.process.step'].search([
                 ('project_id', '=', self.id),
                 ('process_id', '!=', False),
@@ -34,7 +78,7 @@ class ProductModuleProjectHierarchySave(models.Model):
                     raise UserError(_("Failed to sync Process Steps to Arkite (Process %s):\n%s") % (pid, str(e)))
 
     def write(self, vals):
-        """Optionally push staged hierarchy changes on Project save."""
+        # Standard Project save should also push staged hierarchy changes to Arkite.
         res = super().write(vals)
 
         # Avoid recursion / side effects
@@ -51,7 +95,7 @@ class ProductModuleProjectHierarchySave(models.Model):
                     "WHERE id = %s",
                     [project.id],
                 )
-
         if self:
             self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
         return res
+

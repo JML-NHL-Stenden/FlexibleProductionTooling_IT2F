@@ -1,4 +1,4 @@
-﻿# product_module/models/arkite_job_step.py
+# product_module/models/arkite_job_step.py
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import requests
@@ -334,7 +334,7 @@ class ArkiteJobStep(models.TransientModel):
                 # Child levels - use em-spaces for visible indentation
                 # Each level gets 4 em-spaces + arrow indicator
                 indent = (EM_SPACE * 4) * level
-                record.display_name_hierarchy = f"{indent}â””â”€ {name}"
+                record.display_name_hierarchy = f"{indent}└─ {name}"
     
     @api.depends('parent_id', 'parent_id.step_name')
     def _compute_parent_step_name(self):
@@ -353,7 +353,7 @@ class ArkiteJobStep(models.TransientModel):
                 # Get just the step name, no tree characters
                 parent_name = record.parent_id.step_name or "Unnamed Parent"
                 # Remove any tree characters that might be in the name
-                parent_name = parent_name.replace('â””â”€', '').replace('â”œâ”€', '').strip()
+                parent_name = parent_name.replace('└─', '').replace('├─', '').strip()
                 record.parent_step_display = parent_name
             else:
                 record.parent_step_display = ""
@@ -364,7 +364,7 @@ class ArkiteJobStep(models.TransientModel):
         for record in self:
             name = record.step_name or "Unnamed Step"
             # Remove any tree characters
-            name = name.replace('â””â”€', '').replace('â”œâ”€', '').strip()
+            name = name.replace('└─', '').replace('├─', '').strip()
             result.append((record.id, name))
         return result
     
@@ -528,7 +528,7 @@ class ArkiteJobStep(models.TransientModel):
                     short_level = full_level
                 else:
                     # UX: avoid long "1.2.3.4.5" strings in grids. Keep full value in tooltip.
-                    short_level = f"{parts[0]}.{parts[1]}...{parts[-1]}"
+                    short_level = f"{parts[0]}.{parts[1]}…{parts[-1]}"
 
                 # Count dots to determine level depth
                 dot_count = full_level.count('.')
@@ -858,10 +858,7 @@ class ArkiteJobStep(models.TransientModel):
                     "UPDATE product_module_project SET arkite_job_steps_dirty = TRUE, arkite_hierarchy_dirty = TRUE WHERE id = ANY(%s)",
                     [project_ids],
                 )
-                self.env['product_module.project'].browse(project_ids).invalidate_recordset([
-                    'arkite_hierarchy_dirty',
-                    'arkite_job_steps_dirty',
-                ])
+                self.env['product_module.project'].browse(project_ids).invalidate_recordset(['arkite_hierarchy_dirty'])
             # Normalize sibling sequences ONLY for diagram reorder (not list resequence).
             if self.env.context.get('pm_diagram_reorder') and not self.env.context.get('pm_list_resequence'):
                 groups = set()
@@ -1070,37 +1067,13 @@ class ArkiteJobStep(models.TransientModel):
         if not project_id:
             return False
         records = self.env['product_module.arkite.job.step'].search([('project_id', '=', project_id)])
-
-        # Sync only records that actually differ from Arkite's last-synced state.
-        to_sync_ids = []
-        for rec in records:
-            desired_index = int((rec.sequence or 0) // 10) if rec.sequence else 0
-            current_index = int(rec.index or 0)
-            desired_parent = ''
-            if rec.parent_id and rec.parent_id.step_id:
-                desired_parent = str(rec.parent_id.step_id).strip()
-            current_parent = str(rec.parent_step_id or '').strip()
-            if desired_index != current_index or desired_parent != current_parent:
-                to_sync_ids.append(rec.id)
-
-        to_sync = records.browse(to_sync_ids)
-        for rec in to_sync.sorted(lambda r: (r.sequence or 0, r.id)):
+        for rec in records.sorted(lambda r: (r.sequence or 0, r.id)):
             rec.with_context(defer_arkite_sync=False).write({
                 'sequence': rec.sequence,
                 'parent_id': rec.parent_id.id if rec.parent_id else False,
             })
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {'title': _('Saved'), 'message': _('Saved to Arkite.'), 'type': 'success', 'sticky': False}}
 
-        if not to_sync:
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {'title': _('No changes'), 'message': _('No staged Job Step changes to sync.'), 'type': 'info', 'sticky': False},
-            }
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {'title': _('Saved'), 'message': _('Saved Job Steps to Arkite.'), 'type': 'success', 'sticky': False},
-        }
     @api.model
     def pm_action_discard_all(self):
         """Discard staged job-step changes by reloading from Arkite for the project in context."""
@@ -1121,5 +1094,4 @@ class ArkiteJobStep(models.TransientModel):
         Arkite steps unexpectedly.
         """
         return super().unlink()
-
 

@@ -7,8 +7,6 @@ import logging
 import requests
 import urllib3
 import paho.mqtt.client as mqtt
-import psycopg2
-import psycopg2.extras
 
 # =========================
 # Logging
@@ -21,70 +19,28 @@ logging.basicConfig(
 log = logging.getLogger("mqtt-arkite-bridge")
 
 # =========================
-# DATABASE CONFIG
-# =========================
-DB_HOST = os.getenv("DB_HOST", "db")
-DB_PORT = int(os.getenv("DB_PORT", "5432"))
-DB_NAME = os.getenv("DB_NAME", "odoo")
-DB_USER = os.getenv("DB_USER", "odoo")
-DB_PASS = os.getenv("DB_PASS", "odoo")
-
-def get_db_connection():
-    return psycopg2.connect(
-        host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASS
-    )
-
-def get_arkite_unit_config():
-    """Get Arkite configuration from the first active unit in Odoo database"""
-    try:
-        with get_db_connection() as conn, conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute("""
-                SELECT unit_id, api_base, api_key, template_name
-                FROM public.product_module_arkite_unit
-                WHERE active = true
-                ORDER BY id
-                LIMIT 1
-            """)
-            row = cur.fetchone()
-            if not row:
-                return None  # Return None instead of raising error
-            
-            return {
-                'unit_id': row['unit_id'],
-                'api_base': row['api_base'],
-                'api_key': row['api_key'],
-                'template_name': row['template_name']
-            }
-    except Exception as e:
-        log.error(f"Failed to get Arkite unit config from database: {e}")
-        return None
-
-# =========================
-# GLOBAL CONFIG VARIABLES
+# ARKITE API CONFIG
 # =========================
 
-API_BASE = None
-API_KEY = None
-TEMPLATE_PROJECT_NAME = None
-UNIT_ID = None
-CONFIG_LOADED = False
+API_BASE = os.getenv("ARKITE_API_BASE")
+API_KEY = os.getenv("ARKITE_API_KEY")
 
-def load_configuration():
-    """Load Arkite configuration from database. Returns True if loaded successfully."""
-    global API_BASE, API_KEY, TEMPLATE_PROJECT_NAME, UNIT_ID, CONFIG_LOADED
-    
-    config = get_arkite_unit_config()
-    if config:
-        API_BASE = config['api_base']
-        API_KEY = config['api_key']
-        TEMPLATE_PROJECT_NAME = config['template_name']
-        UNIT_ID = int(config['unit_id'])
-        CONFIG_LOADED = True
-        log.info("Successfully loaded Arkite configuration for unit: %s", config['unit_id'])
-        return True
-    else:
-        CONFIG_LOADED = False
-        return False
+# Template project in Arkite you want to duplicate
+TEMPLATE_PROJECT_NAME = os.getenv("ARKITE_TEMPLATE_NAME")
+
+# Workstation / unit ID (from Arkite UI)
+UNIT_ID_STR = os.getenv("ARKITE_UNIT_ID")
+UNIT_ID = int(UNIT_ID_STR) if UNIT_ID_STR else None
+
+# Validate required environment variables
+if not API_BASE:
+    raise ValueError("ARKITE_API_BASE environment variable is required")
+if not API_KEY:
+    raise ValueError("ARKITE_API_KEY environment variable is required")
+if not TEMPLATE_PROJECT_NAME:
+    raise ValueError("ARKITE_TEMPLATE_NAME environment variable is required")
+if not UNIT_ID:
+    raise ValueError("ARKITE_UNIT_ID environment variable is required")
 
 # Disable SSL warnings for self-signed Arkite cert
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -541,21 +497,13 @@ def setup_mqtt():
 
 
 def main():
-    log.info("=== MQTT → Arkite Bridge (in Docker) ===")
-    log.info("Broker: %s:%s | Topic: %s", MQTT_HOST, MQTT_PORT, MQTT_TOPIC)
-    log.info("Waiting for Arkite unit configuration...")
-
-    # Wait for configuration to be available
-    while not CONFIG_LOADED:
-        if load_configuration():
-            break
-        log.info("No Arkite unit configured yet. Waiting %d seconds before checking again...", IDLE_INTERVAL_SEC)
-        time.sleep(IDLE_INTERVAL_SEC)
-
     log.info(
-        "Configuration loaded! Template: %s | Unit ID: %s",
+        "=== MQTT → Arkite Bridge (in Docker) ===\n"
+        "Broker: %s:%s | Topic: %s | Template: %s",
+        MQTT_HOST,
+        MQTT_PORT,
+        MQTT_TOPIC,
         TEMPLATE_PROJECT_NAME,
-        UNIT_ID,
     )
 
     setup_mqtt()

@@ -13,7 +13,7 @@ class ArkiteProjectSelection(models.TransientModel):
     _name = 'product_module.arkite.project.selection'
     _description = 'Select Arkite Project or Template'
     _rec_name = 'display_name'
-
+    
     selection_type = fields.Selection([
         ('template', 'Template'),
         ('project', 'Project'),
@@ -34,7 +34,7 @@ class ArkiteProjectSelection(models.TransientModel):
         required=False,
         help='Select the Arkite Unit (server credentials). Required when duplicating from the Dashboard.',
     )
-
+    
     # For templates - store the Arkite project ID directly
     template_arkite_project_id = fields.Char(
         string='Template Project ID',
@@ -51,18 +51,18 @@ class ArkiteProjectSelection(models.TransientModel):
         string='Available Projects',
         help='List of available projects from Arkite'
     )
-
+    
     # Project name for duplication
     new_project_name = fields.Char(
         string='New Project Name',
         required=False,
         help='Name for the duplicated project'
     )
-
+    
     # For projects (from Arkite API)
     arkite_project_id = fields.Char(string='Arkite Project ID')
     arkite_project_name = fields.Char(string='Arkite Project Name')
-
+    
     display_name = fields.Char(string='Name', compute='_compute_display_name')
     selection_ids = fields.One2many(
         'product_module.arkite.project.selection',
@@ -70,12 +70,12 @@ class ArkiteProjectSelection(models.TransientModel):
         string='Available Projects'
     )
     parent_id = fields.Many2one('product_module.arkite.project.selection', string='Parent')
-
+    
     @api.model
     def default_get(self, fields_list):
         """Set default values - don't load templates here to avoid transaction issues"""
         res = super().default_get(fields_list)
-
+        
         # Set default project name from Odoo project
         if self.env.context.get('default_selection_type') == 'template':
             active_id = self.env.context.get('active_id')
@@ -93,7 +93,7 @@ class ArkiteProjectSelection(models.TransientModel):
                 except Exception as e:
                     _logger.debug("Error getting project name in default_get: %s", e)
                     # Don't fail - just skip setting the default
-
+        
         return res
 
 
@@ -166,33 +166,33 @@ class ArkiteProjectSelection(models.TransientModel):
     def action_load_available_projects(self):
         """Load available projects from Arkite API to show as templates"""
         self.ensure_one()
-
+        
         api_base, api_key = self._pm_get_arkite_api_credentials(require_unit=True)
-
+        
         url = f"{api_base}/projects/"
         params = {"apiKey": api_key}
         headers = {"Content-Type": "application/json"}
-
+        
         try:
             response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-
+            
             if response.status_code == 401:
                 self._pm_raise_auth_error(api_base)
-
+            
             if not response.ok:
                 raise UserError(_('Failed to fetch projects from Arkite: HTTP %s') % response.status_code)
-
+            
             projects = response.json()
-
+            
             if not isinstance(projects, list):
                 raise UserError(_('Invalid response from Arkite API. Expected a list of projects.'))
-
+            
             if not projects:
                 raise UserError(_('No projects found in Arkite. Please create projects in Arkite first.'))
-
+            
             # Clear existing template records
             self.available_template_ids.unlink()
-
+            
             # Create temporary records for each project
             template_model = self.env['product_module.arkite.project.selection.template']
             for proj in projects:
@@ -235,55 +235,55 @@ class ArkiteProjectSelection(models.TransientModel):
         except Exception as e:
             _logger.error("Error loading projects: %s", e)
             raise UserError(_('Error loading projects: %s') % str(e))
-
+    
     def action_load_arkite_projects(self):
         """Load available projects from Arkite API for project selection (linking)"""
         self.ensure_one()
-
+        
         api_base, api_key = self._pm_get_arkite_api_credentials(require_unit=True)
-
+        
         url = f"{api_base}/projects/"
         params = {"apiKey": api_key}
         headers = {"Content-Type": "application/json"}
-
+        
         try:
             _logger.info("Loading projects from Arkite API: %s", url)
             response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-
+            
             if response.status_code == 401:
                 self._pm_raise_auth_error(api_base)
-
+            
             if not response.ok:
                 error_text = response.text[:500] if response.text else "No error details"
                 _logger.error("Arkite API returned error: HTTP %s - %s", response.status_code, error_text)
                 raise UserError(_('Failed to fetch projects from Arkite: HTTP %s\n\nError: %s\n\nPlease check:\n1. API Base URL is correct: %s\n2. API Key is valid\n3. Arkite server is accessible') % (response.status_code, error_text, api_base))
-
+            
             projects = response.json()
-
+            
             if not isinstance(projects, list):
                 _logger.error("Invalid response type from Arkite API: %s", type(projects))
                 raise UserError(_('Invalid response from Arkite API. Expected a list of projects, got: %s\n\nResponse: %s') % (type(projects).__name__, str(projects)[:200]))
-
+            
             if not projects:
                 raise UserError(_('No projects found in Arkite. Please create projects in Arkite first.'))
-
+            
             # Ensure self has an ID (save if needed)
             if not self.id:
                 vals = {
                     'selection_type': self.env.context.get('default_selection_type', 'project'),
                 }
                 self = self.create(vals)
-
+            
             # Clear existing selection records
             self.selection_ids.unlink()
-
+            
             # Create temporary records for each project
             created_count = 0
             for proj in projects:
                 if not isinstance(proj, dict):
                     _logger.warning("Skipping non-dict project item: %s", type(proj))
                     continue
-
+                    
                 project_id = proj.get("Id") or proj.get("ProjectId")
                 project_name = proj.get("Name") or proj.get("ProjectName", "Unnamed")
                 if project_id:
@@ -299,10 +299,10 @@ class ArkiteProjectSelection(models.TransientModel):
                         _logger.error("Error creating selection record for project %s: %s", project_id, e, exc_info=True)
                         # Continue with next project
                         continue
-
+            
             # Commit the changes to ensure they're visible
             self.env.cr.commit()
-
+            
             # Toast + reopen the same wizard (forces modal refresh so the list is visible)
             return {
                 'type': 'ir.actions.client',
@@ -338,12 +338,12 @@ class ArkiteProjectSelection(models.TransientModel):
         except Exception as e:
             _logger.error("Error loading projects: %s", e, exc_info=True)
             raise UserError(_('Error loading projects: %s\n\nPlease check your API configuration and try again.') % str(e))
-
+    
     def action_select_template_project(self):
         """Select a project from the available list as template"""
         self.ensure_one()
         template_record_id = self.env.context.get('template_record_id')
-
+        
         # If called from template model, use the calling record
         if not template_record_id:
             # Try to get from active_id if called from template button
@@ -352,14 +352,14 @@ class ArkiteProjectSelection(models.TransientModel):
                 template_record = self.env['product_module.arkite.project.selection.template'].browse(active_id)
                 if template_record.exists() and template_record.selection_id == self:
                     template_record_id = active_id
-
+        
         if not template_record_id:
             raise UserError(_('No project selected.'))
-
+        
         template_record = self.env['product_module.arkite.project.selection.template'].browse(template_record_id)
         if not template_record.exists() or template_record.selection_id != self:
             raise UserError(_('Invalid project selection.'))
-
+        
         self.write({
             'template_arkite_project_id': template_record.project_id,
             'template_arkite_project_name': template_record.project_name,
@@ -379,18 +379,18 @@ class ArkiteProjectSelection(models.TransientModel):
             'target': 'new',
             'context': dict(self.env.context),
         }
-
+    
     def _get_project_id_by_name(self, project_name):
         """Get Arkite project ID by name"""
         api_base, api_key = self._pm_get_arkite_api_credentials(require_unit=True)
-
+        
         url = f"{api_base}/projects/"
         params = {"apiKey": api_key}
         headers = {"Content-Type": "application/json"}
-
+        
         try:
             response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-
+            
             if response.status_code == 401:
                 self._pm_raise_auth_error(api_base)
             if response.ok:
@@ -402,28 +402,24 @@ class ArkiteProjectSelection(models.TransientModel):
                             return proj.get("Id") or proj.get("ProjectId")
         except Exception:
             pass
-
+        
         return None
-    def _generate_unique_project_name(self, base_name):
-        counter = 2
-        candidate = base_name
-        while self._get_project_id_by_name(candidate):
-            candidate = f"{base_name} ({counter})"
-            counter += 1
-        return candidate
-
-
+    
     def _duplicate_project(self, template_id, new_project_name):
         """Duplicate a project from template"""
         api_base, api_key = self._pm_get_arkite_api_credentials(require_unit=True)
-
-        final_name = self._generate_unique_project_name(new_project_name)
-
+        
+        # Check if project with same name already exists
+        existing_id = self._get_project_id_by_name(new_project_name)
+        if existing_id:
+            # Update existing project instead of creating new
+            return str(existing_id)
+        
         # Duplicate the template project
         url = f"{api_base}/projects/{template_id}/duplicate/"
         params = {"apiKey": api_key}
         headers = {"Content-Type": "application/json"}
-
+        
         try:
             response = requests.post(url, params=params, headers=headers, verify=False, timeout=60)
             if response.status_code == 401:
@@ -431,33 +427,29 @@ class ArkiteProjectSelection(models.TransientModel):
             if response.ok:
                 result = response.json()
                 new_project_id = result.get("Id") or result.get("ProjectId")
-
+                
                 if new_project_id:
                     # Update the name of the duplicated project
                     patch_url = f"{api_base}/projects/{new_project_id}"
                     patch_payload = {"Name": new_project_name}
                     patch_response = requests.patch(
-                        patch_url,
-                        params=params,
-                        json=patch_payload,
-                        headers=headers,
-                        verify=False,
+                        patch_url, 
+                        params=params, 
+                        json=patch_payload, 
+                        headers=headers, 
+                        verify=False, 
                         timeout=10
                     )
-
+                    
                     if patch_response.status_code == 401:
                         self._pm_raise_auth_error(api_base)
 
                     if patch_response.status_code in (200, 204):
-                        return str(new_project_id), final_name
+                        return str(new_project_id)
                     else:
-                        # Duplication succeeded but name update failed — still return usable result
-                        _logger.warning(
-                            "Project duplicated but name update failed: %s",
-                            patch_response.text
-                        )
-                        return str(new_project_id), final_name
-
+                        # Duplication succeeded but name update failed - still return the ID
+                        _logger.warning("Project duplicated but name update failed: %s", patch_response.text)
+                        return str(new_project_id)
                 else:
                     raise UserError(_('Duplication succeeded but no project ID returned'))
             else:
@@ -470,14 +462,13 @@ class ArkiteProjectSelection(models.TransientModel):
                 raise UserError(_('Failed to duplicate project: %s') % error_msg)
         except requests.exceptions.RequestException as e:
             raise UserError(_('Error connecting to Arkite API: %s') % str(e))
-
+    
     def action_select_and_duplicate(self):
         """Selected a template, now duplicate directly"""
         self.ensure_one()
-
         if not self.template_arkite_project_id:
             raise UserError(_('Please select a project to use as template.'))
-
+        
         # Get project name
         project_name = self.new_project_name
         if not project_name:
@@ -488,7 +479,7 @@ class ArkiteProjectSelection(models.TransientModel):
                 project_name = odoo_project.name
             else:
                 raise UserError(_('Please enter a project name.'))
-
+        
         # Check if project with same name already exists
         existing_id = self._get_project_id_by_name(project_name)
         if existing_id:
@@ -507,19 +498,15 @@ class ArkiteProjectSelection(models.TransientModel):
                     'sticky': True,
                 }
             }
-
+        
         # Duplicate the project
         template_arkite_id = self.template_arkite_project_id
         if not template_arkite_id:
             raise UserError(_('Template project ID is missing.'))
-
+        
         try:
-            project_id, final_project_name = self._duplicate_project(
-                template_arkite_id,
-                project_name
-            )
-
-
+            project_id = self._duplicate_project(template_arkite_id, project_name)
+            
             # Link to Odoo project OR create a new one when launched from the Dashboard.
             active_id = self.env.context.get('active_id')
             active_model = self.env.context.get('active_model')
@@ -551,7 +538,7 @@ class ArkiteProjectSelection(models.TransientModel):
                             params = {"apiKey": api_key}
                             headers = {"Content-Type": "application/json"}
                             response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-
+            
                             if response.status_code == 401:
                                 self._pm_raise_auth_error(api_base)
                             if response.ok:
@@ -559,9 +546,9 @@ class ArkiteProjectSelection(models.TransientModel):
                                 final_project_name = proj_data.get("Name") or project_name
                         except Exception:
                             pass
-
+                    
                     odoo_project.write({
-                        'arkite_project_id': project_id,
+                        'arkite_project_id': str(project_id),
                         'arkite_project_name': final_project_name,
                     })
 
@@ -569,7 +556,7 @@ class ArkiteProjectSelection(models.TransientModel):
                     # This uses the Project's Arkite Unit credentials (enforced above).
                     odoo_project.action_load_arkite_project()
                     odoo_project.action_sync_from_arkite()
-
+            
             # After duplication:
             # - Dashboard flow: open the newly created Project immediately (modal).
             # - Project flow: open the Project form.
@@ -614,11 +601,11 @@ class ArkiteProjectSelection(models.TransientModel):
         except Exception as e:
             _logger.error("Error duplicating project: %s", e)
             raise UserError(_('Error duplicating project: %s') % str(e))
-
+    
     def action_confirm_update_existing(self):
         """Confirm updating existing project instead of creating new"""
         self.ensure_one()
-
+        
         project_name = self.new_project_name
         if not project_name:
             odoo_project_id = self.env.context.get('active_id')
@@ -627,12 +614,12 @@ class ArkiteProjectSelection(models.TransientModel):
                 project_name = odoo_project.name
             else:
                 raise UserError(_('Please enter a project name.'))
-
+        
         # Check if project exists
         existing_id = self._get_project_id_by_name(project_name)
         if not existing_id:
             raise UserError(_('Project with name "%s" not found. It may have been deleted.') % project_name)
-
+        
         # Link to Odoo project
         odoo_project_id = self.env.context.get('active_id')
         if odoo_project_id:
@@ -647,7 +634,7 @@ class ArkiteProjectSelection(models.TransientModel):
                         params = {"apiKey": api_key}
                         headers = {"Content-Type": "application/json"}
                         response = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
-
+            
                         if response.status_code == 401:
                             self._pm_raise_auth_error(api_base)
                         if response.ok:
@@ -655,12 +642,12 @@ class ArkiteProjectSelection(models.TransientModel):
                             final_project_name = proj_data.get("Name") or project_name
                     except Exception:
                         pass
-
+                
                 odoo_project.write({
                     'arkite_project_id': str(existing_id),
                     'arkite_project_name': final_project_name,
                 })
-
+        
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
@@ -670,24 +657,24 @@ class ArkiteProjectSelection(models.TransientModel):
                 'type': 'success',
             }
         }
-
+    
     def action_select_this_project(self):
         """Select this project from the list and link it immediately"""
         self.ensure_one()
         if not self.arkite_project_id:
             raise UserError(_('No project ID found.'))
-
+        
         # Get parent selection record
         parent = self.parent_id
         if not parent:
             raise UserError(_('No parent selection found.'))
-
+        
         # Set the selected project on parent
         parent.write({
             'arkite_project_id': self.arkite_project_id,
             'arkite_project_name': self.arkite_project_name,
         })
-
+        
         # Get the Odoo project to link (wizard field preferred, else context)
         odoo_project_id = (self.odoo_project_id.id or self.env.context.get('active_id'))
         if odoo_project_id:
@@ -706,23 +693,23 @@ class ArkiteProjectSelection(models.TransientModel):
                     return {'type': 'ir.actions.act_window_close'}
             except Exception as e:
                 _logger.error("Error linking project: %s", e)
-
+        
         # If we can't resolve the calling project, just close the modal (no navigation).
         return {'type': 'ir.actions.act_window_close'}
-
+    
     def action_select_and_link(self):
         """Selected an Arkite project, now link it"""
         self.ensure_one()
         if not self.arkite_project_id:
             raise UserError(_('Please select a project. Click "Load Projects from Arkite" and then click "Select" on a project.'))
-
+        
         # Get the Odoo project to link (wizard field preferred, else context)
         odoo_project_id = (self.odoo_project_id.id or self.env.context.get('active_id'))
         if not odoo_project_id:
             raise UserError(_('No project context found.'))
-
+        
         odoo_project = self.env['product_module.project'].browse(odoo_project_id)
-
+        
         # Link the project
         odoo_project.write({
             'arkite_project_id': self.arkite_project_id,
@@ -734,7 +721,7 @@ class ArkiteProjectSelection(models.TransientModel):
         # Do not navigate/reopen the project form from inside the wizard.
         # Just close the modal; the caller can refresh if needed.
         return {'type': 'ir.actions.act_window_close'}
-
+    
     @api.depends('template_arkite_project_name', 'arkite_project_name', 'selection_type')
     def _compute_display_name(self):
         for record in self:
@@ -754,7 +741,7 @@ class ArkiteProjectSelectionTemplate(models.TransientModel):
     _name = 'product_module.arkite.project.selection.template'
     _description = 'Available Template Project'
     _rec_name = 'project_name'
-
+    
     selection_id = fields.Many2one(
         'product_module.arkite.project.selection',
         string='Selection',
@@ -769,7 +756,7 @@ class ArkiteProjectSelectionTemplate(models.TransientModel):
         string='Project Name',
         required=True
     )
-
+    
     def action_select_template_project(self):
         """Select this template project - calls parent method"""
         self.ensure_one()

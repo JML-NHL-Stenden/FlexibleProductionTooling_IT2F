@@ -1,4 +1,4 @@
-﻿# product_module/models/project.py
+# product_module/models/project.py
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import requests
@@ -25,59 +25,6 @@ class ProductModuleProject(models.Model):
             'target': 'current',
             'context': dict(self.env.context),
         }
-    def action_sync_staged_hierarchy_to_arkite(self):
-        """Sync staged hierarchy changes (job + process steps) to Arkite and show a toast.
-
-        Kept on the core Project model so the Project form button always validates.
-        """
-        self.ensure_one()
-        if not self.arkite_project_id:
-            raise UserError(_("Please link to an Arkite project first."))
-
-        if not getattr(self, 'arkite_hierarchy_dirty', False):
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('No changes'),
-                    'message': _('No staged hierarchy changes to sync.'),
-                    'type': 'info',
-                    'sticky': False,
-                },
-            }
-
-        if getattr(self, 'arkite_job_steps_loaded', False) and getattr(self, 'arkite_job_steps_dirty', False):
-            self.env['product_module.arkite.job.step'].with_context(default_project_id=self.id).pm_action_save_all()
-
-        if getattr(self, 'arkite_process_steps_loaded', False) and getattr(self, 'arkite_process_steps_dirty', False):
-            process_ids = self.env['product_module.arkite.process.step'].search([
-                ('project_id', '=', self.id),
-                ('process_id', '!=', False),
-            ]).mapped('process_id')
-            for pid in sorted(set(process_ids)):
-                self.env['product_module.arkite.process.step'].with_context(
-                    default_project_id=self.id,
-                    default_process_id=pid,
-                ).pm_action_save_all()
-
-        self.env.cr.execute(
-            "UPDATE product_module_project "
-            "SET arkite_hierarchy_dirty = FALSE, arkite_job_steps_dirty = FALSE, arkite_process_steps_dirty = FALSE "
-            "WHERE id = %s",
-            [self.id],
-        )
-        self.invalidate_recordset(['arkite_hierarchy_dirty', 'arkite_job_steps_dirty', 'arkite_process_steps_dirty'])
-
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _('Saved'),
-                'message': _('Synced staged hierarchy changes to Arkite.'),
-                'type': 'success',
-                'sticky': False,
-            },
-        }
     _name = 'product_module.project'
     _description = 'Product Project'
     _order = 'sequence, name, id'
@@ -90,22 +37,7 @@ class ProductModuleProject(models.Model):
     # Related jobs (Many2many relationship)
     job_ids = fields.Many2many('product_module.type', string='Jobs')
     job_count = fields.Integer(string='Total Jobs', compute='_compute_job_count')
-
-    active_completion_time = fields.Integer(
-        string='Completion Time',
-        default=0
-    )
-    status = fields.Selection(
-        [
-            ('not_started', 'Not Started'),
-            ('in_progress', 'In Progress'),
-            ('done', 'Done'),
-        ],
-        string="Assembly Status",
-        store=True,
-        default='not_started',
-        required=True,
-    )
+    
     # Arkite Integration
     arkite_unit_id = fields.Many2one(
         'product_module.arkite.unit',
@@ -114,15 +46,13 @@ class ProductModuleProject(models.Model):
     )
     arkite_project_id = fields.Char(
         string='Arkite Project ID',
-        help='ID of the linked Arkite project',
-        index=True
+        help='ID of the linked Arkite project'
     )
     arkite_project_name = fields.Char(
         string='Arkite Project Name',
         readonly=True,
         help='Name of the linked Arkite project (auto-filled when linked)'
     )
-
     arkite_linked = fields.Boolean(
         string='Linked to Arkite',
         compute='_compute_arkite_linked',
@@ -151,8 +81,6 @@ class ProductModuleProject(models.Model):
         string='Processes',
         help='Assembly processes for this project'
     )
-
-    
     instruction_count = fields.Integer(
         string='Process Count',
         compute='_compute_instruction_count',
@@ -164,12 +92,6 @@ class ProductModuleProject(models.Model):
         string='Selected Process',
         help='Currently selected process to view/edit its steps'
     )
-
-    _sql_constraints = [
-        ('arkite_project_id_unique',
-        'unique(arkite_project_id)',
-        'Arkite Project ID must be unique'),
-    ]
     
     @api.onchange('selected_instruction_id')
     def _onchange_selected_instruction_id(self):
@@ -193,30 +115,7 @@ class ProductModuleProject(models.Model):
         store=False,
         help='Steps for the currently selected process. Select a process first to view/edit its steps.'
     )
-
-    @api.depends('instruction_ids.is_completed')
-    def _compute_status_and_time(self):
-        for project in self:
-            steps = project.instruction_ids
-            if not steps:
-                project.status = 'not_started'
-                continue
-
-            completed = steps.filtered('is_completed')
-
-            if not completed:
-                project.status = 'not_started'
-            elif len(completed) < len(steps):
-                project.status = 'in_progress'
-            else:
-                project.status = 'done'
     
-    @api.model
-    def cron_increment_active_time(self):
-        projects = self.search([('status', '=', 'in_progress')])
-        for project in projects:
-            project.active_completion_time += 1
-        
     @api.depends('selected_instruction_id', 'selected_instruction_id.process_step_ids')
     def _compute_selected_instruction_steps(self):
         """Compute steps from selected instruction"""
@@ -345,14 +244,6 @@ class ProductModuleProject(models.Model):
         string='Detections',
         help='Arkite detections in the project'
     )
-    
-    # Project detection information (from linked Arkite project)
-    workstation_detection_info = fields.Html(
-        string='Project Detections',
-        compute='_compute_workstation_detection_info',
-        help='Detections configured in the linked Arkite project'
-    )
-    
     arkite_material_ids = fields.One2many(
         'product_module.arkite.material.temp',
         'project_id',
@@ -597,161 +488,6 @@ class ProductModuleProject(models.Model):
                 record.qr_image_name = f'qr_{code}.png'
             else:
                 record.qr_image_name = 'qr_code.png'
-    
-    def refresh_detection_info(self):
-        """Manually trigger recomputation of detection info"""
-        self._compute_workstation_detection_info()
-    
-    @api.depends('arkite_unit_id')
-    @api.depends('arkite_project_id', 'arkite_linked')
-    def _compute_workstation_detection_info(self):
-        """Fetch and display detection information from the linked Arkite project"""
-        for record in self:
-            # Only show detections if project is linked
-            if not record.arkite_linked or not record.arkite_project_id:
-                record.workstation_detection_info = '<div style="padding: 16px; text-align: center; color: #6c757d; font-style: italic;">Link an Arkite project to see its detections</div>'
-                continue
-            
-            # Get credentials from the unit or environment
-            creds = record._get_arkite_credentials()
-            api_base = creds.get('api_base')
-            api_key = creds.get('api_key')
-            
-            if not api_base or not api_key:
-                record.workstation_detection_info = '<div style="padding: 16px; text-align: center; color: #dc3545;">Arkite credentials not configured</div>'
-                continue
-            
-            try:
-                # Fetch detections for the linked project
-                detections_url = f"{api_base}/projects/{record.arkite_project_id}/detections/"
-                params = {"apiKey": api_key}
-                headers = {"Content-Type": "application/json"}
-                
-                response = requests.get(detections_url, params=params, headers=headers, verify=False, timeout=10)
-                
-                if not response.ok:
-                    record.workstation_detection_info = f'<div style="padding: 16px; text-align: center; color: #dc3545;">Failed to fetch detections: HTTP {response.status_code}</div>'
-                    continue
-                
-                detections = response.json()
-                
-                # Handle different API response formats
-                # Sometimes it might be wrapped in a dict or have different structure
-                if isinstance(detections, dict):
-                    # Check if response has detections nested under a key
-                    if 'detections' in detections:
-                        detections = detections['detections']
-                    elif 'Detections' in detections:
-                        detections = detections['Detections']
-                    else:
-                        # Try to extract any list from the dict
-                        for key, value in detections.items():
-                            if isinstance(value, list):
-                                detections = value
-                                break
-                
-                if not isinstance(detections, list) or not detections:
-                    record.workstation_detection_info = '<div style="padding: 16px; text-align: center; color: #6c757d;">No detections configured for this project</div>'
-                    continue
-                
-                # Log detection structure for debugging - show ALL detections
-                _logger.info("Total detections: %d", len(detections))
-                for idx, det in enumerate(detections):
-                    _logger.info("Detection %d: Type=%s, Name=%s, DetectionType=%s, Id=%s", 
-                                 idx, det.get("Type"), det.get("Name"), det.get("DetectionType"), det.get("Id"))
-                
-                # Organize detections by group (using Name field, with Job-Specific as separate category)
-                organized_detections = {}
-                for detection in detections:
-                    # Use Name field for grouping
-                    group_name = detection.get("Name", "Unknown")
-                    detection_type = detection.get("Type", "")
-                    is_job_specific = detection.get("IsJobSpecific", False) or detection.get("isJobSpecific", False)
-                    job_name = detection.get("JobName") if is_job_specific else None
-                    
-                    # Create a unique key for grouping
-                    if is_job_specific and job_name:
-                        key = f"Job-Specific ({job_name})"
-                    else:
-                        key = group_name
-                    
-                    if key not in organized_detections:
-                        organized_detections[key] = []
-                    
-                    organized_detections[key].append(detection)
-                
-                # Log the organized structure for debugging
-                _logger.info("Organized detections by group: %s", {k: len(v) for k, v in organized_detections.items()})
-                
-                # Group detections by their actual DetectionType (PICKING_BIN, OBJECT, ACTIVITY, etc.)
-                # Filter out Detection groups - only keep actual detections
-                type_groups = {}
-                
-                for detection in detections:
-                    det_type = detection.get("Type", "")
-                    # Skip detection group entries - we only want actual detections
-                    if det_type == "Detection group":
-                        continue
-                    
-                    # Use the DetectionType as the grouping key and map to friendly names
-                    detection_type = detection.get("DetectionType", "Unknown")
-                    
-                    # Map DetectionType codes to friendly names
-                    type_map = {
-                        "PICKING_BIN": "Containers",
-                        "OBJECT": "Objects",
-                        "ACTIVITY": "Activities",
-                        "QUALITY_CHECK": "Quality Checks",
-                        "VIRTUAL_BUTTON": "Virtual Buttons",
-                        "TOOL": "Tools",
-                    }
-                    
-                    type_key = type_map.get(detection_type, detection_type)
-                    
-                    if type_key not in type_groups:
-                        type_groups[type_key] = []
-                    
-                    type_groups[type_key].append(detection)
-                
-                # Build hierarchical display grouped by detection type
-                html = '<div style="font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">'
-                
-                # Display each detection type group
-                for type_name in sorted(type_groups.keys()):
-                    detections_in_type = type_groups[type_name]
-                    
-                    # Type header row
-                    html += '<div style="display: flex; padding: 10px 12px; background: #e3f2fd; border-bottom: 1px solid #90caf9; border-radius: 4px 4px 0 0; margin-bottom: 2px;">'
-                    html += f'<div style="flex: 1; font-weight: 600; color: #01579b;">'
-                    html += f'<i class="fa fa-cube" style="margin-right: 6px; color: #2196f3;"></i>{type_name}'
-                    html += f'<span style="margin-left: 8px; color: #666; font-size: 11px; font-weight: normal;">({len(detections_in_type)} items)</span>'
-                    html += '</div>'
-                    html += '</div>'
-                    
-                    # Detection items under this type (indented)
-                    for i, detection in enumerate(detections_in_type):
-                        is_last = (i == len(detections_in_type) - 1)
-                        name = detection.get("Name", "Unnamed")
-                        det_subtype = detection.get("DetectionType", "Unknown")
-                        
-                        border_radius = '0 0 4px 4px' if is_last else '0'
-                        border_bottom = '1px solid #f0f0f0' if not is_last else '1px solid #90caf9'
-                        
-                        html += '<div style="display: flex; padding: 8px 12px; padding-left: 40px; background: #f9f9f9; border-bottom: ' + border_bottom + '; border-radius: ' + border_radius + '; position: relative;">'
-                        html += f'<div style="position: absolute; left: 20px; top: 0; bottom: 0; display: flex; align-items: center;"><i class="fa fa-circle" style="margin-right: 6px; color: #90caf9; font-size: 6px;"></i></div>'
-                        html += f'<div style="flex: 1; color: #333;">{name}</div>'
-                        html += f'<div style="min-width: 120px; text-align: right; color: #666; font-size: 11px;">{det_subtype}</div>'
-                        html += '</div>'
-                    
-                    html += '<div style="margin-bottom: 12px;"></div>'
-                
-                html += '</div>'
-                record.workstation_detection_info = html
-                    
-            except Exception as e:
-                _logger.warning("Error fetching project detections: %s", e)
-                record.workstation_detection_info = f'<div style="padding: 16px; text-align: center; color: #dc3545;">Error loading detections: {str(e)}</div>'
-    
     # ====================
     # MQTT / "Run in Arkite"
     # ====================
@@ -873,7 +609,11 @@ class ProductModuleProject(models.Model):
     # ====================
     
     def _get_arkite_credentials(self):
-        """Get Arkite API credentials from unit or fallback to environment variables"""
+        """Get Arkite API credentials.
+
+        For a multi-server setup, credentials should come from the selected Arkite Unit on the Project.
+        We only fall back to Unit Tracking (progress) credentials if they exist.
+        """
         # Try to get from assigned Arkite Unit model first
         if self.arkite_unit_id:
             if not self.arkite_unit_id.api_base or not self.arkite_unit_id.api_key:
@@ -899,19 +639,12 @@ class ProductModuleProject(models.Model):
                     'unit_id': progress_unit.arkite_unit_id or os.getenv('ARKITE_UNIT_ID'),
                 }
         
-        # Fallback to environment variables (for backward compatibility)
-        api_base = os.getenv('ARKITE_API_BASE')
-        api_key = os.getenv('ARKITE_API_KEY')
-        unit_id = os.getenv('ARKITE_UNIT_ID')
-        
-        if not api_base or not api_key:
-            raise UserError(_('No Arkite unit assigned to this project and environment variables are not configured. Please assign a unit or configure ARKITE_API_BASE and ARKITE_API_KEY.'))
-        
-        return {
-            'api_base': api_base,
-            'api_key': api_key,
-            'unit_id': unit_id,
-        }
+        # Do not fall back to global environment variables here: it easily causes
+        # cross-server mismatches when multiple Arkite servers/keys exist.
+        raise UserError(_(
+            'No Arkite Unit is assigned to this project.\n\n'
+            'Please select an Arkite Unit first so Odoo knows which Arkite server and API key to use.'
+        ))
     
     def action_create_unit_from_tracking(self):
         """Open a wizard to select a Unit Tracking entry and create an Arkite Unit from it"""
@@ -2984,12 +2717,7 @@ class ProductModuleProject(models.Model):
         return client.download_image_bytes(str(self.arkite_project_id), str(image_id))
 
     def action_fetch_material_images_from_arkite(self):
-        """Fetch material images from Arkite (by image_id) into the Materials Used list.
-        
-        This function will:
-        1. First sync/create materials from Arkite (to get image_id values)
-        2. Then download images for all materials that have an image_id
-        """
+        """Fetch material images from Arkite (by image_id) into the Materials Used list."""
         import base64
 
         self.ensure_one()
@@ -3004,127 +2732,33 @@ class ProductModuleProject(models.Model):
             _logger.error("[ARKITE IMAGE] Credential error: %s", e, exc_info=True)
             raise UserError(_('Could not get API credentials. Please check your Arkite unit configuration.'))
 
-        # STEP 1: First sync materials from Arkite (create if not exists, update if exists)
-        _logger.info("[ARKITE IMAGE] Step 1: Syncing materials from Arkite...")
-        created_count = 0
-        updated_count = 0
-        
-        try:
-            url = f"{api_base}/projects/{self.arkite_project_id}/materials/"
-            params = {"apiKey": api_key}
-            response = requests.get(url, params=params, verify=False, timeout=10)
-            
-            if not response.ok:
-                raise UserError(_('Failed to fetch materials from Arkite: HTTP %s') % response.status_code)
-            
-            arkite_materials = response.json()
-            if not isinstance(arkite_materials, list):
-                raise UserError(_('Unexpected response format from Arkite API (materials).'))
-            
-            _logger.info("[ARKITE IMAGE] Found %s material(s) in Arkite", len(arkite_materials))
-            
-            def _map_type(arkite_type, fallback="StandardMaterial"):
-                if arkite_type == "PickingBinMaterial":
-                    return "PickingBinMaterial"
-                if arkite_type == "StandardMaterial":
-                    return "StandardMaterial"
-                return fallback
-            
-            # Process each material from Arkite
-            for arkite_mat in arkite_materials:
-                arkite_id = str(arkite_mat.get("Id", "") or "")
-                image_id = str(arkite_mat.get("ImageId", "") or "")
-                material_name = arkite_mat.get("Name", "Unnamed Material")
-                
-                if not arkite_id:
-                    continue
-                
-                _logger.info("[ARKITE IMAGE] Processing material: %s (ID: %s, ImageId: %s)", material_name, arkite_id, image_id)
-                
-                # Find matching material in Odoo by arkite_material_id or name
-                odoo_mat = self.material_ids.filtered(lambda m: m.arkite_material_id == arkite_id)
-                if not odoo_mat:
-                    odoo_mat = self.material_ids.filtered(lambda m: m.name == material_name)
-                
-                picking_bin_ids = arkite_mat.get("PickingBinIds", [])
-                picking_bin_str = ", ".join(str(bid) for bid in picking_bin_ids) if picking_bin_ids else ""
-                arkite_type = arkite_mat.get("Type", "")
-                odoo_type = _map_type(arkite_type)
-                
-                if odoo_mat:
-                    # Update existing material
-                    odoo_mat.write({
-                        'arkite_material_id': arkite_id,
-                        'material_type': odoo_type,
-                        'description': arkite_mat.get("Description", odoo_mat.description or ""),
-                        'image_id': image_id if image_id and image_id != "0" else odoo_mat.image_id,
-                        'picking_bin_ids_text': picking_bin_str,
-                    })
-                    updated_count += 1
-                    _logger.info("[ARKITE IMAGE] Updated existing material: %s", material_name)
-                else:
-                    # Create new material
-                    self.env['product_module.material'].create({
-                        'project_id': self.id,
-                        'page_id': self.page_id.id if self.page_id else False,
-                        'name': material_name,
-                        'material_type': odoo_type,
-                        'description': arkite_mat.get("Description", ""),
-                        'image_id': image_id if image_id and image_id != "0" else "",
-                        'picking_bin_ids_text': picking_bin_str,
-                        'arkite_material_id': arkite_id,
-                    })
-                    created_count += 1
-                    _logger.info("[ARKITE IMAGE] Created new material: %s", material_name)
-            
-            _logger.info("[ARKITE IMAGE] Material sync complete. Created: %s, Updated: %s", created_count, updated_count)
-            
-        except Exception as e:
-            _logger.error("[ARKITE IMAGE] Error syncing materials: %s", e, exc_info=True)
-            raise UserError(_('Failed to sync materials from Arkite: %s') % str(e))
-
-        # STEP 2: Now fetch images for materials that have image_id
         fetched = 0
         skipped = 0
         failed = 0
 
-        # Get all materials with image_id
-        materials = self.material_ids.filtered(lambda m: m.image_id and m.image_id != "0")
-        
-        _logger.info("[ARKITE IMAGE] Step 2: Found %s material(s) with image_id. Starting image download...", len(materials))
-        
+        # Only fill missing images by default (avoid overwriting any uploaded ones)
+        materials = self.material_ids.filtered(lambda m: m.image_id)
         for mat in materials:
             if mat.image:
                 skipped += 1
-                _logger.debug("[ARKITE IMAGE] Skipped material '%s' (already has image)", mat.name)
                 continue
-            
-            _logger.info("[ARKITE IMAGE] Downloading image for material '%s' (image_id: %s)", mat.name, mat.image_id)
             img_bytes = self._arkite_download_image_bytes(api_base, api_key, mat.image_id)
-            
             if not img_bytes:
                 failed += 1
-                _logger.warning("[ARKITE IMAGE] Failed to download image for material '%s' (image_id: %s)", mat.name, mat.image_id)
                 continue
-            
-            mat.write({'image': base64.b64encode(img_bytes)})
+            mat.image = base64.b64encode(img_bytes)
             fetched += 1
-            _logger.info("[ARKITE IMAGE] Successfully downloaded image for material '%s'", mat.name)
 
-        # Build result message
-        sync_msg = _("Synced %s material(s) from Arkite (%s new, %s updated)") % (created_count + updated_count, created_count, updated_count)
-        image_msg = _("Downloaded %s image(s) (Skipped: %s already had images, Failed: %s)") % (fetched, skipped, failed)
-        
-        full_msg = f"{sync_msg}\n\n{image_msg}"
-        
+        msg = _("Fetched %s image(s). Skipped %s (already had image). Failed %s.") % (fetched, skipped, failed)
+        # Do NOT return an act_window refresh here for the same reason as materials sync.
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': _('Fetch Arkite Images Complete'),
-                'message': full_msg,
-                'type': 'success' if fetched > 0 else ('warning' if failed > 0 else 'info'),
-                'sticky': True,
+                'title': _('Images Updated'),
+                'message': msg,
+                'type': 'success' if fetched else ('warning' if failed else 'info'),
+                'sticky': False,
             }
         }
 
@@ -3207,33 +2841,6 @@ class ProductModuleProject(models.Model):
         
         return False
     
-    def action_open_arkite_image_selector(self):
-        """Open wizard to browse and select Arkite images"""
-        self.ensure_one()
-        
-        if not self.arkite_project_id:
-            raise UserError(_('Please link this project to an Arkite project first.'))
-        
-        # Create wizard
-        wizard = self.env['product_module.arkite.image.selector.wizard'].create({
-            'project_id': self.id,
-        })
-        
-        # Auto-load images
-        wizard.action_load_images()
-        
-        return {
-            'name': _('Select Arkite Image'),
-            'type': 'ir.actions.act_window',
-            'res_model': 'product_module.arkite.image.selector.wizard',
-            'res_id': wizard.id,
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_project_id': self.id,
-            }
-        }
-    
     def action_help_browse_images(self):
         """Show available Arkite image IDs in a notification"""
         self.ensure_one()
@@ -3300,15 +2907,15 @@ class ProductModuleProject(models.Model):
             
             image_ids = [str(img.get('Id', '')) for img in images if img.get('Id')]
             if image_ids:
-                message = _('Available Image IDs in Arkite: %s\n\nClick "Fetch Arkite Images" to automatically download these images to your materials.') % ', '.join(image_ids[:30])
+                message = _('Available Image IDs: %s\n\nCopy an ID and paste it into the Image ID field.') % ', '.join(image_ids[:30])
                 if len(image_ids) > 30:
-                    message += _('\n\n(Showing first 30 of %s images)') % len(image_ids)
+                    message += _('\n(Showing first 30 of %s images)') % len(image_ids)
                 
                 return {
                     'type': 'ir.actions.client',
                     'tag': 'display_notification',
                     'params': {
-                        'title': _('Available Images in Arkite (%s)') % len(image_ids),
+                        'title': _('Available Images (%s)') % len(image_ids),
                         'message': message,
                         'type': 'info',
                         'sticky': True,
@@ -3716,7 +3323,7 @@ class ProductModuleProject(models.Model):
         result = super().write(vals)
 
         # Existing behavior: materials + (legacy) step reorder sync blocks remain below
-        # (â€¦ existing code continues â€¦)
+        # (… existing code continues …)
 
         # At the very end of saving the Project in the form, if we have staged hierarchy changes,
         # push them to Arkite once and clear the flag.
@@ -3727,4 +3334,3 @@ class ProductModuleProject(models.Model):
                     project.with_context(skip_arkite_hierarchy_autosync=True).write({'arkite_hierarchy_dirty': False})
 
         return result
-

@@ -1,4 +1,4 @@
-﻿<!-- product_module/views/project_views.xml -->
+<!-- product_module/views/project_views.xml -->
 <odoo>
     <!-- Project List View -->
     <record id="view_project_list" model="ir.ui.view">
@@ -8,7 +8,6 @@
             <list string="Projects">
                 <field name="name"/>
                 <field name="job_count" string="Total Jobs"/>
-                <field name="status" string="Assembly Status"/>
             </list>
         </field>
     </record>
@@ -304,6 +303,14 @@
         <field name="arch" type="xml">
             <form string="Project">
                 <sheet>
+                    <!-- Hidden fields used for UI logic / buttons -->
+                    <field name="arkite_linked" invisible="1"/>
+                    <field name="arkite_hierarchy_dirty" invisible="1"/>
+                    <field name="arkite_job_steps_loaded" invisible="1"/>
+                    <field name="arkite_process_steps_loaded" invisible="1"/>
+                    <field name="arkite_job_steps_dirty" invisible="1"/>
+                    <field name="arkite_process_steps_dirty" invisible="1"/>
+
                     <!-- Two Column Layout -->
                     <div style="display: flex; width: 100%; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; box-sizing: border-box;">
                         
@@ -319,11 +326,6 @@
                                         <span style="background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
                                             <i class="fa fa-briefcase"/> <field name="job_count"/> Total Jobs
                                         </span>
-                                    </div>
-                                    <div style="display:flex; gap:12px;">
-                                        <field name="status" widget="statusbar"
-                                            statusbar_visible="not_started,in_progress,done"/>
-                                        <field name="active_completion_time" string="Completion time in seconds:" readonly="1"/>
                                     </div>
                                 </div>
                             </div>
@@ -397,13 +399,8 @@
                                             <i class="fa fa-plus" style="margin-right: 8px;"/> Create Arkite Project
                                         </button>
                                         
-                                        <button name="action_duplicate_arkite_project" 
-                                                type="object" 
-                                                class="btn btn-info" 
-                                                invisible="arkite_linked"
-                                                style="background: linear-gradient(45deg, #17a2b8 0%, #138496 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;">
-                                            <i class="fa fa-copy" style="margin-right: 8px;"/> Duplicate from Template
-                                        </button>
+                                        <!-- Duplicate-from-template moved to a dedicated menu action (outside the Project form)
+                                             to avoid modal/navigation issues. -->
                                         
                                         <button name="action_link_arkite_project" 
                                                 type="object" 
@@ -422,6 +419,15 @@
                                             <i class="fa fa-sync" style="margin-right: 8px;"/> Sync from Arkite
                                         </button>
 
+                                        <button name="action_sync_staged_hierarchy_to_arkite"
+                                                type="object"
+                                                class="btn btn-success"
+                                                invisible="not arkite_linked"
+                                                style="background: linear-gradient(45deg, #28a745 0%, #20c997 100%); border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px;"
+                                                help="Push staged hierarchy changes (diagram edits / reorders) from Odoo to Arkite. Note: 'Sync from Arkite' pulls and can overwrite local changes.">
+                                            <i class="fa fa-upload" style="margin-right: 8px;"/> Sync to Arkite
+                                        </button>
+
                                         <button name="action_unlink_arkite_project"
                                                 type="object"
                                                 class="btn btn-outline-danger"
@@ -437,7 +443,7 @@
                                     <!-- Help Text -->
                                     <div style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; color: #6c757d;">
                                         <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
-                                        <strong>Note:</strong> Create or link an Arkite project to manage steps, variants, processes, and detections.
+                                        <strong>Note:</strong> After reordering in the diagram, click <strong>Sync to Arkite</strong> to push changes. <strong>Sync from Arkite</strong> pulls from Arkite and can overwrite local edits.
                                     </div>
                                 </div>
                             </div>
@@ -482,6 +488,13 @@
                                     <i class="fa fa-cogs" style="color: #007bff; margin-right: 8px;"/> Arkite Processes &amp; Steps
                                 </h3>
                                 <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button name="action_sync_staged_hierarchy_to_arkite"
+                                            string="Sync to Arkite"
+                                            type="object"
+                                            class="btn-success"
+                                            invisible="not arkite_linked"
+                                            icon="fa-upload"
+                                            help="Push staged hierarchy changes to Arkite (after diagram edits)."/>
                                     <button name="action_load_process_list" 
                                             string="Load Processes" 
                                             type="object" 
@@ -518,20 +531,12 @@
                                             invisible="not selected_process_id_char"
                                             icon="fa-share-alt"
                                             help="Open the diagram view for drag/reparent. Use the List tab for New/Edit/Delete."/>
-                                    <button name="action_sync_staged_hierarchy_to_arkite"
-                                            string="Sync to Arkite"
-                                            type="object"
-                                            class="btn-secondary"
-                                            invisible="not arkite_linked or not arkite_hierarchy_dirty"
-                                            icon="fa-cloud-upload"
-                                            help="Sync staged hierarchy changes (job + process steps) to Arkite and show a toast."/>
                                 </div>
                             </div>
                             
                             <!-- Hidden fields for selected process -->
                             <field name="selected_process_id_char" invisible="1"/>
                             <field name="selected_arkite_process_id" invisible="1"/>
-                            <field name="arkite_hierarchy_dirty" invisible="1"/>
                             
                             <!-- Process Selection -->
                             <group col="1">
@@ -586,7 +591,7 @@
                                                     help="Delete this process in Arkite"/>
                                             <button name="action_select_process" 
                                                     type="object" 
-                                                    string="Selected âœ“"
+                                                    string="Selected ✓"
                                                     class="btn btn-sm"
                                                     style="background-color: #28a745; color: white; cursor: default;"
                                                     invisible="process_id != parent.selected_process_id_char"
@@ -632,17 +637,6 @@
                                         <h4 style="color: #6c757d; margin-bottom: 8px;">No Process Selected</h4>
                                         <p style="font-size: 14px; margin-bottom: 0;">Click "Select" on a process above to automatically view its steps.</p>
                             </div>
-                                </group>
-                                <group string="Detection Job Steps">
-                                    <field name="instruction_ids" nolabel="1">
-                                        <list delete="false">
-                                            <field name="sequence"/>
-                                            <field name="title" string="Detection Step Title"/>
-                                            <field name="detection_name" string="Related Detection Name"/>
-                                            <field name="detection_status" widget="boolean_toggle" string="Related Detection Status" readonly="1"/>
-                                            <field name="is_completed" widget="boolean_toggle" string="Step Was Completed" readonly="1"/>
-                                        </list>
-                                    </field>
                                 </group>
                             </group>
                             <div style="display:none">
@@ -934,6 +928,13 @@
                                     <i class="fa fa-list-ol" style="color: #ff9800; margin-right: 8px;"/> Arkite Job Steps
                                 </h3>
                                 <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button name="action_sync_staged_hierarchy_to_arkite"
+                                            string="Sync to Arkite"
+                                            type="object"
+                                            class="btn-success"
+                                            invisible="not arkite_linked"
+                                            icon="fa-upload"
+                                            help="Push staged hierarchy changes to Arkite (after diagram edits)."/>
                                     <button name="action_load_job_steps" 
                                             string="Load Job Steps" 
                                             type="object" 
@@ -962,13 +963,6 @@
                                             invisible="not arkite_linked"
                                             icon="fa-share-alt"
                                             help="Open the diagram view for drag/reparent. Use the List tab for New/Edit/Delete."/>
-                                    <button name="action_sync_staged_hierarchy_to_arkite"
-                                            string="Sync to Arkite"
-                                            type="object"
-                                            class="btn-secondary"
-                                            invisible="not arkite_linked or not arkite_hierarchy_dirty"
-                                            icon="fa-cloud-upload"
-                                            help="Sync staged hierarchy changes (job + process steps) to Arkite and show a toast."/>
                                 </div>
                             </div>
                             
@@ -1008,13 +1002,19 @@
                                         <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials Used
                                     </h3>
                                     <div style="display: flex; gap: 8px;">
-                                        <button name="action_open_arkite_image_selector"
+                                        <button name="action_help_browse_images" 
+                                                type="object" 
+                                                class="btn btn-sm btn-info"
+                                                string="Browse Images"
+                                                icon="fa-image"
+                                                help="Show available Arkite image IDs"/>
+                                        <button name="action_fetch_material_images_from_arkite"
                                                 type="object"
                                                 class="btn btn-sm btn-outline-secondary"
                                                 string="Fetch Images"
                                                 icon="fa-download"
                                                 invisible="not arkite_linked"
-                                                help="Browse and select images from Arkite project"/>
+                                                help="Download Arkite images for materials that have an Image ID but no image loaded in Odoo"/>
                                         <button name="action_sync_materials_from_arkite"
                                                 type="object"
                                                 class="btn btn-sm btn-outline-secondary"
@@ -1038,58 +1038,27 @@
                                 </div>
                                 <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
                                     <i class="fa fa-info-circle" style="margin-right: 6px;"/>
-                                    <strong>Tip:</strong> Click "Add a line" to create new materials, or "Link Existing Material" to select materials from the Materials tab. 
-                                    To add an image: <strong>click the <i class="fa fa-images"/> button</strong> to browse Arkite images, or upload directly. 
-                                    <strong>Save the project form to sync all materials to Arkite</strong> - they will then appear in the Materials tab.
+                                    <strong>Tip:</strong> Click "Add a line" to create new materials, or "Link Existing Material" to select materials from the Materials tab. Upload an image to automatically send it to Arkite and get the Image ID. <strong>Save the project form to sync all materials to Arkite</strong> - they will then appear in the Materials tab.
                                 </div>
                                 <field name="material_ids" nolabel="1" context="{'default_project_id': id, 'default_page_id': page_id}">
                                     <list editable="bottom" create="1" delete="1">
                                         <field name="name" string="Name" required="1"/>
                                         <field name="material_type" string="Type" required="1"/>
-                                        <field name="image" widget="image" options="{'size': [64, 64]}" string="Image" help="Upload image to automatically send to Arkite"/>
-                                        <button name="action_select_arkite_image" 
-                                                type="object" 
-                                                string="Select Image" 
-                                                icon="fa-images" 
-                                                class="btn btn-primary"
-                                                style="padding: 8px 16px; min-width: 120px; font-weight: 600; text-align: center;"
-                                                title="Select image from Arkite"
-                                                help="Browse and select an image from Arkite project"/>
+                                        <field name="image" widget="image" options="{'size': [64, 64]}" string="Image" help="Upload image to automatically send to Arkite and get Image ID"/>
+                                        <field name="image_id" string="Image ID" placeholder="Auto-filled when image uploaded" readonly="1"/>
                                         <field name="description" string="Description"/>
                                         <field name="picking_bin_ids_text" string="Picking Bins" placeholder="e.g., 1111,2222,3333"/>
                                     </list>
                                 </field>
                             </div>
                             
-                            <!-- Project Detection Information -->
-                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 24px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600; font-size: 16px;">
-                                        <i class="fa fa-eye" style="color: #28a745; margin-right: 8px;"/> Project Detections
-                                    </h3>
-                                    <button type="object" class="btn btn-sm btn-primary" name="refresh_detection_info" string="Refresh Detections">
-                                        <i class="fa fa-refresh" style="margin-right: 4px;"/> Refresh
-                                    </button>
-                                </div>
-                                <div style="background: #f8f9fa; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #495057; margin-bottom: 12px;">
-                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 6px;"/>
-                                    <strong>Info:</strong> Detections from the linked Arkite project
-                                </div>
-                                <div style="overflow-x: auto;">
-                                    <field name="workstation_detection_info" widget="html" nolabel="1"/>
-                                </div>
-                            </div>
-                            
                             <!-- QR Code -->
-                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; margin-top: 24px;">
+                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
                                 <h3 style="margin: 0 0 16px 0; color: #2c3e50; font-weight: 600;">
                                     <i class="fa fa-qrcode" style="color: #667eea; margin-right: 8px;"/> QR Code
                                 </h3>
                                 <div style="display: inline-block; padding: 16px; background: #f8f9fa; border-radius: 12px;">
                                     <field name="qr_image" widget="image" options="{'size': [200, 200]}" nolabel="1"/>
-                                    <div style="margin-top: 12px; color: #6c757d; font-size: 13px;">
-                                        <field name="qr_text" readonly="1" style="display: inline; border: none; background: transparent; font-weight: 600;"/>
-                                    </div>
                                 </div>
                             </div>
                             
@@ -1097,176 +1066,8 @@
                         </div>
                     </div>
                     
-                    <!-- Notebook with Tabs for Arkite Data -->
-                    <notebook>
-                        
-                        <!-- Arkite Steps Tab -->
-                        <page string="Arkite Steps" name="arkite_steps" invisible="not arkite_project_loaded">
-                            <div style="padding: 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
-                                        <i class="fa fa-list-ol" style="color: #667eea; margin-right: 8px;"/> Job Steps
-                                    </h3>
-                                    <button name="action_load_arkite_steps" 
-                                            type="object" 
-                                            class="btn btn-sm btn-primary"
-                                            string="Refresh Steps"
-                                            icon="fa-refresh"
-                                            help="Refresh steps from Arkite project"/>
-                                </div>
-                                <field name="arkite_job_step_ids" nolabel="1" mode="list"/>
-                                <div style="margin-top: 16px; padding: 12px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; font-size: 13px; color: #0056b3;">
-                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
-                                    <strong>Variant Assignment:</strong> Assign specific variants to steps by selecting them in the "Variants" column. Steps with no assigned variants will apply to all variants by default.
-                                </div>
-                            </div>
-                        </page>
-                        
-                        <!-- Variants Tab -->
-                        <page string="Variants" name="variants" invisible="not arkite_project_loaded">
-                            <div style="padding: 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
-                                        <i class="fa fa-tags" style="color: #ffc107; margin-right: 8px;"/> Variants
-                                    </h3>
-                                    <button name="action_load_arkite_variants" 
-                                            type="object" 
-                                            class="btn btn-sm btn-warning"
-                                            string="Refresh Variants"
-                                            icon="fa-refresh"
-                                            help="Refresh variants from Arkite project"/>
-                                </div>
-                                <field name="arkite_variant_ids" nolabel="1" editable="bottom">
-                                    <list>
-                                        <field name="name" string="Variant Name"/>
-                                        <field name="description" string="Description"/>
-                                    </list>
-                                </field>
-                                <div style="margin-top: 16px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-size: 13px; color: #856404;">
-                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
-                                    <strong>Variant Assignment:</strong> You can assign different variants to different steps. Use the steps tab to configure variant assignments.
-                                </div>
-                            </div>
-                        </page>
-                        
-                        <!-- Detections Tab -->
-                        <page string="Detections" name="detections" invisible="not arkite_project_loaded">
-                            <div style="padding: 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
-                                        <i class="fa fa-eye" style="color: #dc3545; margin-right: 8px;"/> Detections
-                                    </h3>
-                                    <button name="action_load_arkite_detections" 
-                                            type="object" 
-                                            class="btn btn-sm btn-danger"
-                                            string="Refresh Detections"
-                                            icon="fa-refresh"
-                                            help="Refresh detections from Arkite project"/>
-                                </div>
-                                <field name="arkite_detection_ids" nolabel="1" editable="bottom">
-                                    <list>
-                                        <field name="name" string="Detection Name"/>
-                                        <field name="detection_type" string="Type"/>
-                                        <field name="is_job_specific" widget="boolean_toggle" string="Job-Specific"/>
-                                    </list>
-                                </field>
-                            </div>
-                        </page>
-                        
-                        <!-- Arkite Materials Tab (Debug) -->
-                        <!-- Keep for admins/debug only to avoid duplicate material UIs for end users. -->
-                        <page string="Arkite Materials (Debug)" name="arkite_materials" invisible="not arkite_project_loaded" groups="base.group_system">
-                            <div style="padding: 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                    <h3 style="margin: 0; color: #2c3e50; font-weight: 600;">
-                                        <i class="fa fa-box" style="color: #28a745; margin-right: 8px;"/> Materials in Arkite
-                                    </h3>
-                                    <button name="action_load_arkite_materials" 
-                                            type="object" 
-                                            class="btn btn-sm btn-success"
-                                            string="Refresh Materials"
-                                            icon="fa-refresh"
-                                            help="Refresh materials from Arkite project"/>
-                                </div>
-                                <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0c5460;">
-                                    <i class="fa fa-info-circle" style="margin-right: 6px;"/>
-                                    <strong>Tip:</strong> Click "Add a line" to create new materials in Arkite. All changes are synced automatically. For picking bins, enter IDs separated by commas (e.g., 1111,2222,3333).
-                                </div>
-                                <field name="arkite_material_ids" nolabel="1" context="{'default_project_id': id}" editable="bottom" create="1" delete="1">
-                                    <list>
-                                        <field name="name" string="Material Name" required="1"/>
-                                        <field name="material_type" string="Type" required="1"/>
-                                        <field name="description" string="Description"/>
-                                        <field name="image_id" string="Image ID" placeholder="Optional"/>
-                                        <field name="picking_bin_ids_text" string="Picking Bin IDs" placeholder="e.g., 1111,2222,3333"/>
-                                        <field name="material_id" column_invisible="1"/>
-                                    </list>
-                                    <form>
-                                        <sheet>
-                                            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white;">
-                                                <h2 style="color: white; margin: 0 0 16px 0; font-size: 24px; font-weight: 700;">
-                                                    <i class="fa fa-box" style="margin-right: 12px;"/> Material Details
-                                                </h2>
-                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                                    <div>
-                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Material Name *</div>
-                                                        <field name="name" required="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; font-size: 16px;"/>
-                                                    </div>
-                                                    <div>
-                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Type *</div>
-                                                        <field name="material_type" required="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white;"/>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 16px;">
-                                                <h3 style="color: #2c3e50; margin-bottom: 16px; font-weight: 600; font-size: 18px;">
-                                                    <i class="fa fa-info-circle" style="color: #007bff; margin-right: 8px;"/> Additional Information
-                                                </h3>
-                                                <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
-                                                    <div>
-                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Description</div>
-                                                        <field name="description" placeholder="Enter material description..." style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; resize: vertical;"/>
-                                                    </div>
-                                                    <div>
-                                                        <div class="o_form_label" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Image ID</div>
-                                                        <field name="image_id" placeholder="Enter Arkite Image ID (optional)" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px;"/>
-                                                        <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
-                                                            <i class="fa fa-info-circle"/> Optional: ID of an image uploaded to Arkite
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                                            <div class="o_form_label" style="font-weight: 600; color: #495057; margin: 0;">Picking Bin IDs</div>
-                                                            <button name="action_load_picking_bins_from_detections" 
-                                                                    type="object" 
-                                                                    class="btn btn-sm btn-info"
-                                                                    string="Load from Detections"
-                                                                    icon="fa-download"
-                                                                    help="Automatically load picking bin IDs from detections in this project"/>
-                                                        </div>
-                                                        <field name="picking_bin_ids_text" placeholder="e.g., 1111,2222,3333" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-family: monospace;"/>
-                                                        <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
-                                                            <i class="fa fa-info-circle"/> Enter picking bin IDs separated by commas, or click "Load from Detections" to automatically populate from picking bin detections.
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div invisible="not material_id" style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 16px;">
-                                                <div style="font-weight: 600; color: #0056b3; margin-bottom: 8px;">
-                                                    <i class="fa fa-check-circle" style="margin-right: 6px;"/> Material ID
-                                                </div>
-                                                <div style="color: #495057; font-size: 14px;">
-                                                    <field name="material_id" readonly="1" style="display: inline; border: none; background: transparent; font-weight: 600; font-family: monospace;"/>
-                                                </div>
-                                            </div>
-                                        </sheet>
-                                    </form>
-                                </field>
-                            </div>
-                        </page>
-                    </notebook>
+                    <!-- Removed legacy Arkite notebook (duplicate tables under QR section).
+                         The primary Arkite UI is the inline sections above. -->
                 </sheet>
             </form>
         </field>
@@ -1287,5 +1088,4 @@
               action="action_project"
               sequence="15"/>
 </odoo>
-
 
