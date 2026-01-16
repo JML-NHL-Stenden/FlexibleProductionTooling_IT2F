@@ -16,6 +16,7 @@ import { useViewButtons } from "@web/views/view_button/view_button_hook";
 const PM_RELOAD_BUTTONS = new Set([
     "action_sync_materials_from_arkite",
     "action_fetch_material_images_from_arkite",
+    "action_sync_staged_hierarchy_to_arkite",
 ]);
 
 try {
