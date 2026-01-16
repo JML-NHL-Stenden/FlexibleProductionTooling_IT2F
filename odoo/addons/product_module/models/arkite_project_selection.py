@@ -466,6 +466,7 @@ class ArkiteProjectSelection(models.TransientModel):
     def action_select_and_duplicate(self):
         """Selected a template, now duplicate directly"""
         self.ensure_one()
+        raise UserError("Duplicate button executed (backend reached action_select_and_duplicate).")
         if not self.template_arkite_project_id:
             raise UserError(_('Please select a project to use as template.'))
 
