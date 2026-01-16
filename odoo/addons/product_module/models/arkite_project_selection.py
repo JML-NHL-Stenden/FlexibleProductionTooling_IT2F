@@ -18,7 +18,19 @@ class ArkiteProjectSelection(models.TransientModel):
         ('template', 'Template'),
         ('project', 'Project'),
     ], string='Selection Type', required=True)
-    
+
+    # When opening the wizard outside a Project form, the user must pick which Odoo Project
+    # to link/sync the duplicated Arkite project into.
+    odoo_project_id = fields.Many2one(
+        'product_module.project',
+        string="Target Project",
+    )
+
+    arkite_unit_id = fields.Many2one(
+        'product_module.arkite.unit',
+        string="Arkite Unit",
+    )
+
     # For templates - store the Arkite project ID directly
     template_arkite_project_id = fields.Char(
         string='Template Project ID',
@@ -53,7 +65,11 @@ class ArkiteProjectSelection(models.TransientModel):
         'parent_id',
         string='Available Projects'
     )
-    parent_id = fields.Many2one('product_module.arkite.project.selection', string='Parent')
+
+    parent_id = fields.Many2one(
+    'product_module.arkite.project.selection',
+     string='Parent',
+     )
     
     @api.model
     def default_get(self, fields_list):
@@ -74,7 +90,69 @@ class ArkiteProjectSelection(models.TransientModel):
                     # Don't fail - just skip setting the default
         
         return res
-    
+
+    def _pm_get_arkite_api_credentials(self, require_unit: bool = False):
+            """Resolve Arkite API credentials for this wizard.
+
+            If require_unit=True, credentials MUST come from the active Odoo Project's Arkite Unit
+            (no fallback to environment variables). This prevents accidental cross-server usage and
+            matches the expected UX: the wizard should not "guess" credentials.
+            """
+            api_base = None
+            api_key = None
+
+            # Prefer explicit wizard selection, else fall back to context active_id (Project only).
+            odoo_project = self.odoo_project_id
+            if not odoo_project:
+                active_id = self.env.context.get('active_id')
+                active_model = self.env.context.get('active_model')
+                if active_model == 'product_module.project' and active_id:
+                    odoo_project = self.env['product_module.project'].browse(active_id)
+
+            if odoo_project:
+                if odoo_project.exists() and odoo_project.arkite_unit_id:
+                    unit = odoo_project.arkite_unit_id
+                    api_base = unit.api_base
+                    api_key = unit.api_key
+
+            # If no active/selected Project, allow choosing the Unit directly (Dashboard flow).
+            if (not api_base or not api_key) and self.arkite_unit_id:
+                api_base = self.arkite_unit_id.api_base
+                api_key = self.arkite_unit_id.api_key
+
+            if require_unit and (not api_base or not api_key):
+                raise UserError(_(
+                    'Please select an Arkite Unit first.\n\n'
+                    'If you launched this from a Project, set the Project\'s Arkite Unit.\n'
+                    'If you launched this from the Dashboard, select the Unit in this wizard.'
+                ))
+
+            if not api_base or not api_key:
+                # Fallback for backward compatibility (only when require_unit=False)
+                api_base = os.getenv('ARKITE_API_BASE')
+                api_key = os.getenv('ARKITE_API_KEY')
+
+            if not api_base or not api_key:
+                raise UserError(_(
+                    'Arkite API configuration is missing.\n\n'
+                    'Fix:\n'
+                    '- Assign an Arkite Unit to this project (recommended), or\n'
+                    '- Set ARKITE_API_BASE and ARKITE_API_KEY in the environment.'
+                ))
+
+            return api_base, api_key
+
+    @staticmethod
+    def _pm_raise_auth_error(api_base):
+        raise UserError(_(
+             'Authentication failed (HTTP 401).\n\n'
+             'This usually means the API key does not match the Arkite server.\n\n'
+             'Server: %s\n\n'
+             'Fix:\n'
+             '- Ensure the selected Arkite Unit has the correct API Base + API Key for that server, or\n'
+             '- Update ARKITE_API_BASE / ARKITE_API_KEY to the correct pair.'
+        ) % (api_base,))
+
     def action_load_available_projects(self):
         """Load available projects from Arkite API to show as templates"""
         self.ensure_one()
