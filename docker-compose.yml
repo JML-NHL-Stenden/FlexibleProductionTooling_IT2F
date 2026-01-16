@@ -74,11 +74,12 @@ services:
       # Topic that carries the Arkite QR payload
       MQTT_TOPIC_QR: ${MQTT_TOPIC_QR}
 
-      # Arkite API config
-      ARKITE_API_BASE: ${ARKITE_API_BASE}
-      ARKITE_API_KEY: ${ARKITE_API_KEY}
-      ARKITE_UNIT_ID: ${ARKITE_UNIT_ID}
-      ARKITE_TEMPLATE_NAME: ${ARKITE_TEMPLATE_NAME}
+      # Database connection for reading Arkite units
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
 
       # DB fallback (lets mqtt-bridge read Arkite credentials stored by Odoo)
       DB_HOST: db
@@ -102,6 +103,9 @@ services:
     environment:
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
+      ARKITE_API_BASE: ${ARKITE_API_BASE}
+      ARKITE_API_KEY: ${ARKITE_API_KEY}
+      ARKITE_UNIT_ID: ${ARKITE_UNIT_ID}
       MQTT_TOPIC_CODES: ${MQTT_TOPIC_CODES}
       MQTT_TOPIC_DETAILS: ${MQTT_TOPIC_DETAILS}
       MQTT_TOPIC_QR: ${MQTT_TOPIC_QR}

@@ -8,6 +8,8 @@ import requests
 import urllib3
 import psycopg2
 import paho.mqtt.client as mqtt
+import psycopg2
+import psycopg2.extras
 
 # =========================
 # Logging
@@ -20,14 +22,52 @@ logging.basicConfig(
 log = logging.getLogger("mqtt-arkite-bridge")
 
 # =========================
-# ARKITE API CONFIG
+# DATABASE CONFIG
+# =========================
+DB_HOST = os.getenv("DB_HOST", "db")
+DB_PORT = int(os.getenv("DB_PORT", "5432"))
+DB_NAME = os.getenv("DB_NAME", "odoo")
+DB_USER = os.getenv("DB_USER", "odoo")
+DB_PASS = os.getenv("DB_PASS", "odoo")
+
+def get_db_connection():
+    return psycopg2.connect(
+        host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASS
+    )
+
+def get_arkite_unit_config():
+    """Get Arkite configuration from the first active unit in Odoo database"""
+    try:
+        with get_db_connection() as conn, conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("""
+                SELECT unit_id, api_base, api_key, template_name
+                FROM public.product_module_arkite_unit
+                WHERE active = true
+                ORDER BY id
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+            if not row:
+                return None  # Return None instead of raising error
+            
+            return {
+                'unit_id': row['unit_id'],
+                'api_base': row['api_base'],
+                'api_key': row['api_key'],
+                'template_name': row['template_name']
+            }
+    except Exception as e:
+        log.error(f"Failed to get Arkite unit config from database: {e}")
+        return None
+
+# =========================
+# GLOBAL CONFIG VARIABLES
 # =========================
 
 API_BASE = None
 API_KEY = None
 TEMPLATE_PROJECT_NAME = None
 UNIT_ID = None
-
 
 def _parse_int(value: str | None):
     try:
@@ -37,14 +77,7 @@ def _parse_int(value: str | None):
 
 
 def _load_arkite_config_from_env():
-    """Load Arkite config from environment variables.
-
-    Expected:
-      - ARKITE_API_BASE
-      - ARKITE_API_KEY
-      - ARKITE_TEMPLATE_NAME
-      - ARKITE_UNIT_ID (int)
-    """
+    """Load Arkite config from environment variables (optional)."""
     api_base = os.getenv("ARKITE_API_BASE") or None
     api_key = os.getenv("ARKITE_API_KEY") or None
     template_name = os.getenv("ARKITE_TEMPLATE_NAME") or None
@@ -62,16 +95,7 @@ def _load_arkite_config_from_env():
 
 
 def _load_arkite_config_from_db():
-    """Fallback: load Arkite config from the Odoo DB (product_module.arkite.unit).
-
-    This enables running without ARKITE_* in .env once credentials are stored in Odoo.
-    Requires DB connection vars (defaults work in Docker):
-      - DB_HOST (default: db)
-      - DB_PORT (default: 5432)
-      - DB_NAME / POSTGRES_DB
-      - DB_USER / POSTGRES_USER
-      - DB_PASS / POSTGRES_PASSWORD
-    """
+    """Load Arkite config from the Odoo DB (product_module.arkite.unit)."""
     host = os.getenv("DB_HOST", "db")
     port = int(os.getenv("DB_PORT", "5432"))
     dbname = os.getenv("DB_NAME") or os.getenv("POSTGRES_DB")
@@ -120,7 +144,6 @@ def _load_arkite_config_from_db():
                     }
                 return None
     except psycopg2.errors.UndefinedTable:
-        # Module tables not created yet / DB not initialized.
         return None
     except Exception:
         return None
@@ -133,16 +156,12 @@ def _load_arkite_config_from_db():
 
 def resolve_arkite_config():
     """Resolve Arkite config, preferring env vars but falling back to the DB."""
-    poll_sec = float(os.getenv("ARKITE_CONFIG_POLL_SEC", "5"))
+    poll_sec = float(os.getenv("ARKITE_CONFIG_POLL_SEC", str(IDLE_INTERVAL_SEC)))
     while True:
         cfg = _load_arkite_config_from_env() or _load_arkite_config_from_db()
         if cfg:
             return cfg
-        log.warning(
-            "Arkite config missing. Set ARKITE_API_BASE/ARKITE_API_KEY/ARKITE_UNIT_ID/ARKITE_TEMPLATE_NAME "
-            "or create an active Arkite Unit record in Odoo. Retrying in %ss...",
-            poll_sec,
-        )
+        log.info("Waiting for Arkite unit configuration... retrying in %ss", poll_sec)
         time.sleep(poll_sec)
 
 # Disable SSL warnings for self-signed Arkite cert

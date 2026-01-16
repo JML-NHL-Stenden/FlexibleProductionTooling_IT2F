@@ -34,6 +34,7 @@
         'views/variant_views.xml',
         'views/material_views.xml',
         'views/material_link_wizard_views.xml',
+        'views/arkite_image_selector_wizard_view.xml',
         'views/progress_views.xml',
         'views/arkite_project_wizard_view.xml',
         'views/arkite_job_step_wizard_view.xml',
