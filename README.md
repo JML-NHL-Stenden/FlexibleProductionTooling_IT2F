@@ -136,6 +136,71 @@ Expected topics:
 - `localhost/factory/products/all_product_codes`
 - `localhost/factory/products/all_product_details`
 
+### ▶️ Step 9: Update the `.bat` files to use your automation path
+
+📁 **Location:** `flexible-production-tooling/automation/`
+
+#### ✅ 1 Open the automation folder
+- Open **File Explorer**
+- Go to your cloned repository
+- Open the **automation** folder
+
+#### ✅ 2 Edit `run_arkite_trigger.bat`
+- Right-click `run_arkite_trigger.bat` → **Edit**
+- Find the line that sets a path (usually `cd ...` or `set ...=...`)
+- Replace the existing path with the full path to your **automation** folder
+- Save the file
+✅ **Example (use your real path):**
+```bat
+cd /d "C:\Path\To\Your\Repository\automation"
+
+✅ 3 Edit run_arkite_agent.bat
+Right-click run_arkite_agent.bat → Edit
+Do the same change: replace the old path with the full path to your automation folder
+Save the file
+✅ Example:
+bat
+Copy code
+cd /d "C:\Path\To\Your\Repository\automation"
+
+✅ 4 Test both files
+▶️ Double-click run_arkite_trigger.bat to verify it runs
+▶️ Double-click run_arkite_agent.bat to verify it runs
+
+▶️ Step 10: Create a Windows Task Scheduler task (run Arkite Agent on login)
+
+✅ 1 Open Task Scheduler
+Press Windows + R
+Type taskschd.msc and click OK
+
+✅ 2 Create the task
+In the right-hand panel, click Create Basic Task…
+Enter:
+Name: Arkite Agent Autostart
+Description: (optional)
+Click Next
+
+✅ 3 Trigger
+Select When I log on
+Click Next
+
+✅ 4 Action
+Select Start a program
+Click Next
+
+✅ 5 Configure the program
+Click Browse… and select your pythonw.exe
+Fill in:
+Program/script: pythonw.exe
+Add arguments (optional): arkite_agent.py
+Start in (optional): Your automation folder path
+✅ Example values:
+Add arguments (optional): arkite_agent.py
+Start in (optional): C:\Path\To\Your\Repository\automation
+
+✅ 6 Finish
+Click Next
+Click Finish
 ---
 
 ## ✅ Verification Checklist
