@@ -1,8 +1,14 @@
 /** @odoo-module **/
 
-// Reload the current Project record after specific server-side buttons execute.
-// This avoids returning act_window actions from Python (which breaks out of modals and opens full page).
-
+/** product_module/static/src/js/x2many_dialog_reload_after_buttons.js
+ *
+ * Goal: When a Project is opened from an X2Many (Product -> Projects), it is rendered inside
+ * `X2ManyFieldDialog`. Server-side buttons that mutate one2many content (materials) should refresh
+ * the dialog record WITHOUT navigating to a full-page form and WITHOUT opening a second modal.
+ *
+ * Implementation: patch `X2ManyFieldDialog.setup()` to register an additional `useViewButtons`
+ * handler with an `afterExecuteAction` hook. For specific button names, it calls `this.record.load()`.
+ */
 import { X2ManyFieldDialog } from "@web/views/fields/relational_utils";
 import { FormController } from "@web/views/form/form_controller";
 import { useViewButtons } from "@web/views/view_button/view_button_hook";
@@ -12,7 +18,6 @@ const PM_RELOAD_BUTTONS = new Set([
     "action_fetch_material_images_from_arkite",
 ]);
 
-// X2Many dialog (Product -> Projects)
 try {
     if (!X2ManyFieldDialog.prototype.__pm_reload_after_buttons_patched__) {
         X2ManyFieldDialog.prototype.__pm_reload_after_buttons_patched__ = true;
@@ -35,10 +40,11 @@ try {
         };
     }
 } catch {
-    // keep UI stable
+    // Defensive: if Odoo internals change, don't brick the backend UI.
 }
 
-// Standard full-page form
+// Also reload the standard (full-page) project form after these buttons run, since the backend
+// no longer returns an act_window refresh.
 try {
     if (!FormController.prototype.__pm_reload_after_buttons_patched__) {
         FormController.prototype.__pm_reload_after_buttons_patched__ = true;
@@ -56,5 +62,6 @@ try {
         };
     }
 } catch {
-    // keep UI stable
+    // Defensive: keep UI stable if Odoo internals change.
 }
+

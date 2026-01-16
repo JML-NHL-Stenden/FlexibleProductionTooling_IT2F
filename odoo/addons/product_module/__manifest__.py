@@ -23,23 +23,23 @@
         'data/page_data.xml',
         'views/instruction_import_wizard_view.xml',
         'views/instruction_form_wizard_views.xml',
+        # Arkite template selection + action must be loaded BEFORE product_views.xml,
+        # because product_views.xml references action_arkite_duplicate_from_template.
         'views/arkite_project_selection_views.xml',
         'views/arkite_duplicate_menu.xml',
-        'views/menu_cleanup.xml',
-        'views/product_views.xml',  # Load first to define menu_product_module_root (but menu items referencing actions from other files should be in those files)
+        'views/product_views.xml',  # Defines menu_product_module_root and dashboard views
         'views/arkite_unit_views.xml',  # Load after product_views.xml (needs menu_product_module_root), defines action_arkite_unit
         'views/project_views.xml',  # Load after arkite_unit_views.xml (needs action_arkite_unit), defines action_project
         'views/arkite_step_server_actions.xml',
         'views/variant_views.xml',
         'views/material_views.xml',
         'views/material_link_wizard_views.xml',
-        'views/arkite_image_selector_wizard_view.xml',
         'views/progress_views.xml',
         'views/arkite_project_wizard_view.xml',
         'views/arkite_job_step_wizard_view.xml',
         'views/arkite_process_create_wizard_view.xml',
+        'views/menu_cleanup.xml',
         'data/arkite_security_data.xml',
-        'views/test_menu_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

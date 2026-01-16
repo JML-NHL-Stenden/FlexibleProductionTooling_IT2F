@@ -1,4 +1,4 @@
-﻿# product_module/models/arkite_process_step.py
+# product_module/models/arkite_process_step.py
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import requests
@@ -304,7 +304,7 @@ class ArkiteProcessStep(models.TransientModel):
                 # Child levels - use em-spaces for visible indentation
                 # Each level gets 4 em-spaces + arrow indicator
                 indent = (EM_SPACE * 4) * level
-                record.display_name_hierarchy = f"{indent}â””â”€ {name}"
+                record.display_name_hierarchy = f"{indent}└─ {name}"
     
     @api.depends('parent_id', 'parent_id.step_name')
     def _compute_parent_step_name(self):
@@ -332,7 +332,7 @@ class ArkiteProcessStep(models.TransientModel):
                 # Get just the step name, no tree characters
                 parent_name = record.parent_id.step_name or "Unnamed Parent"
                 # Remove any tree characters that might be in the name
-                parent_name = parent_name.replace('â””â”€', '').replace('â”œâ”€', '').strip()
+                parent_name = parent_name.replace('└─', '').replace('├─', '').strip()
                 record.parent_step_display = parent_name
             else:
                 record.parent_step_display = ""
@@ -512,6 +512,7 @@ class ArkiteProcessStep(models.TransientModel):
                 if len(parts) <= 2:
                     short_level = full_level
                 else:
+                    # Use ASCII "..." instead of the unicode ellipsis to avoid mojibake ("â€¦") in some environments.
                     short_level = f"{parts[0]}.{parts[1]}...{parts[-1]}"
 
                 # Count dots to determine level depth
@@ -866,10 +867,7 @@ class ArkiteProcessStep(models.TransientModel):
                         "UPDATE product_module_project SET arkite_process_steps_dirty = TRUE, arkite_hierarchy_dirty = TRUE WHERE id = ANY(%s)",
                         [project_ids],
                     )
-                    self.env['product_module.project'].browse(project_ids).invalidate_recordset([
-                        'arkite_hierarchy_dirty',
-                        'arkite_process_steps_dirty',
-                    ])
+                    self.env['product_module.project'].browse(project_ids).invalidate_recordset(['arkite_hierarchy_dirty'])
             return result
 
         # Recompute hierarchy fields after write (this is what keeps the UI from showing '?' after reorder)
@@ -1017,26 +1015,50 @@ class ArkiteProcessStep(models.TransientModel):
                 
                 # Update step if anything changed
                 if updated:
-                    _logger.info("[ARKITE] Patching process step %s with data: %s", record.step_id, {k: v for k, v in step_data.items() if k in ['Name', 'StepType', 'Index', 'ParentStepId']})
-                    patch_response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+                    # IMPORTANT:
+                    # Arkite can reject unrelated properties on PATCH (e.g., MaterialId for steps where the
+                    # referenced material doesn't exist on the Arkite project). To avoid this, PATCH only the
+                    # fields we actually intend to change (especially for hierarchy sync).
+                    patch_payload = {}
+                    if 'step_name' in vals:
+                        patch_payload["Name"] = step_data.get("Name")
+                    if 'step_type' in vals:
+                        patch_payload["StepType"] = step_data.get("StepType")
+                        patch_payload["ChildStepOrder"] = step_data.get("ChildStepOrder")
+                    if 'sequence' in vals:
+                        patch_payload["Index"] = step_data.get("Index")
+                    if ('variant_ids' in vals) or ('for_all_variants' in vals):
+                        patch_payload["ForAllVariants"] = step_data.get("ForAllVariants")
+                        patch_payload["VariantIds"] = step_data.get("VariantIds")
+                    if 'parent_id' in vals:
+                        # If we removed ParentStepId from step_data, send null explicitly to clear.
+                        patch_payload["ParentStepId"] = step_data.get("ParentStepId") if "ParentStepId" in step_data else None
+
+                    _logger.info(
+                        "[ARKITE] Patching process step %s with payload: %s",
+                        record.step_id,
+                        patch_payload,
+                    )
+                    if not patch_payload:
+                        continue
+
+                    patch_response = requests.patch(url, params=params, headers=headers, json=patch_payload, verify=False, timeout=10)
                     if patch_response.ok:
                         _logger.info("[ARKITE] Successfully updated process step %s in Arkite", record.step_id)
-                        # Avoid an extra verify GET; update our local mirror fields cheaply.
-                        updates = {}
-                        if 'sequence' in vals and step_data.get('Index') is not None:
-                            updates['index'] = int(step_data.get('Index', 0))
+                        # Keep local tracking fields in sync without an extra verify GET (prevents UI timeouts).
+                        if 'sequence' in vals:
+                            record.index = int(step_data.get("Index", record.index or 0))
                         if 'parent_id' in vals:
-                            updates['parent_step_id'] = str(step_data.get('ParentStepId', '') or '')
-                        if updates:
-                            sets = ", ".join(f"{k}=%s" for k in updates.keys())
-                            params_sql = list(updates.values()) + [record.id]
-                            self.env.cr.execute(
-                                f"UPDATE product_module_arkite_process_step SET {sets} WHERE id=%s",
-                                params_sql,
-                            )
-                            record.invalidate_recordset(list(updates.keys()))
+                            record.parent_step_id = str(step_data.get("ParentStepId") or "")
+                    else:
+                        msg = "[ARKITE] Failed to update process step %s: HTTP %s" % (record.step_id, patch_response.status_code)
+                        _logger.warning(msg)
+                        if self.env.context.get("pm_raise_on_arkite_sync"):
+                            raise UserError("%s\n%s" % (msg, patch_response.text or ""))
             except Exception as e:
                 _logger.error("Error updating step in Arkite: %s", e)
+                if self.env.context.get("pm_raise_on_arkite_sync"):
+                    raise
         
         return result
 
@@ -1141,37 +1163,27 @@ class ArkiteProcessStep(models.TransientModel):
         if process_id:
             domain.append(('process_id', '=', process_id))
         records = self.env['product_module.arkite.process.step'].search(domain)
+        for rec in records.sorted(lambda r: (r.sequence or 0, r.id)):
+            payload = {}
 
-        # Sync only records that actually differ from Arkite's last-synced state.
-        to_sync_ids = []
-        for rec in records:
             desired_index = int((rec.sequence or 0) // 10) if rec.sequence else 0
-            current_index = int(rec.index or 0)
-            desired_parent = ''
+            if desired_index != (rec.index or 0):
+                payload['sequence'] = rec.sequence
+
+            current_parent = (rec.parent_step_id or "").strip()
             if rec.parent_id and rec.parent_id.step_id:
                 desired_parent = str(rec.parent_id.step_id).strip()
-            current_parent = str(rec.parent_step_id or '').strip()
-            if desired_index != current_index or desired_parent != current_parent:
-                to_sync_ids.append(rec.id)
+                if desired_parent != current_parent:
+                    payload['parent_id'] = rec.parent_id.id
+            else:
+                # Clear parent if Arkite currently has one.
+                if current_parent:
+                    payload['parent_id'] = False
 
-        to_sync = records.browse(to_sync_ids)
-        for rec in to_sync.sorted(lambda r: (r.sequence or 0, r.id)):
-            rec.with_context(defer_arkite_sync=False).write({
-                'sequence': rec.sequence,
-                'parent_id': rec.parent_id.id if rec.parent_id else False,
-            })
+            if payload:
+                rec.with_context(defer_arkite_sync=False, pm_raise_on_arkite_sync=True).write(payload)
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {'title': _('Saved'), 'message': _('Saved to Arkite.'), 'type': 'success', 'sticky': False}}
 
-        if not to_sync:
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {'title': _('No changes'), 'message': _('No staged Process Step changes to sync.'), 'type': 'info', 'sticky': False},
-            }
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {'title': _('Saved'), 'message': _('Saved Process Steps to Arkite.'), 'type': 'success', 'sticky': False},
-        }
     @api.model
     def pm_action_discard_all(self):
         """Discard staged process-step changes by reloading from Arkite for the project/process in context."""
@@ -1210,4 +1222,3 @@ class ArkiteVariantTemp(models.TransientModel):
     variant_id = fields.Char(string='Variant ID', default='0')
     name = fields.Char(string='Name', required=True)
     description = fields.Text(string='Description')
-

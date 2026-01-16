@@ -1,4 +1,5 @@
-﻿# product_module/models/arkite_job_step.py
+# product_module/models/arkite_job_step.py
+# (auto-managed by product_module) – keep this file in sync with Arkite hierarchy rules
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import requests
@@ -334,7 +335,7 @@ class ArkiteJobStep(models.TransientModel):
                 # Child levels - use em-spaces for visible indentation
                 # Each level gets 4 em-spaces + arrow indicator
                 indent = (EM_SPACE * 4) * level
-                record.display_name_hierarchy = f"{indent}â””â”€ {name}"
+                record.display_name_hierarchy = f"{indent}└─ {name}"
     
     @api.depends('parent_id', 'parent_id.step_name')
     def _compute_parent_step_name(self):
@@ -353,7 +354,7 @@ class ArkiteJobStep(models.TransientModel):
                 # Get just the step name, no tree characters
                 parent_name = record.parent_id.step_name or "Unnamed Parent"
                 # Remove any tree characters that might be in the name
-                parent_name = parent_name.replace('â””â”€', '').replace('â”œâ”€', '').strip()
+                parent_name = parent_name.replace('└─', '').replace('├─', '').strip()
                 record.parent_step_display = parent_name
             else:
                 record.parent_step_display = ""
@@ -364,7 +365,7 @@ class ArkiteJobStep(models.TransientModel):
         for record in self:
             name = record.step_name or "Unnamed Step"
             # Remove any tree characters
-            name = name.replace('â””â”€', '').replace('â”œâ”€', '').strip()
+            name = name.replace('└─', '').replace('├─', '').strip()
             result.append((record.id, name))
         return result
     
@@ -528,6 +529,7 @@ class ArkiteJobStep(models.TransientModel):
                     short_level = full_level
                 else:
                     # UX: avoid long "1.2.3.4.5" strings in grids. Keep full value in tooltip.
+                    # Use ASCII "..." instead of the unicode ellipsis to avoid mojibake ("â€¦") in some environments.
                     short_level = f"{parts[0]}.{parts[1]}...{parts[-1]}"
 
                 # Count dots to determine level depth
@@ -858,10 +860,7 @@ class ArkiteJobStep(models.TransientModel):
                     "UPDATE product_module_project SET arkite_job_steps_dirty = TRUE, arkite_hierarchy_dirty = TRUE WHERE id = ANY(%s)",
                     [project_ids],
                 )
-                self.env['product_module.project'].browse(project_ids).invalidate_recordset([
-                    'arkite_hierarchy_dirty',
-                    'arkite_job_steps_dirty',
-                ])
+                self.env['product_module.project'].browse(project_ids).invalidate_recordset(['arkite_hierarchy_dirty'])
             # Normalize sibling sequences ONLY for diagram reorder (not list resequence).
             if self.env.context.get('pm_diagram_reorder') and not self.env.context.get('pm_list_resequence'):
                 groups = set()
@@ -933,44 +932,171 @@ class ArkiteJobStep(models.TransientModel):
                     
                     step_data = response.json()
                     
+                    updated = False
+
                     # Update fields that changed
-                    if 'step_name' in vals:
+                    if 'step_name' in vals and step_data.get("Name") != record.step_name:
                         step_data["Name"] = record.step_name
-                    if 'step_type' in vals:
+                        updated = True
+                    if 'step_type' in vals and step_data.get("StepType") != record.step_type:
                         step_data["StepType"] = record.step_type
                         step_data["ChildStepOrder"] = "Sequential" if record.step_type == "COMPOSITE" else "None"
+                        updated = True
                     if 'sequence' in vals:
                         # Convert sequence to Index (sequence is typically multiples of 10, Index is the actual order)
                         new_index = record.sequence // 10 if record.sequence > 0 else 0
                         old_index = step_data.get("Index", 0)
-                        _logger.info("[ARKITE] Job step %s sequence changed: %s -> Index %s (was %s)", record.step_id, record.sequence, new_index, old_index)
-                        step_data["Index"] = new_index
-                    if 'for_all_variants' in vals:
+                        if old_index != new_index:
+                            _logger.info(
+                                "[ARKITE] Job step %s sequence changed: %s -> Index %s (was %s)",
+                                record.step_id, record.sequence, new_index, old_index
+                            )
+                            step_data["Index"] = new_index
+                            updated = True
+                    if 'for_all_variants' in vals and step_data.get("ForAllVariants") != record.for_all_variants:
                         step_data["ForAllVariants"] = record.for_all_variants
+                        updated = True
                     if 'parent_id' in vals:
+                        # IMPORTANT: Arkite Job Steps commonly require a ParentStepId. If we don't have a new
+                        # parent, keep the existing ParentStepId instead of deleting it (avoids rejected PATCH).
                         if record.parent_id and record.parent_id.step_id:
-                            step_data["ParentStepId"] = record.parent_id.step_id
+                            desired_parent = str(record.parent_id.step_id)
+                            if step_data.get("ParentStepId") != desired_parent:
+                                step_data["ParentStepId"] = desired_parent
+                                updated = True
                         else:
-                            # Remove ParentStepId or set to "0" for root steps
-                            if "ParentStepId" in step_data:
-                                del step_data["ParentStepId"]
-                    
-                    # Update step in Arkite
-                    _logger.info("[ARKITE] Patching job step %s with data: %s", record.step_id, {k: v for k, v in step_data.items() if k in ['Name', 'StepType', 'Index', 'ParentStepId']})
-                    patch_response = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
-                    if patch_response.ok:
-                        _logger.info("[ARKITE] Successfully updated job step %s in Arkite", record.step_id)
-                        # Update index from response
-                        updated_data = patch_response.json()
-                        if isinstance(updated_data, dict) and updated_data.get("Index") is not None:
-                            record.index = updated_data.get("Index", 0)
-                    else:
-                        _logger.warning("[ARKITE] Failed to update step %s: HTTP %s", record.step_id, patch_response.status_code)
+                            existing_parent = (record.parent_step_id or step_data.get("ParentStepId") or "").strip()
+                            if existing_parent:
+                                if step_data.get("ParentStepId") != existing_parent:
+                                    step_data["ParentStepId"] = existing_parent
+                                    updated = True
+                            else:
+                                if "ParentStepId" in step_data:
+                                    del step_data["ParentStepId"]
+                                    updated = True
+
+                    # Update step in Arkite if anything changed
+                    if updated:
+                        # IMPORTANT: Arkite rejects unrelated properties for some step kinds.
+                        # In particular, sending DetectionId for non-detection steps can cause:
+                        #   HTTP 400: "Property DetectionId is only valid for detection steps"
+                        # We therefore PATCH only the fields we actually intend to change.
+                        patch_payload = {}
+                        if 'step_name' in vals:
+                            patch_payload["Name"] = step_data.get("Name")
+                        if 'sequence' in vals:
+                            patch_payload["Index"] = step_data.get("Index")
+                        if 'parent_id' in vals and "ParentStepId" in step_data:
+                            patch_payload["ParentStepId"] = step_data.get("ParentStepId")
+
+                        _logger.info(
+                            "[ARKITE] Patching job step %s with data: %s",
+                            record.step_id,
+                            patch_payload,
+                        )
+                        # If we somehow have nothing to patch (e.g., unchanged), skip call.
+                        if not patch_payload:
+                            continue
+                        patch_response = requests.patch(url, params=params, headers=headers, json=patch_payload, verify=False, timeout=10)
+                        if patch_response.ok:
+                            _logger.info("[ARKITE] Successfully updated job step %s in Arkite", record.step_id)
+                            # Arkite often returns 204 No Content (empty body) for PATCH.
+                            body_text_ok = (patch_response.text or "").strip()
+                            updated_data = patch_response.json() if body_text_ok else {}
+                            if isinstance(updated_data, dict):
+                                if updated_data.get("Index") is not None:
+                                    record.index = updated_data.get("Index", 0)
+                                if updated_data.get("ParentStepId") is not None:
+                                    record.parent_step_id = str(updated_data.get("ParentStepId") or "")
+                        else:
+                            # Recovery: Arkite may require the parent to exist as a CompositeStep entity for re-parenting.
+                            # If it returns "No CompositeStep for ID <parentStepId>", promote that parent to COMPOSITE
+                            # (and set ChildStepOrder=Sequential) then retry once.
+                            body_text = (patch_response.text or "").strip()
+                            promoted = False
+                            try:
+                                body_json = patch_response.json() if body_text else {}
+                            except Exception:
+                                body_json = {}
+                            err_msg = ""
+                            if isinstance(body_json, dict):
+                                err_msg = str(body_json.get("ErrorMessage") or body_json.get("error") or "")
+
+                            parent_id_in_err = None
+                            if "No CompositeStep for ID" in err_msg:
+                                try:
+                                    parent_id_in_err = err_msg.split("No CompositeStep for ID", 1)[1].strip()
+                                except Exception:
+                                    parent_id_in_err = None
+
+                            if (patch_response.status_code == 404) and parent_id_in_err:
+                                try:
+                                    self._pm_promote_step_to_composite(
+                                        project_id=project.arkite_project_id,
+                                        step_id=str(parent_id_in_err),
+                                        api_base=api_base,
+                                        api_key=api_key,
+                                    )
+                                    promoted = True
+                                except Exception as e:
+                                    _logger.warning("[ARKITE] Failed to promote parent %s to COMPOSITE: %s", parent_id_in_err, e)
+
+                            if promoted:
+                                retry = requests.patch(url, params=params, headers=headers, json=patch_payload, verify=False, timeout=10)
+                                if retry.ok:
+                                    _logger.info("[ARKITE] Retry succeeded for job step %s after promoting parent %s", record.step_id, parent_id_in_err)
+                                    # Arkite may return 204 No Content on PATCH.
+                                    retry_text_ok = (retry.text or "").strip()
+                                    updated_data = retry.json() if retry_text_ok else {}
+                                    if isinstance(updated_data, dict):
+                                        if updated_data.get("Index") is not None:
+                                            record.index = updated_data.get("Index", 0)
+                                        if updated_data.get("ParentStepId") is not None:
+                                            record.parent_step_id = str(updated_data.get("ParentStepId") or "")
+                                    continue
+                                patch_response = retry
+                                body_text = (patch_response.text or "").strip()
+
+                            msg = "[ARKITE] Failed to update step %s: HTTP %s" % (record.step_id, patch_response.status_code)
+                            _logger.warning(msg)
+                            if self.env.context.get("pm_raise_on_arkite_sync"):
+                                raise UserError("%s\n%s" % (msg, body_text or ""))
                         
                 except Exception as e:
                     _logger.warning("[ARKITE] Error syncing job step %s to Arkite: %s", record.step_id, e)
+                    if self.env.context.get("pm_raise_on_arkite_sync"):
+                        raise
         
         return result
+
+    def _pm_promote_step_to_composite(self, project_id, step_id, api_base, api_key):
+        """Promote a step in Arkite to COMPOSITE so it can be a valid parent in API operations."""
+        if not project_id or not step_id:
+            return
+        url = f"{api_base}/projects/{project_id}/steps/{step_id}/"
+        params = {"apiKey": api_key}
+        headers = {"Content-Type": "application/json"}
+
+        resp = requests.get(url, params=params, headers=headers, verify=False, timeout=10)
+        if not resp.ok:
+            raise UserError(_("[ARKITE] Could not fetch parent step %s (HTTP %s)") % (step_id, resp.status_code))
+        step_data = resp.json()
+        if not isinstance(step_data, dict):
+            raise UserError(_("[ARKITE] Unexpected response when fetching step %s") % step_id)
+
+        changed = False
+        if step_data.get("StepType") != "COMPOSITE":
+            step_data["StepType"] = "COMPOSITE"
+            changed = True
+        if step_data.get("ChildStepOrder") != "Sequential":
+            step_data["ChildStepOrder"] = "Sequential"
+            changed = True
+        if not changed:
+            return
+
+        patch = requests.patch(url, params=params, headers=headers, json=step_data, verify=False, timeout=10)
+        if not patch.ok:
+            raise UserError(_("[ARKITE] Failed to promote step %s to COMPOSITE (HTTP %s)\n%s") % (step_id, patch.status_code, patch.text or ""))
 
     @api.model
     def create(self, vals):
@@ -1070,37 +1196,25 @@ class ArkiteJobStep(models.TransientModel):
         if not project_id:
             return False
         records = self.env['product_module.arkite.job.step'].search([('project_id', '=', project_id)])
+        for rec in records.sorted(lambda r: (r.sequence or 0, r.id)):
+            payload = {}
 
-        # Sync only records that actually differ from Arkite's last-synced state.
-        to_sync_ids = []
-        for rec in records:
             desired_index = int((rec.sequence or 0) // 10) if rec.sequence else 0
-            current_index = int(rec.index or 0)
-            desired_parent = ''
+            if desired_index != (rec.index or 0):
+                payload['sequence'] = rec.sequence
+
+            # Only attempt ParentStepId changes when we have a concrete new parent step_id.
+            # Avoid sending parent_id=False for "root" steps as Arkite may reject missing ParentStepId.
+            current_parent = (rec.parent_step_id or "").strip()
             if rec.parent_id and rec.parent_id.step_id:
                 desired_parent = str(rec.parent_id.step_id).strip()
-            current_parent = str(rec.parent_step_id or '').strip()
-            if desired_index != current_index or desired_parent != current_parent:
-                to_sync_ids.append(rec.id)
+                if desired_parent and desired_parent != current_parent:
+                    payload['parent_id'] = rec.parent_id.id
 
-        to_sync = records.browse(to_sync_ids)
-        for rec in to_sync.sorted(lambda r: (r.sequence or 0, r.id)):
-            rec.with_context(defer_arkite_sync=False).write({
-                'sequence': rec.sequence,
-                'parent_id': rec.parent_id.id if rec.parent_id else False,
-            })
+            if payload:
+                rec.with_context(defer_arkite_sync=False, pm_raise_on_arkite_sync=True).write(payload)
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {'title': _('Saved'), 'message': _('Saved to Arkite.'), 'type': 'success', 'sticky': False}}
 
-        if not to_sync:
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {'title': _('No changes'), 'message': _('No staged Job Step changes to sync.'), 'type': 'info', 'sticky': False},
-            }
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {'title': _('Saved'), 'message': _('Saved Job Steps to Arkite.'), 'type': 'success', 'sticky': False},
-        }
     @api.model
     def pm_action_discard_all(self):
         """Discard staged job-step changes by reloading from Arkite for the project in context."""
@@ -1121,5 +1235,4 @@ class ArkiteJobStep(models.TransientModel):
         Arkite steps unexpectedly.
         """
         return super().unlink()
-
 
